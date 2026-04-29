@@ -1,0 +1,1890 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TN Citace — Template 06</title>
+<!-- TN CITACE (quote card) — Graph Generator template 06 -->
+<!-- Layout derived from PSD reference (uploads/citace-reference.png): -->
+<!--   1920×1080 stage, light card inset ~60/70/60/110 px, registration corner ticks, -->
+<!--   portrait left ~40% / text right ~55%, Nova logo top-left, TN badge bottom-right. -->
+<!-- Same shared storage contract as bar-chart (LS_KEY=tn_graphics_engine_projects_v2). -->
+
+<link rel="stylesheet" href="../assets/organica-fonts.css">
+<style>
+  :root {
+    /* TN brand palette */
+    --tn-red:     #e60013;
+    --tn-red-dk:  #b80010;
+    --tn-red-sft: #ffeeef;
+
+    --bg-0:   #ffffff;
+    --bg-1:   #f7f7f7;
+    --bg-2:   #eeeeee;
+    --bg-3:   #1a1a1a;
+    --line:   #e2e2e2;
+    --line-2: #d4d4d4;
+
+    --text-0: #0f0f0f;
+    --text-1: #4a4a4a;
+    --text-2: #8a8a8a;
+    --text-inv: #ffffff;
+
+    --accent: var(--tn-red);
+    --accent-hover: var(--tn-red-dk);
+    --ok: #00a651;
+    --warn: var(--tn-red);
+
+    --font-ui:   'Inter', system-ui, -apple-system, sans-serif;
+    --font-mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+
+    /* Stage palette — pixel-sampled from the PSD composite reference */
+    --card-fill:   #dee2e6;       /* light gray card body */
+    --mint:        #5ee6c3;       /* registration tick color */
+    --nova-teal:   #2dd3c4;       /* Nova wordmark tint */
+    --name-navy:   #0b1e3f;       /* name, quote body */
+    --role-blue:   #2e7fd8;       /* role/subtitle accent */
+    --src-gray:    #7d8791;       /* "zdroj: ..." caption */
+    --portrait-1:  #7d91a8;       /* silhouette mid */
+    --portrait-2:  #556478;       /* silhouette shadow */
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; overflow: hidden; }
+  body {
+    font-family: var(--font-ui);
+    background: var(--bg-1);
+    color: var(--text-0);
+    font-size: 15px;
+    line-height: 1.5;
+  }
+
+  .app {
+    display: grid;
+    grid-template-columns: 600px 1fr;
+    height: 100vh;
+    background: var(--line);
+    gap: 1px;
+  }
+
+  /* =========================================================================
+     CONTROL PANEL — left column. Mirrors bar-chart visual language so the two
+     templates feel like one product. Red masthead, dark project bar, body.
+     ========================================================================= */
+  .control { background: var(--bg-0); overflow-y: auto; display: flex; flex-direction: column; }
+  .control::-webkit-scrollbar { width: 8px; }
+  .control::-webkit-scrollbar-track { background: var(--bg-1); }
+  .control::-webkit-scrollbar-thumb { background: var(--line-2); border: 2px solid var(--bg-1); border-radius: 4px; }
+
+  .control-header {
+    padding: 22px 24px 20px;
+    background: var(--tn-red);
+    color: var(--text-inv);
+    position: relative;
+    border-bottom: 4px solid var(--tn-red-dk);
+  }
+  .brand-row { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+  .tn-mark {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 28px; height: 28px;
+    background: var(--text-inv);
+    color: var(--tn-red);
+    font-weight: 800; font-size: 14px; letter-spacing: -0.02em;
+    font-family: var(--font-ui);
+    border: 0; cursor: pointer; padding: 0;
+    transition: transform .1s ease;
+  }
+  .tn-mark:hover { transform: scale(1.08); }
+  .tn-mark:active { transform: scale(0.95); }
+  .brand {
+    font-family: var(--font-mono);
+    font-weight: 600;
+    font-size: 11px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.82);
+  }
+  .template-badge {
+    display: flex; align-items: baseline; gap: 12px;
+    margin-top: 10px; padding-top: 10px;
+    border-top: 1px solid rgba(255,255,255,0.25);
+  }
+  .tpl-num {
+    font-family: var(--font-mono);
+    font-size: 11px; letter-spacing: 0.2em;
+    color: rgba(255,255,255,0.7);
+    text-transform: uppercase;
+  }
+  .tpl-name {
+    font-family: var(--font-ui);
+    font-weight: 800; font-size: 22px;
+    letter-spacing: -0.01em;
+    color: var(--text-inv); line-height: 1;
+  }
+
+  /* Project bar (identical pattern to bar-chart) */
+  .project-bar {
+    padding: 14px 24px 16px;
+    background: #2a2a2a;
+    border-bottom: 1px solid #1a1a1a;
+    color: #e0e0e0;
+  }
+  .pb-row { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+  .pb-row:last-child { margin-bottom: 0; }
+  .pb-label {
+    font-family: var(--font-mono);
+    font-size: 10px; letter-spacing: 0.2em;
+    text-transform: uppercase; color: #a0a0a0;
+    flex-shrink: 0;
+  }
+  .pb-name {
+    flex: 1;
+    padding: 8px 12px;
+    background: #1a1a1a;
+    border: 1px solid #3a3a3a;
+    color: #f0f0f0;
+    font-family: var(--font-ui);
+    font-size: 13px;
+    border-radius: 2px;
+  }
+  .pb-name:focus { outline: none; border-color: var(--tn-red); }
+  .pb-btn {
+    padding: 7px 12px;
+    background: #3a3a3a;
+    border: 1px solid #4a4a4a;
+    color: #f0f0f0;
+    font-family: var(--font-ui);
+    font-size: 12px; font-weight: 600;
+    letter-spacing: 0.02em;
+    cursor: pointer;
+    border-radius: 2px;
+    transition: background .15s ease;
+  }
+  .pb-btn:hover { background: #4a4a4a; }
+  .pb-btn.primary { background: var(--tn-red); border-color: var(--tn-red-dk); }
+  .pb-btn.primary:hover { background: var(--tn-red-dk); }
+  .pb-meta {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: #777;
+    letter-spacing: 0.04em;
+  }
+  .pb-meta .dirty { color: #ffb75b; }
+  .pb-meta .saved { color: #62d672; }
+
+  /* Panel sections */
+  .section {
+    padding: 18px 24px;
+    border-bottom: 1px solid var(--line);
+  }
+  .section:last-child { border-bottom: 0; }
+  .section h3 {
+    font-size: 10px;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+    color: var(--text-2);
+    font-family: var(--font-mono);
+    font-weight: 600;
+    margin-bottom: 12px;
+  }
+  .field { margin-bottom: 12px; }
+  .field:last-child { margin-bottom: 0; }
+  .field label {
+    display: block;
+    font-size: 11px;
+    color: var(--text-1);
+    margin-bottom: 5px;
+    font-weight: 500;
+  }
+  .field input[type="text"],
+  .field textarea,
+  .field select {
+    width: 100%;
+    padding: 8px 10px;
+    background: var(--bg-0);
+    border: 1px solid var(--line-2);
+    color: var(--text-0);
+    font-family: var(--font-ui);
+    font-size: 13px;
+    border-radius: 2px;
+  }
+  .field input[type="text"]:focus,
+  .field textarea:focus,
+  .field select:focus {
+    outline: none;
+    border-color: var(--tn-red);
+  }
+  .field textarea {
+    resize: vertical;
+    min-height: 110px;
+    font-family: var(--font-ui);
+    line-height: 1.45;
+  }
+  .field .help {
+    font-size: 11px;
+    color: var(--text-2);
+    margin-top: 4px;
+    font-style: italic;
+  }
+
+  .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+  /* File upload for portrait */
+  .upload-row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px; background: var(--bg-1);
+    border: 1px dashed var(--line-2);
+    border-radius: 2px;
+  }
+  .upload-row .thumb {
+    width: 52px; height: 52px; flex-shrink: 0;
+    background: var(--bg-2);
+    border: 1px solid var(--line);
+    background-size: cover; background-position: center;
+  }
+  .upload-row .upload-ctrl { flex: 1; display: flex; gap: 6px; flex-wrap: wrap; }
+  .upload-btn {
+    padding: 6px 10px; font-size: 11px; font-weight: 600;
+    background: var(--bg-0); border: 1px solid var(--line-2);
+    color: var(--text-0); cursor: pointer; border-radius: 2px;
+    font-family: var(--font-ui);
+  }
+  .upload-btn:hover { background: var(--bg-1); }
+  .upload-btn.clear { color: var(--tn-red); border-color: var(--tn-red); }
+
+  /* Toggle-group pattern shared with bar-chart */
+  .toggle-group {
+    display: inline-flex;
+    background: var(--bg-1);
+    border: 1px solid var(--line);
+    padding: 2px;
+    gap: 2px;
+    border-radius: 2px;
+  }
+  .toggle-group button {
+    padding: 6px 12px;
+    background: transparent;
+    border: 0;
+    color: var(--text-1);
+    font-size: 12px; font-weight: 600;
+    cursor: pointer;
+    font-family: var(--font-ui);
+    border-radius: 2px;
+  }
+  .toggle-group button.active {
+    background: var(--text-0); color: var(--text-inv);
+  }
+
+  /* Export buttons */
+  .export-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .btn-export {
+    padding: 10px 12px;
+    background: var(--text-0); color: var(--text-inv);
+    border: 0; border-radius: 2px;
+    font-family: var(--font-ui);
+    font-weight: 600; font-size: 12px;
+    letter-spacing: 0.02em;
+    cursor: pointer;
+  }
+  .btn-export:hover { background: #333; }
+  .btn-export.primary { background: var(--tn-red); }
+  .btn-export.primary:hover { background: var(--tn-red-dk); }
+
+  /* =========================================================================
+     STAGE — right column. 1920×1080 canvas scaled to fit.
+     ========================================================================= */
+  .stage-col {
+    background: var(--bg-3);
+    display: flex; flex-direction: column;
+    overflow: hidden;
+  }
+  .stage-header {
+    padding: 10px 16px;
+    background: #222;
+    border-bottom: 1px solid #111;
+    color: #aaa;
+    font-family: var(--font-mono);
+    font-size: 11px; letter-spacing: 0.12em;
+    display: flex; align-items: center; gap: 14px;
+    flex-shrink: 0;
+  }
+  .stage-header .meta { color: #666; }
+  .stage-header .spacer { flex: 1; }
+  .stage-header .pill {
+    padding: 3px 8px;
+    background: #333;
+    border-radius: 10px;
+    color: #ddd;
+    letter-spacing: 0.05em;
+  }
+
+  .stage-wrap {
+    flex: 1; min-height: 0;
+    padding: 16px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  /* The outer wrapper does the scaling — keep the inner stage at a fixed
+     1920×1080 for pixel-perfect rendering. */
+  .stage-scale {
+    width: 1920px; height: 1080px;
+    transform-origin: center center;
+    position: relative;
+    flex-shrink: 0;
+  }
+  .stage {
+    position: absolute; inset: 0;
+    overflow: hidden;
+    background: #000;
+  }
+  /* The canvas sits ABOVE the bg-video, transparent where режia will later
+     composite top/bottom chrome. 1920×1080 intrinsic, stretched to stage. */
+  .stage canvas#stage-canvas {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%;
+    z-index: 2;
+    pointer-events: none;
+  }
+  .stage .bg-video,
+  .stage .bg-flat {
+    z-index: 1;
+  }
+
+  /* Timeline */
+  .timeline {
+    padding: 10px 16px 12px;
+    background: #1f1f1f;
+    border-top: 1px solid #0f0f0f;
+    color: #aaa;
+    display: flex; align-items: center; gap: 12px;
+    flex-shrink: 0;
+  }
+  .tl-btn {
+    width: 34px; height: 34px;
+    background: #333; border: 1px solid #444;
+    color: #fff; cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 13px;
+    border-radius: 2px;
+  }
+  .tl-btn:hover { background: #444; }
+  .tl-scrubber {
+    flex: 1;
+    -webkit-appearance: none; appearance: none;
+    height: 6px;
+    background: #333;
+    border-radius: 3px;
+    outline: none;
+  }
+  .tl-scrubber::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 14px; height: 14px;
+    background: var(--tn-red);
+    border-radius: 50%;
+    cursor: pointer;
+  }
+  .tl-scrubber::-moz-range-thumb {
+    width: 14px; height: 14px;
+    background: var(--tn-red);
+    border-radius: 50%;
+    cursor: pointer; border: 0;
+  }
+  .tl-readout {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: #aaa;
+    min-width: 100px;
+    text-align: right;
+  }
+
+  /* =========================================================================
+     STAGE CONTENT — drawn inside a 1920×1080 <canvas>. The block layout is
+     identical to the Bar Chart template (topBlack/titleBand/chart/bottomBlack)
+     so the two templates composite identically over the TN režia backdrop.
+     The canvas is transparent in preview mode (top/bottom strips not drawn);
+     режia paints the blue header + teal/TN bar behind via the looped video.
+     ========================================================================= */
+
+  /* Backdrop video — GRAF-style. Hidden by default; JS toggles `.visible`
+     once video is ready. Frame-synced via currentTime, not autoplay loop. */
+  .bg-video {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%;
+    object-fit: cover;
+    pointer-events: none;
+    display: none;
+  }
+  .bg-video.visible { display: block; }
+  /* Solid fallback / export-clean backdrop. Shown when state.branding==='export'. */
+  .bg-flat {
+    position: absolute; inset: 0;
+    background:
+      radial-gradient(ellipse at 30% 20%, rgba(56,143,230,0.35) 0%, rgba(0,0,0,0) 55%),
+      radial-gradient(ellipse at 80% 10%, rgba(14,62,128,0.6) 0%, rgba(0,0,0,0) 50%),
+      linear-gradient(180deg, #0a2346 0%, #0a2a4e 50%, #1a5e6d 100%);
+  }
+
+  /* =========================================================================
+     OVERLAY MODAL (Save/Load project) — same visual as bar-chart
+     ========================================================================= */
+  .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 100; }
+  .modal.show { display: flex; align-items: center; justify-content: center; }
+  .modal-card {
+    background: var(--bg-0);
+    border-radius: 4px;
+    width: 520px; max-width: 90vw; max-height: 80vh;
+    display: flex; flex-direction: column;
+    overflow: hidden;
+  }
+  .modal-head {
+    padding: 16px 20px;
+    background: var(--tn-red); color: var(--text-inv);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .modal-head h2 {
+    font-size: 14px; letter-spacing: 0.12em; text-transform: uppercase;
+    font-family: var(--font-mono); font-weight: 600;
+  }
+  .modal-close {
+    background: transparent; border: 0; color: var(--text-inv);
+    font-size: 18px; cursor: pointer; padding: 4px 8px;
+  }
+  .modal-body { padding: 8px; overflow-y: auto; flex: 1; }
+  .proj-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 12px;
+    border: 1px solid var(--line);
+    border-radius: 2px;
+    margin-bottom: 6px;
+    background: var(--bg-0);
+  }
+  .proj-info { flex: 1; min-width: 0; }
+  .proj-title {
+    font-weight: 600; font-size: 13px; color: var(--text-0);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .proj-date { font-family: var(--font-mono); font-size: 10px; color: var(--text-2); margin-top: 2px; }
+  .proj-btn {
+    padding: 6px 10px; font-size: 11px; font-weight: 600;
+    background: var(--bg-0); border: 1px solid var(--line-2);
+    color: var(--text-0); cursor: pointer; border-radius: 2px;
+    font-family: var(--font-ui);
+  }
+  .proj-btn.load:hover { background: var(--bg-1); }
+  .proj-btn.del { color: var(--tn-red); border-color: var(--tn-red); }
+  .proj-btn.del:hover { background: var(--tn-red-sft); }
+  .proj-empty {
+    text-align: center; padding: 40px 20px;
+    color: var(--text-2); font-size: 13px;
+  }
+
+  /* Toast */
+  .toast-stack {
+    position: fixed; bottom: 20px; right: 20px;
+    display: flex; flex-direction: column-reverse; gap: 8px;
+    z-index: 200; pointer-events: none;
+  }
+  .toast {
+    padding: 10px 14px;
+    background: var(--text-0); color: var(--text-inv);
+    border-radius: 2px;
+    font-size: 13px; font-weight: 500;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    animation: toast-in .25s ease;
+    pointer-events: auto;
+  }
+  .toast.success { background: var(--ok); }
+  .toast.error { background: var(--tn-red); }
+  @keyframes toast-in {
+    from { transform: translateY(10px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ============================ CONTROL ============================ -->
+  <aside class="control">
+    <header class="control-header">
+      <div class="brand-row">
+        <button class="tn-mark" id="btnHome" title="Zpět na hlavní rozcestník">tn</button>
+        <span class="brand">Graphics Engine</span>
+      </div>
+      <div class="template-badge">
+        <span class="tpl-num">06 / TEMPLATE</span>
+        <span class="tpl-name">TN citace</span>
+      </div>
+    </header>
+
+    <div class="project-bar">
+      <div class="pb-row">
+        <span class="pb-label">Projekt</span>
+        <input type="text" class="pb-name" id="projName" value="Untitled" />
+        <span class="pb-meta" id="projMeta">nový</span>
+      </div>
+      <div class="pb-row">
+        <button class="pb-btn primary" id="projSave">Uložit</button>
+        <button class="pb-btn" id="projSaveAs">Uložit jako…</button>
+        <button class="pb-btn" id="projOpen">Otevřít…</button>
+        <button class="pb-btn" id="projNew">Nový</button>
+      </div>
+    </div>
+
+    <!-- Content fields -->
+    <div class="section">
+      <h3>Obsah</h3>
+      <div class="field">
+        <label for="inName">Jméno</label>
+        <input type="text" id="inName" value="Pavel Vavřička" />
+      </div>
+      <div class="field">
+        <label for="inRole">Funkce / podtitul</label>
+        <input type="text" id="inRole" value="grafik" />
+      </div>
+      <div class="field">
+        <label for="inQuote">Citát</label>
+        <textarea id="inQuote" rows="5">Lorem ipsum dolor sit amet, consectetuer adipiscing elit, sed diam nonummy nibh euismod tincidunt ut laoreet dolore magna aliquam erat volutpat. Ut wisi enim ad minim veniam, quis nostrud exerci tation ullamcorper suscipit lobortis.</textarea>
+        <div class="help">Delší citáty se automaticky zmenší aby se vešly do karty.</div>
+      </div>
+      <div class="field">
+        <label for="inSource">Zdroj (top-right)</label>
+        <input type="text" id="inSource" value="zdroj: Facebook" />
+      </div>
+      <div class="field">
+        <label>
+          Svislý posun citátu
+          <span id="outQuoteY" style="float:right;color:var(--text-2);font-variant-numeric:tabular-nums">0 px</span>
+        </label>
+        <input type="range" id="inQuoteY" min="-200" max="200" step="1" value="0" style="width:100%" />
+        <div class="help">Blok citátu se auto-centruje mezi „grafik" a spodní hranu karty. Posuň nahoru/dolů dle potřeby.</div>
+      </div>
+      <div class="field">
+        <label>
+          Rozestup řádků
+          <span id="outQuoteLH" style="float:right;color:var(--text-2);font-variant-numeric:tabular-nums">+0 px</span>
+        </label>
+        <input type="range" id="inQuoteLH" min="-20" max="30" step="1" value="0" style="width:100%" />
+        <div class="help">Jemné doladění line-height (±px od výchozí hodnoty).</div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h3>Fotografie</h3>
+      <div class="field">
+        <div class="upload-row">
+          <div class="thumb" id="portraitThumb"></div>
+          <div class="upload-ctrl">
+            <label class="upload-btn" for="inPortrait">Nahrát foto…</label>
+            <input type="file" id="inPortrait" accept="image/*" style="display:none" />
+            <button class="upload-btn clear" id="btnClearPortrait">Odebrat</button>
+          </div>
+        </div>
+        <div class="help">Doporučené 660×800 px, portrét. Bez fotky se použije silueta.</div>
+      </div>
+      <div class="field">
+        <label>Pozice fotky (Y %)</label>
+        <input type="range" id="inPortraitY" min="0" max="100" value="20" style="width:100%" />
+      </div>
+    </div>
+
+    <div class="section">
+      <h3>Pozadí / Branding</h3>
+      <div class="field">
+        <label>Podklad</label>
+        <div class="toggle-group" id="brandingToggle">
+          <button data-value="preview" class="active">Studio preview</button>
+          <button data-value="export">Export (clean)</button>
+        </div>
+        <div class="help" id="backdropStatus" style="cursor:pointer" title="Klikni pro reload videa">
+          <strong>Studio preview</strong>: <code>../assets/bg-loop.mp4</code> běží pod grafikou, frame-synced.<br>
+          <strong>Export</strong>: čistě černé pozadí — režie si blue/teal overlay přidá sama.
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h3>Animace &amp; Časování</h3>
+      <div class="field">
+        <label>Délka (sekundy)</label>
+        <div class="field-row">
+          <input type="text" id="inDuration" value="3" />
+          <div class="toggle-group" id="fpsToggle">
+            <button data-value="25" class="active">25 fps</button>
+            <button data-value="50">50 fps</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h3>Export</h3>
+      <div class="export-grid">
+        <button class="btn-export" id="btnExportPNG">Aktuální snímek (PNG)</button>
+        <button class="btn-export primary" id="btnExportVideo">Video (WebM)</button>
+        <button class="btn-export" id="btnExportSeq" style="grid-column: 1 / -1">PNG sekvence s pozadím (do složky)</button>
+      </div>
+      <div class="help" style="margin-top:8px">
+        „Video (WebM)" a „PNG sekvence" obsahují aktuálně zvolené pozadí (video / statické / clean).
+        Sekvence: vybereš složku, snímky se do ní uloží přímo (ideální pro After Effects).
+      </div>
+    </div>
+  </aside>
+
+  <!-- ============================ STAGE ============================ -->
+  <main class="stage-col">
+    <div class="stage-header">
+      <span>1920 × 1080 • 16:9</span>
+      <span class="meta">Template 06 · TN citace</span>
+      <span class="spacer"></span>
+      <span class="pill" id="stFps">25 fps</span>
+      <span class="pill" id="stDur">3.0 s</span>
+    </div>
+
+    <div class="stage-wrap" id="stageWrap">
+      <div class="stage-scale" id="stageScale">
+        <div class="stage" id="stage">
+          <!-- BACKDROP LAYERS — режия's live video sits behind the graphic.
+               Top 135px + bottom 88px of the canvas stay transparent so the
+               режия composite (blue header, teal+TN bottom) shows through. -->
+          <video class="bg-video" id="bgVideo" src="../assets/bg-loop.mp4" crossorigin="anonymous" autoplay loop muted playsinline preload="auto"></video>
+          <div class="bg-flat" id="bgFlat" style="display:none"></div>
+          <!-- The ENTIRE graphic is rendered here. Same layout frame as Bar Chart. -->
+          <canvas id="stage-canvas" width="1920" height="1080"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="timeline">
+      <button class="tl-btn" id="btnPlay" title="Přehrát / Zastavit">▶</button>
+      <button class="tl-btn" id="btnRewind" title="Na začátek">⏮</button>
+      <input type="range" class="tl-scrubber" id="scrubber" min="0" max="74" value="74" step="1" />
+      <div class="tl-readout" id="tlRead">75 / 75</div>
+    </div>
+  </main>
+</div>
+
+<!-- ============================ PROJECT MODAL ============================ -->
+<div class="modal" id="projModal">
+  <div class="modal-card">
+    <div class="modal-head">
+      <h2>Projekty</h2>
+      <button class="modal-close" id="projModalClose">×</button>
+    </div>
+    <div class="modal-body">
+      <div id="projList"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Toast stack -->
+<div class="toast-stack" id="toastStack"></div>
+
+<script>
+/* =============================================================================
+   TN CITACE — runtime.
+   State is a single `state` object; `render()` is idempotent per frame.
+   Playback loops a requestAnimationFrame at FPS; scrubber + export use the same
+   renderFrame(i) so everything stays in sync.
+   ============================================================================= */
+
+const TEMPLATE_ID = 'tn-citace-01';
+const LS_KEY = 'tn_graphics_engine_projects_v2';
+const LS_CURRENT = 'tn_graphics_engine_current_v2';
+
+/* ---- state ---- */
+const state = {
+  name: 'Pavel Vavřička',
+  role: 'grafik',
+  quote: 'Lorem ipsum dolor sit amet, consectetuer adipiscing elit, sed diam nonummy nibh euismod tincidunt ut laoreet dolore magna aliquam erat volutpat. Ut wisi enim ad minim veniam, quis nostrud exerci tation ullamcorper suscipit lobortis.',
+  source: 'zdroj: Facebook',
+  portrait: null,          // base64 data URL or null
+  portraitY: 20,           // 0..100 → background-position-y %
+  quoteYOffset: 0,         // manual nudge to auto-centered quote block (px)
+  quoteLHOffset: 0,        // manual line-height offset (±px from default)
+  branding: 'preview',     // 'preview' | 'export' — GRAF-style
+  frame: 0,
+};
+
+let FPS = 25;
+let DURATION = 3;                       // seconds
+let TOTAL_FRAMES = DURATION * FPS;     // 75 @ 25fps
+const CANVAS_W = 1920, CANVAS_H = 1080;
+
+let currentProjectId = null;
+let lastSavedSnapshot = null;
+let playing = false;
+let playRAF = null;
+let playStart = 0;
+let playStartFrame = 0;
+
+/* ---- DOM refs ---- */
+const $ = id => document.getElementById(id);
+const els = {
+  portraitThumb: $('portraitThumb'),
+  bgVideo: $('bgVideo'),
+  bgFlat: $('bgFlat'),
+  scrubber: $('scrubber'),
+  tlRead: $('tlRead'),
+  btnPlay: $('btnPlay'),
+  stFps: $('stFps'),
+  stDur: $('stDur'),
+  backdropStatus: $('backdropStatus'),
+};
+
+/* =============================================================================
+   BACKDROP VIDEO — GRAF-style. The video is NOT on autoplay-loop; we advance
+   its currentTime in sync with state.frame every render. In 'export' mode
+   the video is hidden and режия composites its own clean chrome over black.
+   ============================================================================= */
+let videoReady  = false;
+let videoFailed = false;
+let autoplayBlocked = false;
+
+function setBackdropStatus(msg, kind) {
+  // Non-fatal if the status element isn't there (e.g. during partial boot)
+  if (!els.backdropStatus) return;
+  const prefix = '<strong>Studio preview</strong>: <code>../assets/bg-loop.mp4</code> běží pod grafikou, frame-synced.<br><strong>Export</strong>: čistě černé pozadí — režie si blue/teal overlay přidá sama.';
+  if (!msg) { els.backdropStatus.innerHTML = prefix; return; }
+  const color = kind === 'error' ? 'var(--tn-red)'
+              : kind === 'warn'  ? '#c89522'
+              : kind === 'loading' ? '#888'
+              : 'var(--ok)';
+  els.backdropStatus.innerHTML = `<span style="color:${color};font-weight:600">${msg}</span><br>${prefix}`;
+}
+
+els.bgVideo.addEventListener('error', (e) => markVideoFailed('error event', e));
+els.bgVideo.addEventListener('stalled', () => console.warn('[Backdrop] stalled'));
+
+// --- ROBUST INIT (identical pattern to bar-chart.html) -----------------------
+// A single 'loadeddata' listener misses videos that loaded from cache BEFORE
+// this JS attached. We listen to MULTIPLE ready-events + a readyState fallback
+// + a 5s safety timeout so the backdrop always resolves to either OK or MISSING.
+function markVideoReady(source) {
+  if (videoReady || videoFailed) return;
+  videoReady = true;
+  const dur = isFinite(els.bgVideo.duration) ? els.bgVideo.duration.toFixed(1) + 's' : '?s';
+  setBackdropStatus(`${dur} OK`, 'ok');
+  console.log(`[Backdrop] Ready (via ${source}), readyState=${els.bgVideo.readyState}`);
+  applyBrandingMode();
+}
+function markVideoFailed(source, detail) {
+  if (videoFailed || videoReady) return;
+  videoFailed = true;
+  setBackdropStatus('MISSING — klikni pro pokus znovu', 'error');
+  console.error(`[Backdrop] Failed (${source}):`, detail || els.bgVideo.error);
+}
+
+// Any one of these events flips us to ready — whichever fires first wins.
+els.bgVideo.addEventListener('loadedmetadata', () => markVideoReady('loadedmetadata'));
+els.bgVideo.addEventListener('loadeddata',     () => markVideoReady('loadeddata'));
+els.bgVideo.addEventListener('canplay',        () => markVideoReady('canplay'));
+els.bgVideo.addEventListener('canplaythrough', () => markVideoReady('canplaythrough'));
+
+// Race-condition guard: if video was already cached/loaded before this script
+// ran, the events above fired before we could attach. Check readyState now.
+//   0=NOTHING  1=METADATA  2=CURRENT_DATA  3=FUTURE_DATA  4=ENOUGH_DATA
+if (els.bgVideo.readyState >= 1) {
+  console.log('[Backdrop] Already loaded at script start, readyState =', els.bgVideo.readyState);
+  markVideoReady('already-ready-at-init');
+}
+
+// Safety net: if nothing happened in 5s, bail out with a clear error.
+setTimeout(() => {
+  if (!videoReady && !videoFailed) {
+    console.warn('[Backdrop] 5s timeout. readyState =', els.bgVideo.readyState,
+                 'networkState =', els.bgVideo.networkState, 'error =', els.bgVideo.error);
+    markVideoFailed('5s timeout', `readyState=${els.bgVideo.readyState} networkState=${els.bgVideo.networkState}`);
+  }
+}, 5000);
+
+// Click the status help to force-reload video (same UX as GRAF)
+if (els.backdropStatus) {
+  els.backdropStatus.addEventListener('click', () => {
+    console.log('[Backdrop] Manual retry');
+    videoReady = false; videoFailed = false;
+    setBackdropStatus('RELOADING…', 'loading');
+    els.bgVideo.classList.remove('visible');
+    const srcBase = '../assets/bg-loop.mp4';
+    els.bgVideo.src = srcBase + '?t=' + Date.now();
+    els.bgVideo.load();
+  });
+}
+
+function tryPlayVideo(source) {
+  if (!videoReady || videoFailed) return;
+  const p = els.bgVideo.play();
+  if (p && typeof p.catch === 'function') {
+    p.then(() => { autoplayBlocked = false; })
+     .catch(err => {
+       autoplayBlocked = true;
+       console.warn(`[Backdrop] Autoplay blocked (${source}):`, err.name, err.message);
+       setBackdropStatus('BLOCKED — klikni Play', 'warn');
+     });
+  }
+}
+
+function syncVideoToFrame() {
+  if (!videoReady || videoFailed || state.branding !== 'preview') return;
+  const target = state.frame / FPS;
+  const dur = els.bgVideo.duration;
+  if (isFinite(dur) && target < dur - 0.01 && Math.abs(els.bgVideo.currentTime - target) > 0.05) {
+    try { els.bgVideo.currentTime = target; } catch (_) {}
+  }
+}
+
+function applyBrandingMode() {
+  console.log('[Backdrop] applyBrandingMode:', {
+    branding: state.branding,
+    videoReady,
+    videoFailed,
+    videoReadyState: els.bgVideo.readyState,
+  });
+  if (state.branding === 'preview') {
+    // Preview: video if ready, otherwise transparent (stage's black bg shows).
+    // We intentionally do NOT show .bg-flat as a loading fallback — it looks
+    // nothing like the real режия backdrop and just confuses "is this the video?"
+    if (videoReady && !videoFailed) {
+      els.bgVideo.classList.add('visible');
+      syncVideoToFrame();
+      tryPlayVideo('applyBrandingMode');
+    } else {
+      els.bgVideo.classList.remove('visible');
+    }
+    els.bgFlat.style.display = 'none';
+  } else {
+    // Export: hide everything; renderFrame paints solid black.
+    els.bgVideo.classList.remove('visible');
+    els.bgFlat.style.display = 'none';
+    try { els.bgVideo.pause(); } catch (_) {}
+  }
+}
+
+/* =============================================================================
+   CANVAS RENDERER — identical block layout to Bar Chart so both templates
+   composite 1:1 under режия's top/bottom overlays.
+   ============================================================================= */
+const canvas = document.getElementById('stage-canvas');
+const ctx = canvas.getContext('2d');
+
+// Cached portrait Image (async-loaded from state.portrait data-URL)
+let portraitImageEl = null;
+let portraitImageSrc = null;     // currently loaded src; re-load on change
+
+// Default portrait — shipped silhouette PNG shown when no custom photo is set.
+// Matches the reference's default avatar so previews look "finished" out of the
+// box. Loaded once on boot; drawn same way as user-uploaded photos.
+// Default portrait silhouette. Template lives in templates/ so assets live at ../assets/.
+// If the external PNG can't be loaded for any reason, we fall back to an inline SVG
+// silhouette so the preview never shows an empty box.
+const DEFAULT_PORTRAIT_SRC = '../assets/citace-default-portrait.png';
+const FALLBACK_SILHOUETTE_SVG =
+  'data:image/svg+xml;utf8,' + encodeURIComponent(
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 600">
+       <defs>
+         <linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
+           <stop offset="0" stop-color="#4a5770"/>
+           <stop offset="1" stop-color="#2a3347"/>
+         </linearGradient>
+       </defs>
+       <!-- head -->
+       <circle cx="200" cy="200" r="95" fill="url(#g)"/>
+       <!-- shoulders / body -->
+       <path d="M 60 600 Q 60 380 200 360 Q 340 380 340 600 Z" fill="url(#g)"/>
+     </svg>`
+  );
+
+let defaultPortraitImg = null;
+(function loadDefaultPortrait() {
+  const img = new Image();
+  img.onload = () => { defaultPortraitImg = img; if (typeof renderFrame === 'function') renderFrame(state.frame); };
+  img.onerror = () => {
+    // Fallback to inline SVG silhouette
+    console.warn('[Portrait] Default PNG not found at', DEFAULT_PORTRAIT_SRC, '— using inline SVG fallback');
+    const fallback = new Image();
+    fallback.onload = () => { defaultPortraitImg = fallback; if (typeof renderFrame === 'function') renderFrame(state.frame); };
+    fallback.src = FALLBACK_SILHOUETTE_SVG;
+  };
+  img.src = DEFAULT_PORTRAIT_SRC;
+})();
+
+// SAME LAYOUT CONSTANTS AS BAR CHART — the block frame is the contract
+// that ties every template together. Do not divergé without updating both.
+// NOTE: TN citace has NO white title band (see PSD reference). The block is
+// one continuous gray panel from y=135 down to y=992. Sources live in the
+// top-right of that gray panel, name/role/quote anchor to the right column.
+// Timing + block-anchor still match Bar Chart so both sit under the same
+// режия top/bottom overlays.
+const LAYOUT = {
+  topBlackH:    135,   // y=0..134    режия header zone (transparent in preview)
+  chartTop:     135,   // y=135       gray panel starts (anchor Y)
+  chartBottom:  992,   // y=992       gray panel ends
+  // 992..1079 = режия TN+teal bar zone (transparent in preview)
+  sourceY:      202,   // baseline Y for 'zdroj:' caption (measured 1:1 from PSD)
+  sourceX:      1805,  // right edge — aligned to TN badge right edge (1920-115)
+};
+const BLOCK_ANCHOR_Y = 135;
+const W = 1920, H = 1080;
+
+// Stage content layout — portrait BLEEDS left edge (PSD has no left padding;
+// photo fills x=0..860), text column sits to the right. Measured from PSD.
+const CONTENT = {
+  // Portrait box — full-bleed left, matches PSD reference pixel geometry
+  portraitX: 0,
+  portraitY: 135,                // flush with gray panel top
+  portraitW: 860,                // width from PSD
+  portraitH: 857,                // 992 - 135
+  // Text column — all offsets measured 1:1 from PSD reference
+  textX:     946,                // left of name / role / quote (measured)
+  textY:     260,                // top reference anchor; name baseline at 308
+  textW:     820,                // 1754 - 946 + buffer — matches PSD line widths
+  padBot:    950,                // hard bottom stop for quote reflow
+};
+
+/* =============================================================================
+   STAGE SCALING — fit 1920×1080 into the available viewport.
+   ============================================================================= */
+const stageScale = $('stageScale');
+const stageWrap = $('stageWrap');
+function fitStage() {
+  const w = stageWrap.clientWidth - 32;   // minus padding
+  const h = stageWrap.clientHeight - 32;
+  const s = Math.min(w / CANVAS_W, h / CANVAS_H);
+  stageScale.style.transform = `scale(${s})`;
+}
+window.addEventListener('resize', fitStage);
+
+/* =============================================================================
+   TIMING HELPERS
+   ============================================================================= */
+// easeOutCubic: fast start, slow end — used for entry animations
+const easeOut = t => 1 - Math.pow(1 - t, 3);
+// easeInOut: for smooth scale pulses
+const easeInOut = t => t < 0.5 ? 2*t*t : 1 - Math.pow(-2*t + 2, 2) / 2;
+// Linear clamp in [0,1] given current frame and a (startF, endF) window
+function rampAt(f, startF, endF) {
+  if (endF <= startF) return f >= startF ? 1 : 0;
+  return Math.max(0, Math.min(1, (f - startF) / (endF - startF)));
+}
+
+/* =============================================================================
+   RENDER — all visuals are drawn into the canvas. DOM backdrop (video element)
+   is managed by applyBrandingMode() on mode change / video ready. The portrait
+   thumb and image element are handled by render() above.
+   ============================================================================= */
+
+function clamp01(x) { return Math.max(0, Math.min(1, x)); }
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+// ---------- Canvas frame render ----------
+function renderFrame(f) {
+  state.frame = f;
+  const t = f / FPS;   // seconds elapsed
+
+  ctx.save();
+  ctx.clearRect(0, 0, W, H);
+
+  // === Export clean: opaque black fill so PNG/video isn't transparent ===
+  if (state.branding === 'export') {
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, 0, W, H);
+  }
+
+  // === BLOCK SCALE-Y intro (same as Bar Chart) ===
+  // Anchor Y = 135, scale 0→1 over 0..0.44s, easeInOutCubic.
+  const blockP = clamp01(t / 0.44);
+  const blockScale = easeInOut(blockP);
+  ctx.translate(0, BLOCK_ANCHOR_Y);
+  ctx.scale(1, Math.max(blockScale, 0.0001));
+  ctx.translate(0, -BLOCK_ANCHOR_Y);
+  if (blockScale < 0.001) { ctx.restore(); return; }
+
+  // === Block background layers ===
+  // In EXPORT mode: opaque black top + bottom (placeholder for режия chrome).
+  // In PREVIEW mode: top + bottom stay transparent — the video behind shows.
+  if (state.branding === 'export') {
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, 0, W, LAYOUT.topBlackH);
+    ctx.fillRect(0, LAYOUT.chartBottom, W, H - LAYOUT.chartBottom);
+  }
+  // Main panel — #E0E4E8. The right column (x=860..1920) is nearly opaque
+  // (@ 95%), the left column (behind the portrait, x=0..860) is the same
+  // color but @ 52% so the режия video breathes through, matching the
+  // PSD reference's soft blue-gray field around the silhouette.
+  ctx.fillStyle = 'rgba(224, 228, 232, 0.52)';
+  ctx.fillRect(0, LAYOUT.chartTop, CONTENT.portraitW, LAYOUT.chartBottom - LAYOUT.chartTop);
+  ctx.fillStyle = 'rgba(224, 228, 232, 0.95)';
+  ctx.fillRect(CONTENT.portraitW, LAYOUT.chartTop, W - CONTENT.portraitW, LAYOUT.chartBottom - LAYOUT.chartTop);
+
+  // === Source caption top-right of gray panel ===
+  drawSourceCaption(t);
+
+  // === Content area: portrait (left) + quote block (right) ===
+  drawPortrait(t);
+  drawTextBlock(t);
+  // TN badge: režia přidává v postprodukci, nekreslíme.
+
+  ctx.restore();
+
+  // Timeline readout
+  els.scrubber.value = f;
+  els.tlRead.textContent = `${f + 1} / ${TOTAL_FRAMES}  ·  ${t.toFixed(2)}s`;
+}
+
+// --- Source caption: small gray label top-right of the gray panel (per PSD).
+//     Fade-in AFTER the name headline completes (~0.74s), per director note —
+//     keeps the source tag from stealing attention from the entrance.
+function drawSourceCaption(t) {
+  const p = easeOut(clamp01((t - 0.74) / 0.40));
+  if (p <= 0) return;
+  ctx.save();
+  ctx.globalAlpha = p;
+  ctx.fillStyle = '#5a5a5a';
+  ctx.font = '400 24px "Organica", sans-serif';
+  ctx.textBaseline = 'alphabetic';
+  ctx.textAlign = 'right';
+  ctx.fillText(state.source || '', LAYOUT.sourceX, LAYOUT.sourceY);
+  ctx.restore();
+}
+
+// --- TN badge: NEkreslíme — dodává režie v postprodukci.
+//     (Funkce drawTnBadge dříve renderovala červený čtverec 87×87 vpravo dole
+//     dle PSD reference; odstraněno 2025-01 na žádost uživatele.)
+
+// --- Portrait box: drawn to the left of the content area.
+//     Fixed opacity (~0.55) per PSD reference — the silhouette is a "ghost"
+//     that lets the blue video backdrop breathe through. No fade-in timing,
+//     no opacity animation; the block scale-Y intro is the only reveal.
+function drawPortrait(t) {
+  ctx.save();
+  ctx.globalAlpha = 0.55;
+
+  const { portraitX: x, portraitY: y, portraitW: w, portraitH: h } = CONTENT;
+
+  // Clip to portrait rect
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(x, y, w, h);
+  ctx.clip();
+
+  if (portraitImageEl && portraitImageEl.complete && portraitImageEl.naturalWidth > 0) {
+    // Cover-fit the image: scale so both dimensions fill, respecting portraitY offset.
+    const imgW = portraitImageEl.naturalWidth;
+    const imgH = portraitImageEl.naturalHeight;
+    const scale = Math.max(w / imgW, h / imgH);
+    const drawW = imgW * scale;
+    const drawH = imgH * scale;
+    const offsetY = (state.portraitY / 100) * (drawH - h);
+    const drawX = x + (w - drawW) / 2;
+    const drawY = y - offsetY;
+    ctx.drawImage(portraitImageEl, drawX, drawY, drawW, drawH);
+  } else {
+    // No user photo → default silhouette PNG. The silhouette itself is the
+    // whole portrait — no fill behind it, so the режия video (or our flat
+    // backdrop) shows through around the figure, matching the reference.
+    if (defaultPortraitImg && defaultPortraitImg.complete && defaultPortraitImg.naturalWidth > 0) {
+      // Cover-fit: scale so silhouette fills the entire portrait box.
+      // Source PNG already has transparent background — nothing behind it.
+      const imgW = defaultPortraitImg.naturalWidth;
+      const imgH = defaultPortraitImg.naturalHeight;
+      const scale = Math.max(w / imgW, h / imgH);
+      const drawW = imgW * scale;
+      const drawH = imgH * scale;
+      const drawX = x + (w - drawW) / 2;
+      const drawY = y + (h - drawH) / 2;
+      ctx.drawImage(defaultPortraitImg, drawX, drawY, drawW, drawH);
+    }
+  }
+  ctx.restore();   // unclip
+  ctx.restore();   // alpha
+}
+
+// --- Text block (inside gray content area, right of portrait) ---
+//     PSD reference stack, top→bottom:
+//       1. NAME   — OrganicaM-Bold  ~54px navy
+//       2. ROLE   — OrganicaM-Reg   ~32px mid-blue  (directly under name)
+//       3. QUOTE  — OrganicaM-Reg   auto-fit navy   (~60px gap above)
+//     Each block fades up with its own stagger so the eye reads top-down.
+function drawTextBlock(t) {
+  const { textX: x, textW: w } = CONTENT;
+  const yMax = CONTENT.padBot;
+
+  // === TYPE SCALE — all values measured 1:1 from PSD reference ===
+  //   NAME   baseline y=308    font bold 56px   navy
+  //   ROLE   baseline y=370    font reg 32px    mid-blue  (Δ from name: 62px)
+  //   QUOTE  line-1 base y=486 font reg 32px    navy      (Δ from role: 116px)
+  //   QUOTE  line-step 60px                               (reference center-to-center)
+  // ----------------------------------------------------------------
+
+  // ---- NAME ----
+  const nameFS = 56;
+  const nameBaseline = 308;
+  const nameP = easeOut(clamp01((t - 0.32) / 0.42));
+
+  if (nameP > 0) {
+    ctx.save();
+    ctx.globalAlpha = nameP;
+    ctx.fillStyle = '#0b1e3f';                    // navy
+    ctx.font = `800 ${nameFS}px "Organica", sans-serif`;
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'alphabetic';
+    const shift = (1 - nameP) * 14;
+    ctx.fillText(state.name || ' ', x, nameBaseline + shift);
+    ctx.restore();
+  }
+
+  // ---- ROLE ----
+  const roleFS = 32;
+  const roleBaseline = 370;                        // 62px below name (measured)
+  const roleP = easeOut(clamp01((t - 0.48) / 0.42));
+
+  if (state.role && roleP > 0) {
+    ctx.save();
+    ctx.globalAlpha = roleP;
+    ctx.fillStyle = '#3b82c0';                    // mid-blue, matches PSD reference
+    ctx.font = `400 ${roleFS}px "Organica", sans-serif`;
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'alphabetic';
+    const shift = (1 - roleP) * 12;
+    ctx.fillText(state.role, x, roleBaseline + shift);
+    ctx.restore();
+  }
+
+  // ---- QUOTE ----
+  //     Auto-center vertically between role baseline (y=370) and card bottom
+  //     (y=992). The user can nudge with state.quoteYOffset, and tweak line
+  //     spacing with state.quoteLHOffset. Font-fit loop picks the largest size
+  //     that fits the available height, same ladder as before.
+  const quote = state.quote || '';
+
+  // Usable vertical range for the quote block
+  const topAvail = 398;                            // a bit below role baseline
+  const botAvail = LAYOUT.chartBottom - 20;        // small breathing room above bottom edge
+  const availH   = botAvail - topAvail;
+
+  // Base line-step table. User LH offset applies on top (clamped per font size).
+  const sizes = [32, 28, 24, 22];
+  const lhFor = (fs) => {
+    const base = fs === 32 ? 60 : Math.round(fs * 1.4);
+    const nudged = base + (state.quoteLHOffset || 0);
+    // Clamp so lh never goes below 90% of the font size (prevents collisions)
+    return Math.max(Math.round(fs * 0.9), nudged);
+  };
+
+  let fontSize = sizes[sizes.length - 1], lines = [''], lineHeight = lhFor(fontSize);
+  for (const fs of sizes) {
+    const lh = lhFor(fs);
+    ctx.font = `400 ${fs}px "Organica", sans-serif`;
+    const wrapped = wrapText(quote, w);
+    const totalH = wrapped.length * lh;           // approximate block height
+    if (totalH <= availH) {
+      fontSize = fs; lines = wrapped; lineHeight = lh;
+      break;
+    }
+    fontSize = fs; lines = wrapped; lineHeight = lh;
+  }
+
+  // Center the block vertically in [topAvail, botAvail], then apply user nudge.
+  // quoteBaseline1 = Y of the FIRST line's alphabetic baseline.
+  const blockH = lines.length * lineHeight;
+  const centeredTop = topAvail + Math.max(0, (availH - blockH) / 2);
+  const quoteBaseline1 = centeredTop + fontSize + (state.quoteYOffset || 0);
+
+  ctx.save();
+  ctx.fillStyle = '#0b1e3f';
+  ctx.font = `400 ${fontSize}px "Organica", sans-serif`;
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'alphabetic';
+
+  let yy = quoteBaseline1;
+  const baseStart = 0.72;
+  const perLine = 0.08;
+  const fadeDur = 0.4;
+  lines.forEach((line, i) => {
+    const start = baseStart + i * perLine;
+    const p = easeOut(clamp01((t - start) / fadeDur));
+    if (p > 0) {
+      ctx.save();
+      ctx.globalAlpha = p;
+      const shift = (1 - p) * 14;
+      ctx.fillText(line, x, yy + shift);
+      ctx.restore();
+    }
+    yy += lineHeight;
+  });
+  ctx.restore();
+}
+
+// Word-wrap helper — greedy line break at nearest space using current ctx.font.
+function wrapText(text, maxWidth) {
+  if (!text) return [''];
+  // Honor explicit \n first, then wrap each paragraph.
+  const out = [];
+  const paragraphs = String(text).replace(/\r\n/g, '\n').split('\n');
+  for (const para of paragraphs) {
+    const words = para.split(/\s+/).filter(Boolean);
+    if (words.length === 0) { out.push(''); continue; }
+    let line = words[0];
+    for (let i = 1; i < words.length; i++) {
+      const test = line + ' ' + words[i];
+      if (ctx.measureText(test).width <= maxWidth) {
+        line = test;
+      } else {
+        out.push(line);
+        line = words[i];
+      }
+    }
+    out.push(line);
+  }
+  return out;
+}
+
+function render() {
+  // Keep the upload-row thumb preview in sync with state.portrait
+  if (els.portraitThumb) {
+    els.portraitThumb.style.backgroundImage = state.portrait
+      ? `url("${state.portrait}")`
+      : '';
+  }
+  // Async-load portrait Image for canvas rendering if it changed
+  if (state.portrait && state.portrait !== portraitImageSrc) {
+    portraitImageSrc = state.portrait;
+    const img = new Image();
+    img.onload = () => {
+      if (img.src === portraitImageSrc || img.src.endsWith(portraitImageSrc)) {
+        portraitImageEl = img;
+        renderFrame(state.frame);
+      }
+    };
+    img.onerror = () => { portraitImageEl = null; };
+    img.src = state.portrait;
+  } else if (!state.portrait) {
+    portraitImageEl = null;
+    portraitImageSrc = null;
+  }
+  renderFrame(state.frame);
+}
+
+/* =============================================================================
+   PLAYBACK
+   ============================================================================= */
+function setDuration(sec) {
+  DURATION = Math.max(1, Math.min(30, sec));
+  TOTAL_FRAMES = Math.round(DURATION * FPS);
+  els.scrubber.max = TOTAL_FRAMES - 1;
+  els.stDur.textContent = DURATION.toFixed(1) + ' s';
+  if (state.frame >= TOTAL_FRAMES) state.frame = TOTAL_FRAMES - 1;
+}
+function setFps(fps) {
+  FPS = fps;
+  TOTAL_FRAMES = Math.round(DURATION * FPS);
+  els.scrubber.max = TOTAL_FRAMES - 1;
+  els.stFps.textContent = FPS + ' fps';
+  if (state.frame >= TOTAL_FRAMES) state.frame = TOTAL_FRAMES - 1;
+}
+
+function startPlayback() {
+  if (playing) return;
+  playing = true;
+  els.btnPlay.textContent = '⏸';
+  if (state.frame >= TOTAL_FRAMES - 1) state.frame = 0;
+  playStart = performance.now();
+  playStartFrame = state.frame;
+
+  // Video backdrop: Chrome often blocks autoplay before first user gesture.
+  // Clicking Play is that gesture — use it to force-sync and play the backdrop,
+  // same pattern as bar-chart. Video keeps looping while anim runs.
+  if (state.branding === 'preview' && videoReady && !videoFailed) {
+    syncVideoToFrame();
+    tryPlayVideo('startPlayback');
+  }
+
+  const step = (now) => {
+    if (!playing) return;
+    const dt = (now - playStart) / 1000;
+    const f = Math.min(TOTAL_FRAMES - 1, playStartFrame + Math.floor(dt * FPS));
+    renderFrame(f);
+    if (f >= TOTAL_FRAMES - 1) {
+      stopPlayback();
+      return;
+    }
+    playRAF = requestAnimationFrame(step);
+  };
+  playRAF = requestAnimationFrame(step);
+}
+function stopPlayback() {
+  playing = false;
+  els.btnPlay.textContent = '▶';
+  if (playRAF) { cancelAnimationFrame(playRAF); playRAF = null; }
+  // Do NOT pause video in preview — let backdrop loop keep running so the
+  // stage never goes static behind the paused graphic.
+}
+function togglePlay() { playing ? stopPlayback() : startPlayback(); }
+
+/* =============================================================================
+   INPUT WIRING
+   ============================================================================= */
+$('inName').addEventListener('input', e => { state.name = e.target.value; render(); });
+$('inRole').addEventListener('input', e => { state.role = e.target.value; render(); });
+$('inQuote').addEventListener('input', e => { state.quote = e.target.value; render(); });
+$('inSource').addEventListener('input', e => { state.source = e.target.value; render(); });
+$('inDuration').addEventListener('input', e => {
+  const v = parseFloat(e.target.value);
+  if (!isNaN(v) && v > 0) { setDuration(v); render(); }
+});
+$('inPortraitY').addEventListener('input', e => {
+  state.portraitY = parseInt(e.target.value, 10); render();
+});
+$('inQuoteY').addEventListener('input', e => {
+  state.quoteYOffset = parseInt(e.target.value, 10);
+  $('outQuoteY').textContent = `${state.quoteYOffset > 0 ? '+' : ''}${state.quoteYOffset} px`;
+  render();
+});
+$('inQuoteLH').addEventListener('input', e => {
+  state.quoteLHOffset = parseInt(e.target.value, 10);
+  $('outQuoteLH').textContent = `${state.quoteLHOffset > 0 ? '+' : ''}${state.quoteLHOffset} px`;
+  render();
+});
+$('inPortrait').addEventListener('change', e => {
+  const f = e.target.files?.[0];
+  if (!f) return;
+  const reader = new FileReader();
+  reader.onload = () => { state.portrait = reader.result; render(); };
+  reader.readAsDataURL(f);
+});
+$('btnClearPortrait').addEventListener('click', () => {
+  state.portrait = null;
+  $('inPortrait').value = '';
+  render();
+});
+
+// Toggle groups
+document.querySelectorAll('#brandingToggle button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('#brandingToggle button').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    state.branding = btn.dataset.value;
+    applyBrandingMode();  // sync video element visibility with new mode
+    render();
+  });
+});
+document.querySelectorAll('#fpsToggle button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('#fpsToggle button').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    setFps(parseInt(btn.dataset.value, 10));
+    render();
+  });
+});
+
+// Timeline
+els.scrubber.addEventListener('input', () => {
+  stopPlayback();
+  state.frame = parseInt(els.scrubber.value, 10);
+  // Scrubbing is a user gesture — sync + kick video so backdrop can start
+  // even if autoplay was blocked on boot.
+  if (state.branding === 'preview' && videoReady && !videoFailed) {
+    syncVideoToFrame();
+    tryPlayVideo('scrubber');
+  }
+  renderFrame(state.frame);
+});
+els.btnPlay.addEventListener('click', togglePlay);
+$('btnRewind').addEventListener('click', () => {
+  stopPlayback();
+  state.frame = 0;
+  renderFrame(0);
+});
+
+// Home button
+$('btnHome').addEventListener('click', () => {
+  if (isDirty() && !confirm('Máš neuložené změny. Opravdu odejít na hlavní stránku?')) return;
+  window.location.href = '../index.html';
+});
+
+/* =============================================================================
+   PROJECT STORAGE — shared contract with bar-chart.
+   ============================================================================= */
+function loadAllProjects() {
+  try { return JSON.parse(localStorage.getItem(LS_KEY) || '[]'); }
+  catch (e) { return []; }
+}
+function saveAllProjects(list) {
+  localStorage.setItem(LS_KEY, JSON.stringify(list));
+}
+function snapshotState() {
+  return {
+    template: TEMPLATE_ID,
+    name: state.name,
+    role: state.role,
+    quote: state.quote,
+    source: state.source,
+    portrait: state.portrait,
+    portraitY: state.portraitY,
+    branding: state.branding,
+    duration: DURATION,
+    fps: FPS,
+  };
+}
+function applySnapshot(snap) {
+  if (!snap) return;
+  state.name    = snap.name    ?? state.name;
+  state.role    = snap.role    ?? state.role;
+  state.quote   = snap.quote   ?? state.quote;
+  state.source  = snap.source  ?? state.source;
+  state.portrait = snap.portrait ?? null;
+  state.portraitY = snap.portraitY ?? 20;
+  // Normalize legacy branding values from older saves: 'live' meant video backdrop,
+  // 'flat' meant solid gradient. Current scheme is only 'preview' (video) / 'export' (clean).
+  const rawBranding = snap.branding ?? 'preview';
+  state.branding = (rawBranding === 'live' || rawBranding === 'preview') ? 'preview' : 'export';
+  if (snap.duration) DURATION = snap.duration;
+  if (snap.fps === 25 || snap.fps === 50) FPS = snap.fps;
+  setDuration(DURATION); setFps(FPS);
+
+  // Sync UI
+  $('inName').value = state.name;
+  $('inRole').value = state.role;
+  $('inQuote').value = state.quote;
+  $('inSource').value = state.source;
+  $('inDuration').value = DURATION;
+  $('inPortraitY').value = state.portraitY;
+  $('inQuoteY').value = state.quoteYOffset || 0;
+  $('outQuoteY').textContent = `${(state.quoteYOffset || 0) > 0 ? '+' : ''}${state.quoteYOffset || 0} px`;
+  $('inQuoteLH').value = state.quoteLHOffset || 0;
+  $('outQuoteLH').textContent = `${(state.quoteLHOffset || 0) > 0 ? '+' : ''}${state.quoteLHOffset || 0} px`;
+  document.querySelectorAll('#brandingToggle button').forEach(b => {
+    b.classList.toggle('active', b.dataset.value === state.branding);
+  });
+  document.querySelectorAll('#fpsToggle button').forEach(b => {
+    b.classList.toggle('active', parseInt(b.dataset.value,10) === FPS);
+  });
+  state.frame = TOTAL_FRAMES - 1;
+  els.scrubber.value = state.frame;
+  // Apply backdrop mode to DOM — video shows/hides based on loaded branding
+  applyBrandingMode();
+}
+function isDirty() {
+  return lastSavedSnapshot !== JSON.stringify(snapshotState());
+}
+function updateProjectMeta() {
+  const el = $('projMeta');
+  if (!currentProjectId) {
+    el.innerHTML = '<span>nový</span>';
+  } else {
+    el.innerHTML = isDirty() ? '<span class="dirty">● neuloženo</span>' : '<span class="saved">✓ uloženo</span>';
+  }
+}
+function saveProject(id, name) {
+  const all = loadAllProjects();
+  const now = Date.now();
+  const snap = snapshotState();
+  if (!id) {
+    id = 'p_' + now.toString(36) + '_' + Math.random().toString(36).slice(2, 6);
+    all.push({ id, name, createdAt: now, updatedAt: now, state: snap });
+  } else {
+    const idx = all.findIndex(p => p.id === id);
+    if (idx >= 0) {
+      all[idx].name = name;
+      all[idx].updatedAt = now;
+      all[idx].state = snap;
+    } else {
+      all.push({ id, name, createdAt: now, updatedAt: now, state: snap });
+    }
+  }
+  saveAllProjects(all);
+  currentProjectId = id;
+  localStorage.setItem(LS_CURRENT, id);
+  lastSavedSnapshot = JSON.stringify(snap);
+  updateProjectMeta();
+  return id;
+}
+function loadProject(id) {
+  const p = loadAllProjects().find(x => x.id === id);
+  if (!p) return;
+  applySnapshot(p.state);
+  currentProjectId = p.id;
+  $('projName').value = p.name;
+  localStorage.setItem(LS_CURRENT, id);
+  lastSavedSnapshot = JSON.stringify(snapshotState());
+  updateProjectMeta();
+  render();
+  showToast(`Otevřeno: ${p.name}`, 'success');
+}
+function deleteProject(id) {
+  const all = loadAllProjects().filter(p => p.id !== id);
+  saveAllProjects(all);
+  if (currentProjectId === id) {
+    currentProjectId = null;
+    localStorage.removeItem(LS_CURRENT);
+    updateProjectMeta();
+  }
+  renderProjectList();
+}
+
+// ---------- Modal UI ----------
+function renderProjectList() {
+  const list = $('projList');
+  // Show only projects for this template (or legacy untagged) — avoids
+  // bar-chart projects leaking into the quote template's Open dialog.
+  const all = loadAllProjects()
+    .filter(p => (p.state?.template || 'bar-chart-01') === TEMPLATE_ID)
+    .sort((a, b) => b.updatedAt - a.updatedAt);
+  if (all.length === 0) {
+    list.innerHTML = '<div class="proj-empty">Žádné uložené projekty v této šabloně.<br>Použij „Uložit jako…" pro vytvoření.</div>';
+    return;
+  }
+  list.innerHTML = all.map(p => {
+    const d = new Date(p.updatedAt);
+    const dateStr = d.toLocaleString('cs-CZ', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' });
+    const isCurrent = p.id === currentProjectId ? ' (current)' : '';
+    return `<div class="proj-item" data-id="${p.id}">
+      <div class="proj-info">
+        <div class="proj-title">${escapeHtml(p.name)}${isCurrent}</div>
+        <div class="proj-date">${dateStr}</div>
+      </div>
+      <button class="proj-btn load" data-action="load" data-id="${p.id}">Otevřít</button>
+      <button class="proj-btn del" data-action="delete" data-id="${p.id}" title="Smazat">Smazat</button>
+    </div>`;
+  }).join('');
+  list.querySelectorAll('.proj-btn').forEach(btn => {
+    btn.addEventListener('click', e => {
+      const id = e.target.dataset.id;
+      if (e.target.dataset.action === 'load') { closeProjModal(); loadProject(id); }
+      else if (e.target.dataset.action === 'delete') {
+        const p = loadAllProjects().find(x => x.id === id);
+        if (p && confirm(`Smazat projekt „${p.name}"?`)) deleteProject(id);
+      }
+    });
+  });
+}
+function openProjModal()  { renderProjectList(); $('projModal').classList.add('show'); }
+function closeProjModal() { $('projModal').classList.remove('show'); }
+
+$('projSave').addEventListener('click', () => {
+  const name = $('projName').value.trim() || 'Untitled';
+  saveProject(currentProjectId, name);
+  showToast(`Uloženo: ${name}`, 'success');
+});
+$('projSaveAs').addEventListener('click', () => {
+  const base = $('projName').value.trim() || 'Untitled';
+  const name = prompt('Název projektu:', `${base} copy`);
+  if (!name || !name.trim()) return;
+  $('projName').value = name.trim();
+  saveProject(null, name.trim());
+  showToast(`Vytvořeno: ${name.trim()}`, 'success');
+});
+$('projOpen').addEventListener('click', openProjModal);
+$('projNew').addEventListener('click', () => {
+  if (isDirty() && !confirm('Zahodit neuložené změny?')) return;
+  applySnapshot({
+    name: 'Pavel Vavřička',
+    role: 'grafik',
+    quote: 'Lorem ipsum dolor sit amet, consectetuer adipiscing elit, sed diam nonummy nibh euismod tincidunt ut laoreet dolore magna aliquam erat volutpat.',
+    source: 'zdroj: Facebook',
+    portrait: null, portraitY: 20,
+    branding: 'preview', duration: 3, fps: 25,
+  });
+  currentProjectId = null;
+  localStorage.removeItem(LS_CURRENT);
+  $('projName').value = 'Untitled';
+  lastSavedSnapshot = JSON.stringify(snapshotState());
+  updateProjectMeta();
+  render();
+  showToast('Nový projekt', 'success');
+});
+$('projModalClose').addEventListener('click', closeProjModal);
+$('projModal').addEventListener('click', e => {
+  if (e.target.id === 'projModal') closeProjModal();
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeProjModal();
+  if (e.key === ' ' && e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
+    e.preventDefault(); togglePlay();
+  }
+});
+$('projName').addEventListener('input', updateProjectMeta);
+setInterval(updateProjectMeta, 1000);
+
+/* =============================================================================
+   EXPORT — the entire graphic is already in <canvas>, so we just toBlob
+   for PNG and captureStream + MediaRecorder for WebM. No DOM rasterization
+   dance. Export flips branding to 'export' first so the top/bottom strips
+   aren't transparent in the file.
+   ============================================================================= */
+
+$('btnExportPNG').addEventListener('click', async () => {
+  const prevBranding = state.branding;
+  state.branding = 'export';
+  applyBrandingMode();
+  await waitFonts();
+  renderFrame(state.frame);
+  try {
+    const blob = await new Promise(r => canvas.toBlob(r, 'image/png'));
+    downloadBlob(blob, `citace_${Date.now()}.png`);
+    showToast('PNG uložen', 'success');
+  } catch (err) {
+    console.error(err);
+    showToast('Export selhal: ' + err.message, 'error');
+  } finally {
+    state.branding = prevBranding;
+    render();
+  }
+});
+
+$('btnExportVideo').addEventListener('click', async () => {
+  const prevBranding = state.branding;
+  state.branding = 'export';
+  applyBrandingMode();
+  stopPlayback();
+  await waitFonts();
+  showToast('Export WebM — připravuji…', 'success');
+  try {
+    // Stream the live canvas directly. 0 = manual frame pump via requestFrame().
+    const stream = canvas.captureStream(0);
+    const track = stream.getVideoTracks()[0];
+    const mimes = ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm'];
+    const mime = mimes.find(m => MediaRecorder.isTypeSupported(m));
+    if (!mime) throw new Error('Prohlížeč nepodporuje WebM nahrávání');
+    const recorder = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 8_000_000 });
+    const chunks = [];
+    recorder.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
+    const stopped = new Promise(r => recorder.onstop = r);
+    recorder.start();
+    for (let i = 0; i < TOTAL_FRAMES; i++) {
+      renderFrame(i);
+      if (track.requestFrame) track.requestFrame();
+      await new Promise(r => setTimeout(r, 1000 / FPS));
+    }
+    // Hold last frame briefly so the recorder captures it
+    await new Promise(r => setTimeout(r, 200));
+    recorder.stop();
+    await stopped;
+    const blob = new Blob(chunks, { type: mime });
+    downloadBlob(blob, `citace_${Date.now()}.webm`);
+    showToast('Video exportováno', 'success');
+  } catch (err) {
+    console.error(err);
+    showToast('Export selhal: ' + err.message, 'error');
+  } finally {
+    state.branding = prevBranding;
+    render();
+  }
+});
+
+function downloadBlob(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename; a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+/* =============================================================================
+   PNG SEQUENCE (with backdrop) — writes PNGs straight into a user-picked folder
+   via the File System Access API. No zip step. Each frame is composited onto
+   an offscreen canvas: bg (video / flat gradient) first, then the main stage
+   canvas on top. AE-friendly naming: citace_0000.png … citace_NNNN.png.
+   ============================================================================= */
+$('btnExportSeq').addEventListener('click', async () => {
+  if (typeof window.showDirectoryPicker !== 'function') {
+    showToast('PNG sekvenci podporuje jen Chrome/Edge (File System Access API)', 'error');
+    return;
+  }
+
+  let dirHandle;
+  try {
+    dirHandle = await window.showDirectoryPicker({ mode: 'readwrite' });
+  } catch (err) {
+    // User cancelled picker — silent
+    if (err && err.name === 'AbortError') return;
+    console.error(err);
+    showToast('Nelze otevřít složku: ' + err.message, 'error');
+    return;
+  }
+
+  stopPlayback();
+  await waitFonts();
+  const prevBranding = state.branding;
+  // Keep whatever backdrop the user has chosen — we composite it ourselves,
+  // so no need to flip to 'export'. Just make sure the DOM state is sane.
+  applyBrandingMode();
+
+  // Offscreen compositor — same intrinsic size as the stage canvas.
+  const comp = document.createElement('canvas');
+  comp.width = W; comp.height = H;
+  const cctx = comp.getContext('2d');
+
+  // Pre-rasterize the flat gradient once (matches .bg-flat CSS so 'flat' and
+  // 'export' export identically to what designer sees).
+  const flatBg = document.createElement('canvas');
+  flatBg.width = W; flatBg.height = H;
+  const fctx = flatBg.getContext('2d');
+  // Base linear gradient
+  const lg = fctx.createLinearGradient(0, 0, 0, H);
+  lg.addColorStop(0,    '#0a2346');
+  lg.addColorStop(0.5,  '#0a2a4e');
+  lg.addColorStop(1,    '#1a5e6d');
+  fctx.fillStyle = lg; fctx.fillRect(0, 0, W, H);
+  // Top-right deep-blue glow
+  const r2 = fctx.createRadialGradient(W * 0.80, H * 0.10, 0, W * 0.80, H * 0.10, W * 0.50);
+  r2.addColorStop(0, 'rgba(14,62,128,0.6)');
+  r2.addColorStop(1, 'rgba(14,62,128,0)');
+  fctx.fillStyle = r2; fctx.fillRect(0, 0, W, H);
+  // Upper-left cyan glow
+  const r1 = fctx.createRadialGradient(W * 0.30, H * 0.20, 0, W * 0.30, H * 0.20, W * 0.55);
+  r1.addColorStop(0, 'rgba(56,143,230,0.35)');
+  r1.addColorStop(1, 'rgba(56,143,230,0)');
+  fctx.fillStyle = r1; fctx.fillRect(0, 0, W, H);
+
+  // In the new branding scheme, 'preview' = backdrop is video.
+  // 'export' = clean composite (no video baked).
+  const useVideo = (state.branding === 'preview');
+  const video    = els.bgVideo;
+  if (useVideo) {
+    // Rewind & play so frame 0 of the sequence lines up with video frame 0.
+    try { video.currentTime = 0; video.play(); } catch (_) {}
+  }
+
+  showToast(`Export PNG sekvence — ${TOTAL_FRAMES} snímků…`, 'success');
+
+  const pad = String(TOTAL_FRAMES - 1).length;
+  const frameInterval = 1000 / FPS;
+
+  try {
+    for (let i = 0; i < TOTAL_FRAMES; i++) {
+      // 1) backdrop
+      cctx.clearRect(0, 0, W, H);
+      if (useVideo && video.readyState >= 2) {
+        // object-fit: cover math — scale video to fill W×H, crop overflow.
+        const vw = video.videoWidth || W;
+        const vh = video.videoHeight || H;
+        const scale = Math.max(W / vw, H / vh);
+        const dw = vw * scale, dh = vh * scale;
+        const dx = (W - dw) / 2, dy = (H - dh) / 2;
+        cctx.drawImage(video, dx, dy, dw, dh);
+      } else {
+        // flat gradient or export (both render same gradient today)
+        cctx.drawImage(flatBg, 0, 0);
+      }
+
+      // 2) animation frame on top
+      renderFrame(i);
+      cctx.drawImage(canvas, 0, 0);
+
+      // 3) write PNG to folder
+      const blob = await new Promise(r => comp.toBlob(r, 'image/png'));
+      const name = `citace_${String(i).padStart(pad, '0')}.png`;
+      const fh = await dirHandle.getFileHandle(name, { create: true });
+      const w = await fh.createWritable();
+      await w.write(blob);
+      await w.close();
+
+      // Keep video in sync with the frame cadence when recording live bg.
+      if (useVideo) {
+        await new Promise(r => setTimeout(r, frameInterval));
+      }
+    }
+    showToast(`Hotovo — ${TOTAL_FRAMES} PNG snímků`, 'success');
+  } catch (err) {
+    console.error(err);
+    showToast('Export selhal: ' + err.message, 'error');
+  } finally {
+    if (useVideo) { try { video.pause(); } catch (_) {} }
+    state.branding = prevBranding;
+    render();
+  }
+});
+
+/* =============================================================================
+   TOAST
+   ============================================================================= */
+function showToast(msg, kind) {
+  const stack = $('toastStack');
+  const el = document.createElement('div');
+  el.className = 'toast' + (kind ? ' ' + kind : '');
+  el.textContent = msg;
+  stack.appendChild(el);
+  setTimeout(() => {
+    el.style.transition = 'opacity .3s ease';
+    el.style.opacity = '0';
+    setTimeout(() => el.remove(), 300);
+  }, 2400);
+}
+
+/* =============================================================================
+   BOOT
+   ============================================================================= */
+async function waitFonts() {
+  try {
+    await Promise.all([
+      document.fonts.load('800 64px "Organica"'),
+      document.fonts.load('800 56px "Organica"'),
+      document.fonts.load('800 46px "Organica"'),
+      document.fonts.load('700 50px "Organica"'),
+      document.fonts.load('400 36px "Organica"'),
+      document.fonts.load('400 32px "Organica"'),
+      document.fonts.load('400 28px "Organica"'),
+      document.fonts.load('400 24px "Organica"'),
+      document.fonts.load('400 22px "Organica"'),
+    ]);
+    await document.fonts.ready;
+  } catch (e) { console.warn('Font load:', e); }
+}
+
+// URL params: ?project=<id> (auto-load) and ?preview=1&frame=N (thumbnail mode)
+const _params = new URLSearchParams(window.location.search);
+const _urlProjectId = _params.get('project');
+
+(async function boot() {
+  setDuration(DURATION);
+  setFps(FPS);
+  // Ensure the blue fallback panel is hidden — it's legacy and only ever
+  // visually leaked when video was slow. Real preview uses video or black.
+  if (els.bgFlat) els.bgFlat.style.display = 'none';
+  await waitFonts();
+  fitStage();
+
+  // PREVIEW MODE — used by the launcher's iframe thumbs. Hide chrome + snap
+  // to a representative frame so the card looks settled.
+  if (_params.get('preview') === '1') {
+    document.querySelector('.control').style.display = 'none';
+    document.querySelector('.stage-header').style.display = 'none';
+    document.querySelector('.timeline').style.display = 'none';
+    document.querySelector('.stage-wrap').style.padding = '0';
+    document.querySelector('.app').style.gridTemplateColumns = '1fr';
+    state.branding = 'export';
+    const requestedFrame = parseInt(_params.get('frame') || '60', 10);
+    // Duration may be 3s default → cap frame to TOTAL_FRAMES-1
+    state.frame = Math.min(requestedFrame, TOTAL_FRAMES - 1);
+    render();
+    fitStage();
+    return;
+  }
+
+  // Load project from URL or last-open
+  const targetId = _urlProjectId || localStorage.getItem(LS_CURRENT);
+  if (targetId) {
+    const all = loadAllProjects();
+    const p = all.find(x => x.id === targetId && (x.state?.template === TEMPLATE_ID));
+    if (p) {
+      applySnapshot(p.state);
+      currentProjectId = p.id;
+      $('projName').value = p.name;
+    }
+  }
+  lastSavedSnapshot = JSON.stringify(snapshotState());
+  updateProjectMeta();
+
+  // Open on the SETTLED end frame (like Bar Chart does) so the stage isn't
+  // empty on first paint — the block scale-Y intro is at 0 at frame 0.
+  state.frame = TOTAL_FRAMES - 1;
+  render();
+  // Stage scale needs a second pass once the control panel settles.
+  // Layout can measure 0 on first paint before the flex grid stabilizes.
+  requestAnimationFrame(() => { fitStage(); render(); });
+  setTimeout(() => { fitStage(); render(); }, 150);
+})();
+</script>
+</body>
+</html>

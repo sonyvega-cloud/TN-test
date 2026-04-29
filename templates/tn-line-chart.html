@@ -1,0 +1,2496 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TN Line Chart — Template 04 [v2 drag]</title>
+<!-- TN CITACE (quote card) — Graph Generator template 06 -->
+<!-- Layout derived from PSD reference (uploads/citace-reference.png): -->
+<!--   1920×1080 stage, light card inset ~60/70/60/110 px, registration corner ticks, -->
+<!--   portrait left ~40% / text right ~55%, Nova logo top-left, TN badge bottom-right. -->
+<!-- Same shared storage contract as bar-chart (LS_KEY=tn_graphics_engine_projects_v2). -->
+
+<link rel="stylesheet" href="../assets/organica-fonts.css">
+<style>
+  :root {
+    /* TN brand palette */
+    --tn-red:     #e60013;
+    --tn-red-dk:  #b80010;
+    --tn-red-sft: #ffeeef;
+
+    --bg-0:   #ffffff;
+    --bg-1:   #f7f7f7;
+    --bg-2:   #eeeeee;
+    --bg-3:   #1a1a1a;
+    --line:   #e2e2e2;
+    --line-2: #d4d4d4;
+
+    --text-0: #0f0f0f;
+    --text-1: #4a4a4a;
+    --text-2: #8a8a8a;
+    --text-inv: #ffffff;
+
+    --accent: var(--tn-red);
+    --accent-hover: var(--tn-red-dk);
+    --ok: #00a651;
+    --warn: var(--tn-red);
+
+    --font-ui:   'Inter', system-ui, -apple-system, sans-serif;
+    --font-mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+
+    /* Stage palette — pixel-sampled from the PSD composite reference */
+    --card-fill:   #dee2e6;       /* light gray card body */
+    --mint:        #5ee6c3;       /* registration tick color */
+    --nova-teal:   #2dd3c4;       /* Nova wordmark tint */
+    --name-navy:   #0b1e3f;       /* name, quote body */
+    --role-blue:   #2e7fd8;       /* role/subtitle accent */
+    --src-gray:    #7d8791;       /* "zdroj: ..." caption */
+    --portrait-1:  #7d91a8;       /* silhouette mid */
+    --portrait-2:  #556478;       /* silhouette shadow */
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; overflow: hidden; }
+  body {
+    font-family: var(--font-ui);
+    background: var(--bg-1);
+    color: var(--text-0);
+    font-size: 15px;
+    line-height: 1.5;
+  }
+
+  .app {
+    display: grid;
+    grid-template-columns: 600px 1fr;
+    height: 100vh;
+    background: var(--line);
+    gap: 1px;
+  }
+
+  /* =========================================================================
+     CONTROL PANEL — left column. Mirrors bar-chart visual language so the two
+     templates feel like one product. Red masthead, dark project bar, body.
+     ========================================================================= */
+  .control { background: var(--bg-0); overflow-y: auto; display: flex; flex-direction: column; }
+  .control::-webkit-scrollbar { width: 8px; }
+  .control::-webkit-scrollbar-track { background: var(--bg-1); }
+  .control::-webkit-scrollbar-thumb { background: var(--line-2); border: 2px solid var(--bg-1); border-radius: 4px; }
+
+  .control-header {
+    padding: 22px 24px 20px;
+    background: var(--tn-red);
+    color: var(--text-inv);
+    position: relative;
+    border-bottom: 4px solid var(--tn-red-dk);
+  }
+  .brand-row { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+  .tn-mark {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 28px; height: 28px;
+    background: var(--text-inv);
+    color: var(--tn-red);
+    font-weight: 800; font-size: 14px; letter-spacing: -0.02em;
+    font-family: var(--font-ui);
+    border: 0; cursor: pointer; padding: 0;
+    transition: transform .1s ease;
+  }
+  .tn-mark:hover { transform: scale(1.08); }
+  .tn-mark:active { transform: scale(0.95); }
+  .brand {
+    font-family: var(--font-mono);
+    font-weight: 600;
+    font-size: 11px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.82);
+  }
+  .template-badge {
+    display: flex; align-items: baseline; gap: 12px;
+    margin-top: 10px; padding-top: 10px;
+    border-top: 1px solid rgba(255,255,255,0.25);
+  }
+  .tpl-num {
+    font-family: var(--font-mono);
+    font-size: 11px; letter-spacing: 0.2em;
+    color: rgba(255,255,255,0.7);
+    text-transform: uppercase;
+  }
+  .tpl-name {
+    font-family: var(--font-ui);
+    font-weight: 800; font-size: 22px;
+    letter-spacing: -0.01em;
+    color: var(--text-inv); line-height: 1;
+  }
+
+  /* Project bar (identical pattern to bar-chart) */
+  .project-bar {
+    padding: 14px 24px 16px;
+    background: #2a2a2a;
+    border-bottom: 1px solid #1a1a1a;
+    color: #e0e0e0;
+  }
+  .pb-row { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+  .pb-row:last-child { margin-bottom: 0; }
+  .pb-label {
+    font-family: var(--font-mono);
+    font-size: 10px; letter-spacing: 0.2em;
+    text-transform: uppercase; color: #a0a0a0;
+    flex-shrink: 0;
+  }
+  .pb-name {
+    flex: 1;
+    padding: 8px 12px;
+    background: #1a1a1a;
+    border: 1px solid #3a3a3a;
+    color: #f0f0f0;
+    font-family: var(--font-ui);
+    font-size: 13px;
+    border-radius: 2px;
+  }
+  .pb-name:focus { outline: none; border-color: var(--tn-red); }
+  .pb-btn {
+    padding: 7px 12px;
+    background: #3a3a3a;
+    border: 1px solid #4a4a4a;
+    color: #f0f0f0;
+    font-family: var(--font-ui);
+    font-size: 12px; font-weight: 600;
+    letter-spacing: 0.02em;
+    cursor: pointer;
+    border-radius: 2px;
+    transition: background .15s ease;
+  }
+  .pb-btn:hover { background: #4a4a4a; }
+  .pb-btn.primary { background: var(--tn-red); border-color: var(--tn-red-dk); }
+  .pb-btn.primary:hover { background: var(--tn-red-dk); }
+  .pb-meta {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: #777;
+    letter-spacing: 0.04em;
+  }
+  .pb-meta .dirty { color: #ffb75b; }
+  .pb-meta .saved { color: #62d672; }
+
+  /* Panel sections */
+  .section {
+    padding: 18px 24px;
+    border-bottom: 1px solid var(--line);
+  }
+  .section:last-child { border-bottom: 0; }
+  .section h3 {
+    font-size: 10px;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+    color: var(--text-2);
+    font-family: var(--font-mono);
+    font-weight: 600;
+    margin-bottom: 12px;
+  }
+  .field { margin-bottom: 12px; }
+  .field:last-child { margin-bottom: 0; }
+  .field label {
+    display: block;
+    font-size: 11px;
+    color: var(--text-1);
+    margin-bottom: 5px;
+    font-weight: 500;
+  }
+  .field input[type="text"],
+  .field textarea,
+  .field select {
+    width: 100%;
+    padding: 8px 10px;
+    background: var(--bg-0);
+    border: 1px solid var(--line-2);
+    color: var(--text-0);
+    font-family: var(--font-ui);
+    font-size: 13px;
+    border-radius: 2px;
+  }
+  .field input[type="text"]:focus,
+  .field textarea:focus,
+  .field select:focus {
+    outline: none;
+    border-color: var(--tn-red);
+  }
+  .field textarea {
+    resize: vertical;
+    min-height: 110px;
+    font-family: var(--font-ui);
+    line-height: 1.45;
+  }
+  .field .help {
+    font-size: 11px;
+    color: var(--text-2);
+    margin-top: 4px;
+    font-style: italic;
+  }
+
+  .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+  /* File upload for portrait */
+  .upload-row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px; background: var(--bg-1);
+    border: 1px dashed var(--line-2);
+    border-radius: 2px;
+  }
+  .upload-row .thumb {
+    width: 52px; height: 52px; flex-shrink: 0;
+    background: var(--bg-2);
+    border: 1px solid var(--line);
+    background-size: cover; background-position: center;
+  }
+  .upload-row .upload-ctrl { flex: 1; display: flex; gap: 6px; flex-wrap: wrap; }
+  .upload-btn {
+    padding: 6px 10px; font-size: 11px; font-weight: 600;
+    background: var(--bg-0); border: 1px solid var(--line-2);
+    color: var(--text-0); cursor: pointer; border-radius: 2px;
+    font-family: var(--font-ui);
+  }
+  .upload-btn:hover { background: var(--bg-1); }
+  .upload-btn.clear { color: var(--tn-red); border-color: var(--tn-red); }
+
+  /* X-axis labels editor — horizontal row of compact text inputs */
+  .x-labels-row {
+    display: grid;
+    grid-template-columns: repeat(var(--x-cols, 5), minmax(0, 1fr));
+    gap: 4px;
+  }
+  .x-labels-row input {
+    padding: 8px 6px;
+    font-size: 13px;
+    font-family: var(--font-ui);
+    background: var(--bg-0);
+    border: 1px solid var(--line-2);
+    color: var(--text-0);
+    border-radius: 2px;
+    outline: none;
+    text-align: center;
+    min-width: 0;
+    width: 100%;
+    box-sizing: border-box;
+  }
+  /* When >8 columns, shrink the per-input padding so they all fit visibly */
+  .x-labels-row[style*="--x-cols:9"] input,
+  .x-labels-row[style*="--x-cols:10"] input,
+  .x-labels-row[style*="--x-cols:11"] input,
+  .x-labels-row[style*="--x-cols:12"] input,
+  .x-labels-row[style*="--x-cols:13"] input,
+  .x-labels-row[style*="--x-cols:14"] input,
+  .x-labels-row[style*="--x-cols:15"] input {
+    padding: 6px 3px;
+    font-size: 11px;
+  }
+  .x-labels-row input:focus { border-color: var(--tn-red); }
+
+  /* Series editor — one card per line */
+  .series-list { display: flex; flex-direction: column; gap: 12px; }
+  .series-card {
+    background: var(--bg-1);
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .series-head {
+    display: grid;
+    grid-template-columns: 36px 1fr 28px;
+    gap: 8px;
+    align-items: center;
+  }
+  .series-head input.color {
+    width: 36px; height: 32px;
+    border: 1px solid var(--line-2);
+    border-radius: 2px;
+    background: transparent;
+    cursor: pointer;
+    padding: 2px;
+  }
+  .series-head input.label {
+    padding: 8px 10px;
+    font-size: 13px;
+    font-family: var(--font-ui);
+    background: var(--bg-0);
+    border: 1px solid var(--line-2);
+    color: var(--text-0);
+    border-radius: 2px;
+    outline: none;
+    min-width: 0;
+  }
+  .series-head input.label:focus { border-color: var(--tn-red); }
+  .series-values {
+    display: grid;
+    grid-template-columns: repeat(var(--x-cols, 5), minmax(0, 1fr));
+    gap: 4px;
+  }
+  /* Each value cell stacks: numeric input on top + small highlight checkbox row below.
+     The checkbox is a toggle that shows the value as a callout block on the chart. */
+  .value-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+  }
+  .value-cell input.value-num {
+    padding: 6px 4px;
+    font-size: 12px;
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    background: var(--bg-0);
+    border: 1px solid var(--line-2);
+    color: var(--text-0);
+    border-radius: 2px;
+    outline: none;
+    text-align: right;
+    min-width: 0;
+    width: 100%;
+    box-sizing: border-box;
+    /* Hide the spinner arrows so the input fits even when narrow */
+    -moz-appearance: textfield;
+  }
+  .value-cell input.value-num::-webkit-outer-spin-button,
+  .value-cell input.value-num::-webkit-inner-spin-button {
+    -webkit-appearance: none; margin: 0;
+  }
+  /* Compact mode for many columns */
+  .series-values[style*="--x-cols:9"] input.value-num,
+  .series-values[style*="--x-cols:10"] input.value-num,
+  .series-values[style*="--x-cols:11"] input.value-num,
+  .series-values[style*="--x-cols:12"] input.value-num,
+  .series-values[style*="--x-cols:13"] input.value-num,
+  .series-values[style*="--x-cols:14"] input.value-num,
+  .series-values[style*="--x-cols:15"] input.value-num {
+    padding: 5px 2px;
+    font-size: 10px;
+  }
+  .value-cell input.value-num:focus { border-color: var(--tn-red); }
+  .value-cell label.hl-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-2);
+    cursor: pointer;
+    user-select: none;
+    line-height: 1;
+  }
+  .value-cell label.hl-toggle span { font-size: 9px; }
+  /* When many columns, hide the "HL" word, keep just the checkbox */
+  .series-values[style*="--x-cols:1"][style*="0"] label.hl-toggle span,
+  .series-values[style*="--x-cols:11"] label.hl-toggle span,
+  .series-values[style*="--x-cols:12"] label.hl-toggle span,
+  .series-values[style*="--x-cols:13"] label.hl-toggle span,
+  .series-values[style*="--x-cols:14"] label.hl-toggle span,
+  .series-values[style*="--x-cols:15"] label.hl-toggle span {
+    display: none;
+  }
+  .value-cell label.hl-toggle input[type="checkbox"] {
+    width: 12px; height: 12px;
+    margin: 0;
+    accent-color: var(--tn-red);
+    cursor: pointer;
+  }
+
+  .series-del {
+    background: transparent;
+    border: 1px solid var(--line-2);
+    color: var(--text-2);
+    cursor: pointer;
+    font-size: 14px;
+    border-radius: 2px;
+    padding: 0;
+    height: 32px;
+  }
+  .series-del:hover { color: var(--tn-red); border-color: var(--tn-red); }
+
+  /* X-count step buttons (+/−) next to the section header */
+  .x-step {
+    width: 22px; height: 22px;
+    background: var(--bg-0);
+    border: 1px solid var(--line-2);
+    color: var(--text-0);
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 700;
+    border-radius: 2px;
+    padding: 0;
+    line-height: 1;
+    vertical-align: middle;
+  }
+  .x-step:hover:not(:disabled) {
+    border-color: var(--tn-red);
+    color: var(--tn-red);
+  }
+  .x-step:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+  }
+
+  /* Toggle-group pattern shared with bar-chart */
+  .toggle-group {
+    display: inline-flex;
+    background: var(--bg-1);
+    border: 1px solid var(--line);
+    padding: 2px;
+    gap: 2px;
+    border-radius: 2px;
+  }
+  .toggle-group button {
+    padding: 6px 12px;
+    background: transparent;
+    border: 0;
+    color: var(--text-1);
+    font-size: 12px; font-weight: 600;
+    cursor: pointer;
+    font-family: var(--font-ui);
+    border-radius: 2px;
+  }
+  .toggle-group button.active {
+    background: var(--text-0); color: var(--text-inv);
+  }
+
+  /* Export buttons */
+  .export-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .btn-export {
+    padding: 10px 12px;
+    background: var(--text-0); color: var(--text-inv);
+    border: 0; border-radius: 2px;
+    font-family: var(--font-ui);
+    font-weight: 600; font-size: 12px;
+    letter-spacing: 0.02em;
+    cursor: pointer;
+  }
+  .btn-export:hover { background: #333; }
+  .btn-export.primary { background: var(--tn-red); }
+  .btn-export.primary:hover { background: var(--tn-red-dk); }
+
+  /* =========================================================================
+     STAGE — right column. 1920×1080 canvas scaled to fit.
+     ========================================================================= */
+  .stage-col {
+    background: var(--bg-3);
+    display: flex; flex-direction: column;
+    overflow: hidden;
+  }
+  .stage-header {
+    padding: 10px 16px;
+    background: #222;
+    border-bottom: 1px solid #111;
+    color: #aaa;
+    font-family: var(--font-mono);
+    font-size: 11px; letter-spacing: 0.12em;
+    display: flex; align-items: center; gap: 14px;
+    flex-shrink: 0;
+  }
+  .stage-header .meta { color: #666; }
+  .stage-header .spacer { flex: 1; }
+  .stage-header .pill {
+    padding: 3px 8px;
+    background: #333;
+    border-radius: 10px;
+    color: #ddd;
+    letter-spacing: 0.05em;
+  }
+
+  .stage-wrap {
+    flex: 1; min-height: 0;
+    padding: 16px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  /* The outer wrapper does the scaling — keep the inner stage at a fixed
+     1920×1080 for pixel-perfect rendering. */
+  .stage-scale {
+    width: 1920px; height: 1080px;
+    transform-origin: center center;
+    position: relative;
+    flex-shrink: 0;
+  }
+  .stage {
+    position: absolute; inset: 0;
+    overflow: hidden;
+    background: #000;
+  }
+  /* The canvas sits ABOVE the bg-video, transparent where режia will later
+     composite top/bottom chrome. 1920×1080 intrinsic, stretched to stage.
+     Pointer events ENABLED so user can drag highlight callout blocks. */
+  .stage canvas#stage-canvas {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%;
+    z-index: 2;
+    pointer-events: auto;
+  }
+  .stage canvas#stage-canvas.dragging {
+    cursor: grabbing;
+  }
+  .stage canvas#stage-canvas.over-callout {
+    cursor: grab;
+  }
+  .stage .bg-video,
+  .stage .bg-flat {
+    z-index: 1;
+  }
+
+  /* Timeline */
+  .timeline {
+    padding: 10px 16px 12px;
+    background: #1f1f1f;
+    border-top: 1px solid #0f0f0f;
+    color: #aaa;
+    display: flex; align-items: center; gap: 12px;
+    flex-shrink: 0;
+  }
+  .tl-btn {
+    width: 34px; height: 34px;
+    background: #333; border: 1px solid #444;
+    color: #fff; cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 13px;
+    border-radius: 2px;
+  }
+  .tl-btn:hover { background: #444; }
+  .tl-scrubber {
+    flex: 1;
+    -webkit-appearance: none; appearance: none;
+    height: 6px;
+    background: #333;
+    border-radius: 3px;
+    outline: none;
+  }
+  .tl-scrubber::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 14px; height: 14px;
+    background: var(--tn-red);
+    border-radius: 50%;
+    cursor: pointer;
+  }
+  .tl-scrubber::-moz-range-thumb {
+    width: 14px; height: 14px;
+    background: var(--tn-red);
+    border-radius: 50%;
+    cursor: pointer; border: 0;
+  }
+  .tl-readout {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: #aaa;
+    min-width: 100px;
+    text-align: right;
+  }
+
+  /* =========================================================================
+     STAGE CONTENT — drawn inside a 1920×1080 <canvas>. The block layout is
+     identical to the Bar Chart template (topBlack/titleBand/chart/bottomBlack)
+     so the two templates composite identically over the TN režia backdrop.
+     The canvas is transparent in preview mode (top/bottom strips not drawn);
+     режia paints the blue header + teal/TN bar behind via the looped video.
+     ========================================================================= */
+
+  /* Backdrop video — GRAF-style. Hidden by default; JS toggles `.visible`
+     once video is ready. Frame-synced via currentTime, not autoplay loop. */
+  .bg-video {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%;
+    object-fit: cover;
+    pointer-events: none;
+    display: none;
+  }
+  .bg-video.visible { display: block; }
+  /* Solid fallback / export-clean backdrop. Shown when state.branding==='export'. */
+  .bg-flat {
+    position: absolute; inset: 0;
+    background:
+      radial-gradient(ellipse at 30% 20%, rgba(56,143,230,0.35) 0%, rgba(0,0,0,0) 55%),
+      radial-gradient(ellipse at 80% 10%, rgba(14,62,128,0.6) 0%, rgba(0,0,0,0) 50%),
+      linear-gradient(180deg, #0a2346 0%, #0a2a4e 50%, #1a5e6d 100%);
+  }
+
+  /* =========================================================================
+     OVERLAY MODAL (Save/Load project) — same visual as bar-chart
+     ========================================================================= */
+  .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 100; }
+  .modal.show { display: flex; align-items: center; justify-content: center; }
+  .modal-card {
+    background: var(--bg-0);
+    border-radius: 4px;
+    width: 520px; max-width: 90vw; max-height: 80vh;
+    display: flex; flex-direction: column;
+    overflow: hidden;
+  }
+  .modal-head {
+    padding: 16px 20px;
+    background: var(--tn-red); color: var(--text-inv);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .modal-head h2 {
+    font-size: 14px; letter-spacing: 0.12em; text-transform: uppercase;
+    font-family: var(--font-mono); font-weight: 600;
+  }
+  .modal-close {
+    background: transparent; border: 0; color: var(--text-inv);
+    font-size: 18px; cursor: pointer; padding: 4px 8px;
+  }
+  .modal-body { padding: 8px; overflow-y: auto; flex: 1; }
+  .proj-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 12px;
+    border: 1px solid var(--line);
+    border-radius: 2px;
+    margin-bottom: 6px;
+    background: var(--bg-0);
+  }
+  .proj-info { flex: 1; min-width: 0; }
+  .proj-title {
+    font-weight: 600; font-size: 13px; color: var(--text-0);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .proj-date { font-family: var(--font-mono); font-size: 10px; color: var(--text-2); margin-top: 2px; }
+  .proj-btn {
+    padding: 6px 10px; font-size: 11px; font-weight: 600;
+    background: var(--bg-0); border: 1px solid var(--line-2);
+    color: var(--text-0); cursor: pointer; border-radius: 2px;
+    font-family: var(--font-ui);
+  }
+  .proj-btn.load:hover { background: var(--bg-1); }
+  .proj-btn.del { color: var(--tn-red); border-color: var(--tn-red); }
+  .proj-btn.del:hover { background: var(--tn-red-sft); }
+  .proj-empty {
+    text-align: center; padding: 40px 20px;
+    color: var(--text-2); font-size: 13px;
+  }
+
+  /* Toast */
+  .toast-stack {
+    position: fixed; bottom: 20px; right: 20px;
+    display: flex; flex-direction: column-reverse; gap: 8px;
+    z-index: 200; pointer-events: none;
+  }
+  .toast {
+    padding: 10px 14px;
+    background: var(--text-0); color: var(--text-inv);
+    border-radius: 2px;
+    font-size: 13px; font-weight: 500;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    animation: toast-in .25s ease;
+    pointer-events: auto;
+  }
+  .toast.success { background: var(--ok); }
+  .toast.error { background: var(--tn-red); }
+  @keyframes toast-in {
+    from { transform: translateY(10px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ============================ CONTROL ============================ -->
+  <aside class="control">
+    <header class="control-header">
+      <div class="brand-row">
+        <button class="tn-mark" id="btnHome" title="Zpět na hlavní rozcestník">tn</button>
+        <span class="brand">Graphics Engine</span>
+      </div>
+      <div class="template-badge">
+        <span class="tpl-num">04 / TEMPLATE</span>
+        <span class="tpl-name">TN line chart</span>
+      </div>
+    </header>
+
+    <div class="project-bar">
+      <div class="pb-row">
+        <span class="pb-label">Projekt</span>
+        <input type="text" class="pb-name" id="projName" value="Untitled" />
+        <span class="pb-meta" id="projMeta">nový</span>
+      </div>
+      <div class="pb-row">
+        <button class="pb-btn primary" id="projSave">Uložit</button>
+        <button class="pb-btn" id="projSaveAs">Uložit jako…</button>
+        <button class="pb-btn" id="projOpen">Otevřít…</button>
+        <button class="pb-btn" id="projNew">Nový</button>
+      </div>
+    </div>
+
+    <!-- Content fields -->
+    <div class="section">
+      <h3>Obsah</h3>
+      <div class="field">
+        <label for="inTitle">Nadpis</label>
+        <input type="text" id="inTitle" value="Podíl dokončených rekonstrukcí" />
+      </div>
+      <div class="field">
+        <label for="inSource">Zdroj (top-right)</label>
+        <input type="text" id="inSource" value="zdroj: Facebook" />
+      </div>
+      <div class="field">
+        <label for="inUnit">Jednotka (za poslední hodnotou)</label>
+        <input type="text" id="inUnit" value="%" placeholder="např. %, let, Kč, mil. Kč, mld. EUR" />
+        <div class="help">Zobrazí se vedle pravého konce každé linky. Nech prázdné pro žádnou jednotku.</div>
+      </div>
+    </div>
+
+    <!-- X-axis labels (1-15 slots, dynamic) -->
+    <div class="section">
+      <h3>
+        Osa X (popisky)
+        <span style="float:right">
+          <button class="x-step" id="btnXMinus" title="Ubrat bod">−</button>
+          <span id="xCount" style="display:inline-block;min-width:18px;text-align:center;font-size:12px;color:var(--text-2);font-variant-numeric:tabular-nums">5</span>
+          <button class="x-step" id="btnXPlus" title="Přidat bod">+</button>
+        </span>
+      </h3>
+      <div class="help" style="margin-bottom:10px">
+        Texty pod jednotlivými datovými body (např. roky, měsíce, kategorie). 1–15 bodů. Při velkém počtu se popisky automaticky prokládají (zobrazí se každý druhý nebo třetí), aby se nepřekrývaly.
+      </div>
+      <div id="xLabelsRow" class="x-labels-row"></div>
+    </div>
+
+    <!-- Series editor — 1–5 lines, each with label, color, 5 values -->
+    <div class="section">
+      <h3>Série (linky) <span id="seriesCount" style="color:var(--text-2);font-weight:400;font-size:11px">(2)</span></h3>
+      <div class="help" style="margin-bottom:10px">
+        Každá linka má vlastní popisek (do legendy), barvu a hodnoty pro každý bod osy X. Maximum 5 linek.
+        Zaškrtnutí <strong>HL</strong> u hodnoty zobrazí na grafu callout blok &nbsp;—&nbsp; <strong>v náhledu jej můžeš chytit a přetáhnout</strong>, kdyby zavazel. Dvojklik na blok ho vrátí na výchozí pozici.
+      </div>
+      <div id="seriesList" class="series-list"></div>
+      <button class="upload-btn" id="btnAddSeries" style="margin-top:8px">+ Přidat sérii</button>
+    </div>
+
+    <div class="section">
+      <h3>Pozadí / Branding</h3>
+      <div class="field">
+        <label>Podklad</label>
+        <div class="toggle-group" id="brandingToggle">
+          <button data-value="preview" class="active">Studio preview</button>
+          <button data-value="export">Export (clean)</button>
+        </div>
+        <div class="help" id="backdropStatus" style="cursor:pointer" title="Klikni pro reload videa">
+          <strong>Studio preview</strong>: <code>../assets/bg-loop.mp4</code> běží pod grafikou, frame-synced.<br>
+          <strong>Export</strong>: čistě černé pozadí — režie si blue/teal overlay přidá sama.
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h3>Animace &amp; Časování</h3>
+      <div class="field">
+        <label>Délka (sekundy)</label>
+        <div class="field-row">
+          <input type="text" id="inDuration" value="3" />
+          <div class="toggle-group" id="fpsToggle">
+            <button data-value="25" class="active">25 fps</button>
+            <button data-value="50">50 fps</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h3>Export</h3>
+      <div class="export-grid">
+        <button class="btn-export" id="btnExportPNG">Aktuální snímek (PNG)</button>
+        <button class="btn-export primary" id="btnExportVideo">Video (WebM)</button>
+        <button class="btn-export" id="btnExportSeq" style="grid-column: 1 / -1">PNG sekvence s pozadím (do složky)</button>
+      </div>
+      <div class="help" style="margin-top:8px">
+        „Video (WebM)" a „PNG sekvence" obsahují aktuálně zvolené pozadí (video / statické / clean).
+        Sekvence: vybereš složku, snímky se do ní uloží přímo (ideální pro After Effects).
+      </div>
+    </div>
+  </aside>
+
+  <!-- ============================ STAGE ============================ -->
+  <main class="stage-col">
+    <div class="stage-header">
+      <span>1920 × 1080 • 16:9</span>
+      <span class="meta">Template 06 · TN citace</span>
+      <span class="spacer"></span>
+      <span class="pill" id="stFps">25 fps</span>
+      <span class="pill" id="stDur">3.0 s</span>
+    </div>
+
+    <div class="stage-wrap" id="stageWrap">
+      <div class="stage-scale" id="stageScale">
+        <div class="stage" id="stage">
+          <!-- BACKDROP LAYERS — режия's live video sits behind the graphic.
+               Top 135px + bottom 88px of the canvas stay transparent so the
+               режия composite (blue header, teal+TN bottom) shows through. -->
+          <video class="bg-video" id="bgVideo" src="../assets/bg-loop.mp4" crossorigin="anonymous" autoplay loop muted playsinline preload="auto"></video>
+          <div class="bg-flat" id="bgFlat" style="display:none"></div>
+          <!-- The ENTIRE graphic is rendered here. Same layout frame as Bar Chart. -->
+          <canvas id="stage-canvas" width="1920" height="1080"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="timeline">
+      <button class="tl-btn" id="btnPlay" title="Přehrát / Zastavit">▶</button>
+      <button class="tl-btn" id="btnRewind" title="Na začátek">⏮</button>
+      <input type="range" class="tl-scrubber" id="scrubber" min="0" max="74" value="74" step="1" />
+      <div class="tl-readout" id="tlRead">75 / 75</div>
+    </div>
+  </main>
+</div>
+
+<!-- ============================ PROJECT MODAL ============================ -->
+<div class="modal" id="projModal">
+  <div class="modal-card">
+    <div class="modal-head">
+      <h2>Projekty</h2>
+      <button class="modal-close" id="projModalClose">×</button>
+    </div>
+    <div class="modal-body">
+      <div id="projList"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Toast stack -->
+<div class="toast-stack" id="toastStack"></div>
+
+<script>
+/* =============================================================================
+   TN CITACE — runtime.
+   State is a single `state` object; `render()` is idempotent per frame.
+   Playback loops a requestAnimationFrame at FPS; scrubber + export use the same
+   renderFrame(i) so everything stays in sync.
+   ============================================================================= */
+
+const TEMPLATE_ID = 'tn-line-chart-01';
+const LS_KEY = 'tn_graphics_engine_projects_v2';
+const LS_CURRENT = 'tn_graphics_engine_current_v2';
+
+/* ---- state ---- */
+const state = {
+  title: 'Podíl dokončených rekonstrukcí',
+  source: 'zdroj: Facebook',
+  // X-axis labels (5 datapoints by default — user can edit each)
+  xLabels: ['2021', '2022', '2023', '2024', '2025'],
+  // Series (1–5 lines). Each series has:
+  //   label  — short legend text ("červená", "modrá", "muži"...)
+  //   color  — hex stroke color (user-pickable)
+  //   values — 5 numbers, one per X-label slot. null = missing point (skipped).
+  series: [
+    { label: 'červená', color: '#DC0F2E', values: [25, 16, 25, 52, 56], highlights: [false, false, false, false, true] },
+    { label: 'modrá',   color: '#2668AC', values: [62, 56, 45, 32, 41], highlights: [true, false, false, false, false] },
+  ],
+  // Unit suffix shown next to the LAST datapoint (e.g. 'let', 'Kč', 'mil. Kč',
+  // 'mld. EUR', '%'). Empty string = no unit. Applied to all series.
+  unit: '%',
+  branding: 'preview',     // 'preview' | 'export'
+  frame: 0,
+};
+
+let FPS = 25;
+let DURATION = 2.4;                     // seconds (animation finishes ~1.6s, +0.8s hold)
+let TOTAL_FRAMES = Math.round(DURATION * FPS);
+const CANVAS_W = 1920, CANVAS_H = 1080;
+
+let currentProjectId = null;
+let lastSavedSnapshot = null;
+let playing = false;
+let playRAF = null;
+let playStart = 0;
+let playStartFrame = 0;
+
+/* ---- DOM refs ---- */
+const $ = id => document.getElementById(id);
+const els = {
+  imageThumb: $('imageThumb'),
+  bgVideo: $('bgVideo'),
+  bgFlat: $('bgFlat'),
+  scrubber: $('scrubber'),
+  tlRead: $('tlRead'),
+  btnPlay: $('btnPlay'),
+  stFps: $('stFps'),
+  stDur: $('stDur'),
+  backdropStatus: $('backdropStatus'),
+};
+
+/* =============================================================================
+   BACKDROP VIDEO — GRAF-style. The video is NOT on autoplay-loop; we advance
+   its currentTime in sync with state.frame every render. In 'export' mode
+   the video is hidden and режия composites its own clean chrome over black.
+   ============================================================================= */
+let videoReady  = false;
+let videoFailed = false;
+let autoplayBlocked = false;
+
+function setBackdropStatus(msg, kind) {
+  // Non-fatal if the status element isn't there (e.g. during partial boot)
+  if (!els.backdropStatus) return;
+  const prefix = '<strong>Studio preview</strong>: <code>../assets/bg-loop.mp4</code> běží pod grafikou, frame-synced.<br><strong>Export</strong>: čistě černé pozadí — režie si blue/teal overlay přidá sama.';
+  if (!msg) { els.backdropStatus.innerHTML = prefix; return; }
+  const color = kind === 'error' ? 'var(--tn-red)'
+              : kind === 'warn'  ? '#c89522'
+              : kind === 'loading' ? '#888'
+              : 'var(--ok)';
+  els.backdropStatus.innerHTML = `<span style="color:${color};font-weight:600">${msg}</span><br>${prefix}`;
+}
+
+els.bgVideo.addEventListener('error', (e) => markVideoFailed('error event', e));
+els.bgVideo.addEventListener('stalled', () => console.warn('[Backdrop] stalled'));
+
+// --- ROBUST INIT (identical pattern to bar-chart.html) -----------------------
+// A single 'loadeddata' listener misses videos that loaded from cache BEFORE
+// this JS attached. We listen to MULTIPLE ready-events + a readyState fallback
+// + a 5s safety timeout so the backdrop always resolves to either OK or MISSING.
+function markVideoReady(source) {
+  if (videoReady || videoFailed) return;
+  videoReady = true;
+  const dur = isFinite(els.bgVideo.duration) ? els.bgVideo.duration.toFixed(1) + 's' : '?s';
+  setBackdropStatus(`${dur} OK`, 'ok');
+  console.log(`[Backdrop] Ready (via ${source}), readyState=${els.bgVideo.readyState}`);
+  applyBrandingMode();
+}
+function markVideoFailed(source, detail) {
+  if (videoFailed || videoReady) return;
+  videoFailed = true;
+  setBackdropStatus('MISSING — klikni pro pokus znovu', 'error');
+  console.error(`[Backdrop] Failed (${source}):`, detail || els.bgVideo.error);
+}
+
+// Any one of these events flips us to ready — whichever fires first wins.
+els.bgVideo.addEventListener('loadedmetadata', () => markVideoReady('loadedmetadata'));
+els.bgVideo.addEventListener('loadeddata',     () => markVideoReady('loadeddata'));
+els.bgVideo.addEventListener('canplay',        () => markVideoReady('canplay'));
+els.bgVideo.addEventListener('canplaythrough', () => markVideoReady('canplaythrough'));
+
+// Race-condition guard: if video was already cached/loaded before this script
+// ran, the events above fired before we could attach. Check readyState now.
+//   0=NOTHING  1=METADATA  2=CURRENT_DATA  3=FUTURE_DATA  4=ENOUGH_DATA
+if (els.bgVideo.readyState >= 1) {
+  console.log('[Backdrop] Already loaded at script start, readyState =', els.bgVideo.readyState);
+  markVideoReady('already-ready-at-init');
+}
+
+// Safety net: if nothing happened in 5s, bail out with a clear error.
+setTimeout(() => {
+  if (!videoReady && !videoFailed) {
+    console.warn('[Backdrop] 5s timeout. readyState =', els.bgVideo.readyState,
+                 'networkState =', els.bgVideo.networkState, 'error =', els.bgVideo.error);
+    markVideoFailed('5s timeout', `readyState=${els.bgVideo.readyState} networkState=${els.bgVideo.networkState}`);
+  }
+}, 5000);
+
+// Click the status help to force-reload video (same UX as GRAF)
+if (els.backdropStatus) {
+  els.backdropStatus.addEventListener('click', () => {
+    console.log('[Backdrop] Manual retry');
+    videoReady = false; videoFailed = false;
+    setBackdropStatus('RELOADING…', 'loading');
+    els.bgVideo.classList.remove('visible');
+    const srcBase = '../assets/bg-loop.mp4';
+    els.bgVideo.src = srcBase + '?t=' + Date.now();
+    els.bgVideo.load();
+  });
+}
+
+function tryPlayVideo(source) {
+  if (!videoReady || videoFailed) return;
+  const p = els.bgVideo.play();
+  if (p && typeof p.catch === 'function') {
+    p.then(() => { autoplayBlocked = false; })
+     .catch(err => {
+       autoplayBlocked = true;
+       console.warn(`[Backdrop] Autoplay blocked (${source}):`, err.name, err.message);
+       setBackdropStatus('BLOCKED — klikni Play', 'warn');
+     });
+  }
+}
+
+function syncVideoToFrame() {
+  if (!videoReady || videoFailed || state.branding !== 'preview') return;
+  const target = state.frame / FPS;
+  const dur = els.bgVideo.duration;
+  if (isFinite(dur) && target < dur - 0.01 && Math.abs(els.bgVideo.currentTime - target) > 0.05) {
+    try { els.bgVideo.currentTime = target; } catch (_) {}
+  }
+}
+
+function applyBrandingMode() {
+  console.log('[Backdrop] applyBrandingMode:', {
+    branding: state.branding,
+    videoReady,
+    videoFailed,
+    videoReadyState: els.bgVideo.readyState,
+  });
+  if (state.branding === 'preview') {
+    // Preview: video if ready, otherwise transparent (stage's black bg shows).
+    // We intentionally do NOT show .bg-flat as a loading fallback — it looks
+    // nothing like the real режия backdrop and just confuses "is this the video?"
+    if (videoReady && !videoFailed) {
+      els.bgVideo.classList.add('visible');
+      syncVideoToFrame();
+      tryPlayVideo('applyBrandingMode');
+    } else {
+      els.bgVideo.classList.remove('visible');
+    }
+    els.bgFlat.style.display = 'none';
+  } else {
+    // Export: hide everything; renderFrame paints solid black.
+    els.bgVideo.classList.remove('visible');
+    els.bgFlat.style.display = 'none';
+    try { els.bgVideo.pause(); } catch (_) {}
+  }
+}
+
+/* =============================================================================
+   CANVAS RENDERER — identical block layout to Bar Chart so both templates
+   composite 1:1 under режия's top/bottom overlays.
+   ============================================================================= */
+const canvas = document.getElementById('stage-canvas');
+const ctx = canvas.getContext('2d');
+
+// (Tabulka template doesn't use a default portrait — left side is a user-
+// uploaded illustration that defaults to TN red fill when empty.)
+
+// =============================================================================
+// GLOBAL TN BRAND COLORS — share these across every template. Whenever a
+// template needs a brand color, pull from here, never invent a custom hex.
+// =============================================================================
+const TN_COLORS = {
+  red:           '#DC0F2E',  // TN editorial red (lines, accents)
+  blue:          '#2668AC',  // TN editorial blue (lines, subtitles, tags)
+  textPrimary:   '#0a0a0a',
+  textSecondary: '#222222',
+  axisLine:      'rgba(120, 140, 165, 0.55)',  // X axis 0-line and Y grid lines
+  panelGray:     '#e0e0e0',
+  titleBandGray: 'rgba(242, 242, 242, 0.95)',
+};
+
+// LAYOUT — LINE CHART
+// Same outer frame as bar-chart (top black 0..134, white title band 135..222,
+// gray panel 222..992). Inside the gray panel: Y axis ticks left, line plot
+// fills middle, legend top-right.
+const LAYOUT = {
+  topBlackH:     135,
+  titleBandTop:  135,
+  titleBandH:     87,
+  titleBandBot:  222,
+  chartTop:      222,
+  chartBottom:   992,
+  // Title text positioning
+  titleX:        115,
+  titleY:        198,
+  sourceX:       1805,   // GLOBAL TN right-edge alignment
+  // Plot area (inside gray panel)
+  plotLeft:      215,    // x where leftmost datapoint sits (≈ first reference center 344 - half of step ≈ 215 for the y-axis label gap)
+  plotRight:     1700,   // x where rightmost datapoint sits (≈ x=1599 last center, padded so unit fits at 1805)
+  plotTop:       370,    // y of top grid line (max value)
+  plotBot:       820,    // y of bottom grid line (zero / min value)
+  // Y axis label margin (left of plotLeft)
+  yLabelX:       180,    // right-aligned at this X
+  // X axis label baseline (below the 0-line)
+  xLabelY:       870,    // baseline of "2020" etc.
+  // Legend (top-right inside chart, just below source caption)
+  legendY:       275,    // baseline of legend text
+  legendRight:   1805,   // global TN right edge (last legend entry ends here)
+  // TN red logo box reservation (режия adds bottom-right post-render)
+  logoBoxW:      270,
+  logoBoxH:      155,
+};
+const BLOCK_ANCHOR_Y = 135;
+const W = 1920, H = 1080;
+
+/* =============================================================================
+   STAGE SCALING — fit 1920×1080 into the available viewport.
+   ============================================================================= */
+const stageScale = $('stageScale');
+const stageWrap = $('stageWrap');
+function fitStage() {
+  const w = stageWrap.clientWidth - 32;   // minus padding
+  const h = stageWrap.clientHeight - 32;
+  const s = Math.min(w / CANVAS_W, h / CANVAS_H);
+  stageScale.style.transform = `scale(${s})`;
+}
+window.addEventListener('resize', fitStage);
+
+/* =============================================================================
+   TIMING HELPERS
+   ============================================================================= */
+// easeOutCubic: fast start, slow end — used for entry animations
+const easeOut = t => 1 - Math.pow(1 - t, 3);
+// easeInOut: for smooth scale pulses
+const easeInOut = t => t < 0.5 ? 2*t*t : 1 - Math.pow(-2*t + 2, 2) / 2;
+// Linear clamp in [0,1] given current frame and a (startF, endF) window
+function rampAt(f, startF, endF) {
+  if (endF <= startF) return f >= startF ? 1 : 0;
+  return Math.max(0, Math.min(1, (f - startF) / (endF - startF)));
+}
+
+/* =============================================================================
+   RENDER — all visuals are drawn into the canvas. DOM backdrop (video element)
+   is managed by applyBrandingMode() on mode change / video ready. The portrait
+   thumb and image element are handled by render() above.
+   ============================================================================= */
+
+function clamp01(x) { return Math.max(0, Math.min(1, x)); }
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+// ---------- Helpers ----------
+function easeInCubic(x)   { return x * x * x; }
+function easeOutCubic(x)  { return 1 - Math.pow(1 - x, 3); }
+function easeOutQuart(x)  { return 1 - Math.pow(1 - x, 4); }
+
+// =============================================================================
+// HIGHLIGHT CALLOUT DRAG STATE
+// drawSeriesHighlights pushes one entry per visible callout into _calloutHitAreas
+// (in canvas-space coords). The canvas pointerdown handler resolves the click
+// against this list to find which callout to drag. The drag updates
+// state.series[sIdx].calloutOffsets[idx] = {dx, dy} in real time.
+// =============================================================================
+const _calloutHitAreas = [];   // cleared at start of every drawLines() call
+let _dragState = null;         // {sIdx, idx, startMouseX, startMouseY, startDX, startDY}
+
+// =============================================================================
+// LINE CHART RENDER
+// =============================================================================
+function renderFrame(f) {
+  state.frame = f;
+  const t = f / FPS;   // seconds elapsed
+
+  ctx.save();
+  ctx.clearRect(0, 0, W, H);
+
+  // EXPORT clean: opaque black under everything (fills режия zones too)
+  if (state.branding === 'export') {
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, 0, W, H);
+  }
+
+  // === BLOCK SCALE-Y intro (anchor y=135) ===
+  const blockP = clamp01(t / 0.44);
+  const blockScale = easeInOut(blockP);
+  ctx.translate(0, BLOCK_ANCHOR_Y);
+  ctx.scale(1, Math.max(blockScale, 0.0001));
+  ctx.translate(0, -BLOCK_ANCHOR_Y);
+  if (blockScale < 0.001) { ctx.restore(); return; }
+
+  // EXPORT mode: paint top + bottom black (режия zones)
+  if (state.branding === 'export') {
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, 0, W, LAYOUT.topBlackH);
+    ctx.fillRect(0, LAYOUT.chartBottom, W, H - LAYOUT.chartBottom);
+  }
+
+  // === White title band (95% opacity, plain — always visible)
+  ctx.fillStyle = TN_COLORS.titleBandGray;
+  ctx.fillRect(0, LAYOUT.titleBandTop, W, LAYOUT.titleBandH);
+
+  // === Title (left, baseline y=198) — fade-in 0.48..0.88s
+  const titleP = easeOutCubic(clamp01((t - 0.48) / 0.40));
+  if (titleP > 0) {
+    ctx.save();
+    ctx.globalAlpha = titleP;
+    ctx.fillStyle = TN_COLORS.textPrimary;
+    ctx.font = '800 54px "Organica", sans-serif';
+    ctx.textBaseline = 'alphabetic';
+    ctx.textAlign = 'left';
+    ctx.fillText(state.title || '', LAYOUT.titleX, LAYOUT.titleY);
+    ctx.fillStyle = TN_COLORS.textSecondary;
+    ctx.font = '400 28px "Organica", sans-serif';
+    ctx.textAlign = 'right';
+    ctx.fillText(state.source || '', LAYOUT.sourceX, LAYOUT.titleY);
+    ctx.restore();
+  }
+
+  // === Gray chart panel — fade in 0.20..0.55s
+  const panelP = easeOutCubic(clamp01((t - 0.20) / 0.35));
+  if (panelP > 0) {
+    ctx.save();
+    ctx.globalAlpha = panelP;
+    ctx.fillStyle = TN_COLORS.panelGray;
+    ctx.fillRect(0, LAYOUT.chartTop, W, LAYOUT.chartBottom - LAYOUT.chartTop);
+    ctx.restore();
+  }
+
+  // From here on, only draw if the gray panel has at least started fading in
+  if (panelP <= 0) { ctx.restore(); return; }
+
+  // Compute Y-axis scale dynamically based on data
+  const scale = computeYScale(state.series);
+
+  // === Grid lines + Y labels — fade 0.40..0.80s
+  drawGridAndAxes(t, scale);
+
+  // === X-axis labels — fade 0.55..0.95s
+  drawXLabels(t);
+
+  // === Lines — draw stroke 0.70..1.40s with stagger between series
+  drawLines(t, scale);
+
+  // === Legend — fade 0.85..1.15s
+  drawLegend(t);
+
+  ctx.restore();
+
+  // Timeline readout
+  els.scrubber.value = f;
+  els.tlRead.textContent = `${f + 1} / ${TOTAL_FRAMES}  ·  ${t.toFixed(2)}s`;
+}
+
+// ---------- Y-axis scale ----------
+// Compute a "nice" rounded max for Y axis based on the actual data so that
+// the chart adapts when the user enters arbitrary values. We use 4 grid lines
+// (matching reference: 0, 20, 40, 60 → step=20).
+function computeYScale(series) {
+  let maxV = 0;
+  let minV = Infinity;
+  let hasData = false;
+  for (const s of series) {
+    for (const v of (s.values || [])) {
+      if (v == null || isNaN(v)) continue;
+      hasData = true;
+      if (v > maxV) maxV = v;
+      if (v < minV) minV = v;
+    }
+  }
+  if (!hasData) {
+    return { yMin: 0, yMax: 100, step: 25, ticks: [0, 25, 50, 75, 100] };
+  }
+  // Always start at 0 if min is non-negative (common case)
+  const yMin = Math.min(0, minV);
+  // Round max up to a "nice" multiple. Aim for ~4 ticks above 0.
+  const niceMax = niceCeil(maxV);
+  const step = niceMax / 4;
+  const ticks = [];
+  for (let i = 0; i <= 4; i++) ticks.push(yMin + i * (niceMax - yMin) / 4);
+  return { yMin, yMax: niceMax, step, ticks };
+}
+
+function niceCeil(v) {
+  if (v <= 0) return 10;
+  const exp = Math.pow(10, Math.floor(Math.log10(v)));
+  const n = v / exp;
+  let nice;
+  if      (n <= 1)   nice = 1;
+  else if (n <= 2)   nice = 2;
+  else if (n <= 2.5) nice = 2.5;
+  else if (n <= 5)   nice = 5;
+  else               nice = 10;
+  return nice * exp;
+}
+
+// ---------- Y → screen mapping ----------
+function yToScreen(v, scale) {
+  const range = scale.yMax - scale.yMin;
+  if (range === 0) return LAYOUT.plotBot;
+  const norm = (v - scale.yMin) / range;
+  return LAYOUT.plotBot - norm * (LAYOUT.plotBot - LAYOUT.plotTop);
+}
+
+// ---------- X (slot index) → screen mapping ----------
+function xToScreen(slotIdx, slotCount) {
+  if (slotCount <= 1) return (LAYOUT.plotLeft + LAYOUT.plotRight) / 2;
+  const range = LAYOUT.plotRight - LAYOUT.plotLeft;
+  return LAYOUT.plotLeft + (slotIdx / (slotCount - 1)) * range;
+}
+
+// ---------- Grid lines + Y labels ----------
+function drawGridAndAxes(t, scale) {
+  const p = easeOutCubic(clamp01((t - 0.40) / 0.40));
+  if (p <= 0) return;
+
+  ctx.save();
+  ctx.globalAlpha = p;
+
+  // Horizontal grid lines (one per tick) — light blue/gray stroke
+  ctx.strokeStyle = TN_COLORS.axisLine;
+  ctx.lineWidth = 1.5;
+  for (let i = 0; i < scale.ticks.length; i++) {
+    const v = scale.ticks[i];
+    const y = yToScreen(v, scale);
+    ctx.beginPath();
+    ctx.moveTo(LAYOUT.plotLeft - 25, y);
+    ctx.lineTo(LAYOUT.plotRight + 25, y);
+    ctx.stroke();
+  }
+
+  // Y-axis labels (right-aligned at LAYOUT.yLabelX)
+  ctx.fillStyle = TN_COLORS.textPrimary;
+  ctx.font = '500 38px "Organica", sans-serif';
+  ctx.textAlign = 'right';
+  ctx.textBaseline = 'middle';
+  for (const v of scale.ticks) {
+    const y = yToScreen(v, scale);
+    const txt = formatYNumber(v);
+    ctx.fillText(txt, LAYOUT.yLabelX, y);
+  }
+  ctx.restore();
+}
+
+function formatYNumber(v) {
+  if (Math.abs(v) < 0.01) return '0';
+  if (Math.abs(v) >= 1000) {
+    // Use Czech thousand separator (non-breaking space)
+    return Math.round(v).toLocaleString('cs-CZ').replace(/,/g, ' ');
+  }
+  // Show 1 decimal if non-integer, else integer
+  if (Math.abs(v - Math.round(v)) < 0.01) return String(Math.round(v));
+  return v.toFixed(1).replace('.', ',');
+}
+
+// ---------- X-axis labels ----------
+function drawXLabels(t) {
+  const p = easeOutCubic(clamp01((t - 0.55) / 0.40));
+  if (p <= 0) return;
+
+  const labels = state.xLabels || [];
+  const slotCount = labels.length;
+  if (slotCount === 0) return;
+
+  ctx.save();
+  ctx.globalAlpha = p;
+  ctx.fillStyle = TN_COLORS.textPrimary;
+  ctx.font = '500 38px "Organica", sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'alphabetic';
+
+  // Available slot width on screen (distance between two adjacent X positions)
+  const slotW = (slotCount > 1)
+    ? (LAYOUT.plotRight - LAYOUT.plotLeft) / (slotCount - 1)
+    : (LAYOUT.plotRight - LAYOUT.plotLeft);
+
+  // Decide a "step" so labels don't overlap. We measure the widest label and
+  // skip every-other (or every-third, etc.) until labels fit comfortably with
+  // a small visual gutter between them.
+  const GUTTER = 24;   // minimum px between adjacent label rectangles
+  let widest = 0;
+  for (let i = 0; i < slotCount; i++) {
+    const w = ctx.measureText(labels[i] || '').width;
+    if (w > widest) widest = w;
+  }
+  let step = 1;
+  while (step < slotCount && (widest + GUTTER) > slotW * step) step++;
+
+  // Always render the FIRST and LAST label so the axis is anchored visually,
+  // plus every `step`-th in between. Build the visible-index set.
+  const visible = new Set();
+  for (let i = 0; i < slotCount; i += step) visible.add(i);
+  visible.add(slotCount - 1);   // ensure last slot is shown
+
+  for (let i = 0; i < slotCount; i++) {
+    if (!visible.has(i)) continue;
+    const x = xToScreen(i, slotCount);
+    ctx.fillText(labels[i] || '', x, LAYOUT.xLabelY);
+  }
+  ctx.restore();
+}
+
+// ---------- Lines ----------
+// Each series draws as a stroked path. We animate the stroke "drawing" by
+// trimming the path to a percentage of its total length using setLineDash.
+// Series stagger by 0.10s so they reveal one after the other.
+function drawLines(t, scale) {
+  const series = state.series || [];
+  const slotCount = (state.xLabels || []).length || 1;
+
+  // Reset callout hit areas at the start of each render — drawSeriesHighlights
+  // populates them so the canvas mousedown handler can pick the right block.
+  _calloutHitAreas.length = 0;
+
+  series.forEach((s, sIdx) => {
+    s.__sIdx = sIdx;   // inject for drawSeriesHighlights
+    const start = 0.70 + sIdx * 0.10;
+    const dur   = 0.65;
+    const p = easeOutCubic(clamp01((t - start) / dur));
+    if (p <= 0) return;
+
+    // Build path points (skip null values)
+    const pts = [];
+    for (let i = 0; i < slotCount; i++) {
+      const v = (s.values || [])[i];
+      if (v == null || isNaN(v)) continue;
+      pts.push({ x: xToScreen(i, slotCount), y: yToScreen(v, scale), v, idx: i });
+    }
+    if (pts.length === 0) return;
+
+    // Total length of the polyline (for line-dash drawing animation)
+    let total = 0;
+    for (let i = 1; i < pts.length; i++) {
+      const dx = pts[i].x - pts[i-1].x;
+      const dy = pts[i].y - pts[i-1].y;
+      total += Math.sqrt(dx * dx + dy * dy);
+    }
+
+    ctx.save();
+    ctx.strokeStyle = s.color || TN_COLORS.red;
+    ctx.lineWidth = 12;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.setLineDash([total]);
+    ctx.lineDashOffset = total * (1 - p);
+    ctx.beginPath();
+    ctx.moveTo(pts[0].x, pts[0].y);
+    for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.restore();
+
+    // Highlight callouts — drawn AFTER the line stroke so they sit on top.
+    drawSeriesHighlights(t, s, pts, start, dur);
+
+    // Last-point unit annotation
+    if (p >= 1 && state.unit && pts.length > 0) {
+      const last = pts[pts.length - 1];
+      const unitStart = start + dur;
+      const uP = easeOutCubic(clamp01((t - unitStart) / 0.30));
+      if (uP > 0) {
+        ctx.save();
+        ctx.globalAlpha = uP;
+        ctx.fillStyle = s.color || TN_COLORS.textPrimary;
+        ctx.font = '700 36px "Organica", sans-serif';
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(' ' + state.unit, last.x + 16, last.y);
+        ctx.restore();
+      }
+    }
+  });
+}
+
+// ---------- Highlight callouts ----------
+// For each datapoint flagged in state.series[].highlights[], render:
+//   - a small colored square exactly on the data point (12×12 with white center
+//     so it stands out against the line stroke)
+//   - a colored callout block ABOVE that, with the value in white bold
+// Both elements fade in slightly AFTER the line finishes drawing for that series.
+function drawSeriesHighlights(t, s, pts, lineStart, lineDur) {
+  const flags = s.highlights || [];
+  // Highlights start fading in after the line for this series finishes drawing
+  const hlStart = lineStart + lineDur * 0.85;
+  const hlP = easeOutCubic(clamp01((t - hlStart) / 0.40));
+  if (hlP <= 0) return;
+
+  const color = s.color || TN_COLORS.red;
+  const unit  = state.unit || '';
+  const offsets = s.calloutOffsets || {};
+
+  pts.forEach(pt => {
+    if (!flags[pt.idx]) return;
+
+    ctx.save();
+    ctx.globalAlpha = hlP;
+
+    // Marker square AT THE DATAPOINT — solid color fill (replaces outlined dot
+    // from the previous version). Sits ON TOP of the line stroke.
+    const DOT = 22;
+    ctx.fillStyle = color;
+    ctx.fillRect(pt.x - DOT/2, pt.y - DOT/2, DOT, DOT);
+
+    // Callout block — default position is centered above the dot, but the user
+    // can drag it to reposition (stored in s.calloutOffsets[idx] = {dx,dy}).
+    const valueText = formatYNumber(pt.v) + (unit ? ' ' + unit : '');
+    ctx.font = '800 36px "Organica", sans-serif';
+    const textW = ctx.measureText(valueText).width;
+    const PAD_X = 18;
+    const blockW = textW + PAD_X * 2;
+    const blockH = 56;
+    const GAP    = 18;   // default gap between dot and bottom of block
+
+    // Per-point user offset (set by drag interaction; falls back to zero)
+    const off = offsets[pt.idx] || { dx: 0, dy: 0 };
+
+    // Default anchor: callout's center X = pt.x, callout's bottom = pt.y - DOT/2 - GAP
+    const baseX = pt.x - blockW / 2;
+    const baseY = pt.y - DOT/2 - GAP - blockH;
+
+    // Slide-up animation only on first reveal (skip if the user has already
+    // moved the block — the slide would feel jarring after positioning)
+    const hasMoved = (off.dx !== 0 || off.dy !== 0);
+    const slideY = hasMoved ? 0 : (1 - hlP) * 12;
+
+    const blockX = baseX + off.dx;
+    const blockY = baseY + off.dy + slideY;
+
+    // Optional connector line from dot to block when the block is far enough
+    // that the visual anchor is unclear. Drawn before the block so the block
+    // sits on top of the line tip.
+    const blockCx = blockX + blockW / 2;
+    const blockCy = blockY + blockH / 2;
+    const dist = Math.hypot(blockCx - pt.x, blockCy - pt.y);
+    if (dist > DOT) {
+      ctx.save();
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(pt.x, pt.y);
+      // Draw to the nearest edge of the block (simplified: bottom-center of block)
+      const targetY = (blockCy > pt.y) ? blockY : (blockY + blockH);
+      ctx.lineTo(blockCx, targetY);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    ctx.fillStyle = color;
+    ctx.fillRect(blockX, blockY, blockW, blockH);
+
+    // Value text (white bold, centered)
+    ctx.fillStyle = '#FFFFFF';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(valueText, blockX + blockW / 2, blockY + blockH / 2 + 1);
+
+    ctx.restore();
+
+    // Register hit-area for drag interaction. Only collect when the highlight
+    // is fully revealed; otherwise an in-flight callout is hard to grab.
+    if (hlP >= 0.999) {
+      _calloutHitAreas.push({
+        sIdx: s.__sIdx,    // injected by drawLines below
+        idx:  pt.idx,
+        x: blockX, y: blockY, w: blockW, h: blockH,
+      });
+    }
+  });
+}
+
+// ---------- Legend (top-right) ----------
+// Each entry is a colored rect + label. Entries are right-aligned so the
+// rightmost edge sits on LAYOUT.legendRight (1805). Layout right-to-left.
+function drawLegend(t) {
+  const p = easeOutCubic(clamp01((t - 0.85) / 0.30));
+  if (p <= 0) return;
+
+  const series = state.series || [];
+  if (series.length === 0) return;
+
+  ctx.save();
+  ctx.globalAlpha = p;
+  ctx.font = '500 38px "Organica", sans-serif';
+  ctx.textBaseline = 'middle';
+
+  const RECT_W = 50;
+  const RECT_H = 28;
+  const GAP_RECT_LABEL = 14;
+  const GAP_ENTRIES = 36;
+
+  // Measure total width
+  const widths = series.map(s => {
+    const tw = ctx.measureText(s.label || '').width;
+    return RECT_W + GAP_RECT_LABEL + tw;
+  });
+  const totalW = widths.reduce((a, b) => a + b, 0) + GAP_ENTRIES * (series.length - 1);
+
+  // Right-aligned: x of right edge = legendRight
+  let cursor = LAYOUT.legendRight - totalW;
+  const cy = LAYOUT.legendY;
+
+  series.forEach((s, i) => {
+    // Color rect
+    ctx.fillStyle = s.color || TN_COLORS.red;
+    ctx.fillRect(cursor, cy - RECT_H / 2, RECT_W, RECT_H);
+    // Label
+    ctx.fillStyle = TN_COLORS.textPrimary;
+    ctx.textAlign = 'left';
+    ctx.fillText(s.label || '', cursor + RECT_W + GAP_RECT_LABEL, cy);
+    cursor += widths[i] + GAP_ENTRIES;
+  });
+  ctx.restore();
+}
+
+// =============================================================================
+// HIGHLIGHT CALLOUT — pointer drag
+// The canvas is rendered intrinsic (1920×1080) but stretched to fit the stage.
+// We map browser pointer coords to canvas coords using getBoundingClientRect()
+// and the canvas's intrinsic size (W × H).
+// =============================================================================
+function _canvasCoords(e) {
+  const rect = canvas.getBoundingClientRect();
+  const sx = W / rect.width;
+  const sy = H / rect.height;
+  return {
+    x: (e.clientX - rect.left) * sx,
+    y: (e.clientY - rect.top)  * sy,
+  };
+}
+function _hitCalloutAt(cx, cy) {
+  // Iterate in reverse so the most recently drawn callout (last series) wins
+  for (let i = _calloutHitAreas.length - 1; i >= 0; i--) {
+    const a = _calloutHitAreas[i];
+    if (cx >= a.x && cx <= a.x + a.w && cy >= a.y && cy <= a.y + a.h) return a;
+  }
+  return null;
+}
+
+canvas.addEventListener('pointermove', (e) => {
+  if (_dragState) {
+    // Active drag — update offset based on pointer movement
+    const c = _canvasCoords(e);
+    const dx = (c.x - _dragState.startMouseX) + _dragState.startDX;
+    const dy = (c.y - _dragState.startMouseY) + _dragState.startDY;
+    const s = state.series[_dragState.sIdx];
+    if (!s.calloutOffsets) s.calloutOffsets = {};
+    s.calloutOffsets[_dragState.idx] = { dx, dy };
+    renderFrame(state.frame);
+    e.preventDefault();
+    return;
+  }
+  // Idle hover — change cursor when over a callout block
+  const c = _canvasCoords(e);
+  const hit = _hitCalloutAt(c.x, c.y);
+  canvas.classList.toggle('over-callout', !!hit);
+});
+
+canvas.addEventListener('pointerdown', (e) => {
+  const c = _canvasCoords(e);
+  const hit = _hitCalloutAt(c.x, c.y);
+  if (!hit) return;
+  const s = state.series[hit.sIdx];
+  const off = (s.calloutOffsets && s.calloutOffsets[hit.idx]) || { dx: 0, dy: 0 };
+  _dragState = {
+    sIdx: hit.sIdx,
+    idx:  hit.idx,
+    startMouseX: c.x,
+    startMouseY: c.y,
+    startDX: off.dx,
+    startDY: off.dy,
+  };
+  canvas.classList.add('dragging');
+  try { canvas.setPointerCapture(e.pointerId); } catch (_) {}
+  e.preventDefault();
+});
+
+function _endCalloutDrag(e) {
+  if (!_dragState) return;
+  _dragState = null;
+  canvas.classList.remove('dragging');
+  try { if (e && e.pointerId != null) canvas.releasePointerCapture(e.pointerId); } catch (_) {}
+}
+canvas.addEventListener('pointerup',     _endCalloutDrag);
+canvas.addEventListener('pointercancel', _endCalloutDrag);
+canvas.addEventListener('pointerleave', () => {
+  // Don't end drag on leave — pointer capture should keep the drag alive.
+  if (!_dragState) canvas.classList.remove('over-callout');
+});
+
+// Double-click resets the offset back to zero (handy if user dragged it off-screen)
+canvas.addEventListener('dblclick', (e) => {
+  const c = _canvasCoords(e);
+  const hit = _hitCalloutAt(c.x, c.y);
+  if (!hit) return;
+  const s = state.series[hit.sIdx];
+  if (s.calloutOffsets && s.calloutOffsets[hit.idx]) {
+    delete s.calloutOffsets[hit.idx];
+    renderFrame(state.frame);
+  }
+});
+
+// ---------- render() — called on any state change ----------
+function render() {
+  renderFrame(state.frame);
+}
+
+
+/* =============================================================================
+   PLAYBACK
+   ============================================================================= */
+function setDuration(sec) {
+  DURATION = Math.max(1, Math.min(30, sec));
+  TOTAL_FRAMES = Math.round(DURATION * FPS);
+  els.scrubber.max = TOTAL_FRAMES - 1;
+  els.stDur.textContent = DURATION.toFixed(1) + ' s';
+  if (state.frame >= TOTAL_FRAMES) state.frame = TOTAL_FRAMES - 1;
+}
+function setFps(fps) {
+  FPS = fps;
+  TOTAL_FRAMES = Math.round(DURATION * FPS);
+  els.scrubber.max = TOTAL_FRAMES - 1;
+  els.stFps.textContent = FPS + ' fps';
+  if (state.frame >= TOTAL_FRAMES) state.frame = TOTAL_FRAMES - 1;
+}
+
+function startPlayback() {
+  if (playing) return;
+  playing = true;
+  els.btnPlay.textContent = '⏸';
+  if (state.frame >= TOTAL_FRAMES - 1) state.frame = 0;
+  playStart = performance.now();
+  playStartFrame = state.frame;
+
+  // Video backdrop: Chrome often blocks autoplay before first user gesture.
+  // Clicking Play is that gesture — use it to force-sync and play the backdrop,
+  // same pattern as bar-chart. Video keeps looping while anim runs.
+  if (state.branding === 'preview' && videoReady && !videoFailed) {
+    syncVideoToFrame();
+    tryPlayVideo('startPlayback');
+  }
+
+  const step = (now) => {
+    if (!playing) return;
+    const dt = (now - playStart) / 1000;
+    const f = Math.min(TOTAL_FRAMES - 1, playStartFrame + Math.floor(dt * FPS));
+    renderFrame(f);
+    if (f >= TOTAL_FRAMES - 1) {
+      stopPlayback();
+      return;
+    }
+    playRAF = requestAnimationFrame(step);
+  };
+  playRAF = requestAnimationFrame(step);
+}
+function stopPlayback() {
+  playing = false;
+  els.btnPlay.textContent = '▶';
+  if (playRAF) { cancelAnimationFrame(playRAF); playRAF = null; }
+  // Do NOT pause video in preview — let backdrop loop keep running so the
+  // stage never goes static behind the paused graphic.
+}
+function togglePlay() { playing ? stopPlayback() : startPlayback(); }
+
+/* =============================================================================
+   INPUT WIRING
+   ============================================================================= */
+$('inTitle').addEventListener('input',  e => { state.title  = e.target.value; render(); });
+$('inSource').addEventListener('input', e => { state.source = e.target.value; render(); });
+$('inUnit').addEventListener('input',   e => { state.unit   = e.target.value; render(); });
+$('inDuration').addEventListener('input', e => {
+  const v = parseFloat(e.target.value);
+  if (!isNaN(v) && v > 0) { setDuration(v); render(); }
+});
+
+// === X-axis labels editor ===
+function rebuildXLabelsRow() {
+  const row = $('xLabelsRow');
+  const slotCount = state.xLabels.length;
+  row.style.setProperty('--x-cols', slotCount);
+  row.innerHTML = state.xLabels.map((lbl, i) => `
+    <input type="text" data-idx="${i}" placeholder="osa X" value="${escapeHtml(lbl)}" />
+  `).join('');
+  row.querySelectorAll('input').forEach((el, i) => {
+    el.addEventListener('input', e => {
+      state.xLabels[i] = e.target.value;
+      render();
+    });
+  });
+  $('xCount').textContent = String(slotCount);
+  if (typeof updateXStepButtons === 'function') updateXStepButtons();
+}
+
+// === Series editor ===
+function rebuildSeriesList() {
+  const list = $('seriesList');
+  const slotCount = state.xLabels.length;
+  list.style.setProperty('--x-cols', slotCount);
+
+  list.innerHTML = state.series.map((s, sIdx) => {
+    // Each value cell = number input + small highlight toggle below.
+    // The highlight, when ON, shows that datapoint as a callout block on the
+    // chart (colored square + value tag floating above it).
+    const valuesHtml = Array.from({ length: slotCount }).map((_, vIdx) => {
+      const v = (s.values || [])[vIdx];
+      const display = (v == null || isNaN(v)) ? '' : String(v);
+      const hl = !!(s.highlights && s.highlights[vIdx]);
+      return `
+        <div class="value-cell" data-vidx="${vIdx}">
+          <input type="number" step="any" class="value-num" placeholder="" value="${escapeHtml(display)}" />
+          <label class="hl-toggle" title="Zvýraznit tento bod jako callout">
+            <input type="checkbox" class="value-hl" ${hl ? 'checked' : ''} />
+            <span>↑ HL</span>
+          </label>
+        </div>
+      `;
+    }).join('');
+    return `
+      <div class="series-card" data-sidx="${sIdx}" style="--x-cols:${slotCount}">
+        <div class="series-head">
+          <input type="color" class="color" value="${escapeHtml(s.color || '#DC0F2E')}" />
+          <input type="text"  class="label" placeholder="popisek (legenda)" value="${escapeHtml(s.label || '')}" />
+          <button class="series-del" title="Smazat sérii">×</button>
+        </div>
+        <div class="series-values" style="--x-cols:${slotCount}">${valuesHtml}</div>
+      </div>
+    `;
+  }).join('');
+
+  list.querySelectorAll('.series-card').forEach((card, sIdx) => {
+    card.querySelector('.color').addEventListener('input', e => {
+      state.series[sIdx].color = e.target.value;
+      render();
+    });
+    card.querySelector('.label').addEventListener('input', e => {
+      state.series[sIdx].label = e.target.value;
+      render();
+    });
+    card.querySelector('.series-del').addEventListener('click', () => {
+      if (state.series.length <= 1) return;
+      state.series.splice(sIdx, 1);
+      rebuildSeriesList();
+      $('seriesCount').textContent = `(${state.series.length})`;
+      render();
+    });
+    // Per-value handlers
+    card.querySelectorAll('.value-cell').forEach((cell, vIdx) => {
+      // Numeric value input
+      cell.querySelector('.value-num').addEventListener('input', e => {
+        const raw = e.target.value;
+        if (raw === '') {
+          state.series[sIdx].values[vIdx] = null;
+        } else {
+          const parsed = parseFloat(raw.replace(',', '.'));
+          state.series[sIdx].values[vIdx] = isNaN(parsed) ? null : parsed;
+        }
+        render();
+      });
+      // Highlight checkbox
+      cell.querySelector('.value-hl').addEventListener('change', e => {
+        if (!Array.isArray(state.series[sIdx].highlights)) {
+          state.series[sIdx].highlights = Array.from({ length: state.xLabels.length }, () => false);
+        }
+        state.series[sIdx].highlights[vIdx] = e.target.checked;
+        render();
+      });
+    });
+  });
+  $('seriesCount').textContent = `(${state.series.length})`;
+}
+
+$('btnAddSeries').addEventListener('click', () => {
+  if (state.series.length >= 5) return;
+  const palette = ['#DC0F2E', '#2668AC', '#F5A623', '#0A8754', '#7B3FA0'];
+  const newColor = palette[state.series.length % palette.length];
+  state.series.push({
+    label: 'série ' + (state.series.length + 1),
+    color: newColor,
+    values:     Array.from({ length: state.xLabels.length }, () => null),
+    highlights: Array.from({ length: state.xLabels.length }, () => false),
+  });
+  rebuildSeriesList();
+  render();
+});
+
+// === X-count step buttons ===
+// + adds a slot (max 15), − removes the last (min 1). All series' values and
+// highlights arrays are kept in lockstep with state.xLabels.length.
+function setXCount(newCount) {
+  newCount = Math.max(1, Math.min(15, newCount));
+  const cur = state.xLabels.length;
+  if (newCount === cur) return;
+
+  if (newCount > cur) {
+    // Append empty x-labels and null/false slots in every series
+    for (let i = cur; i < newCount; i++) {
+      state.xLabels.push('');
+    }
+    state.series.forEach(s => {
+      while ((s.values || []).length < newCount) (s.values = s.values || []).push(null);
+      while ((s.highlights || []).length < newCount) (s.highlights = s.highlights || []).push(false);
+    });
+  } else {
+    // Trim off the tail
+    state.xLabels.length = newCount;
+    state.series.forEach(s => {
+      if (Array.isArray(s.values))     s.values.length     = newCount;
+      if (Array.isArray(s.highlights)) s.highlights.length = newCount;
+    });
+  }
+
+  rebuildXLabelsRow();
+  rebuildSeriesList();
+  updateXStepButtons();
+  render();
+}
+
+function updateXStepButtons() {
+  const n = state.xLabels.length;
+  $('btnXMinus').disabled = (n <= 1);
+  $('btnXPlus').disabled  = (n >= 15);
+}
+
+$('btnXMinus').addEventListener('click', () => setXCount(state.xLabels.length - 1));
+$('btnXPlus').addEventListener('click',  () => setXCount(state.xLabels.length + 1));
+
+// Toggle groups
+document.querySelectorAll('#brandingToggle button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('#brandingToggle button').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    state.branding = btn.dataset.value;
+    applyBrandingMode();
+    render();
+  });
+});
+document.querySelectorAll('#fpsToggle button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('#fpsToggle button').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    setFps(parseInt(btn.dataset.value, 10));
+    render();
+  });
+});
+
+// Timeline
+els.scrubber.addEventListener('input', () => {
+  stopPlayback();
+  state.frame = parseInt(els.scrubber.value, 10);
+  // Scrubbing is a user gesture — sync + kick video so backdrop can start
+  // even if autoplay was blocked on boot.
+  if (state.branding === 'preview' && videoReady && !videoFailed) {
+    syncVideoToFrame();
+    tryPlayVideo('scrubber');
+  }
+  renderFrame(state.frame);
+});
+els.btnPlay.addEventListener('click', togglePlay);
+$('btnRewind').addEventListener('click', () => {
+  stopPlayback();
+  state.frame = 0;
+  renderFrame(0);
+});
+
+// Home button
+$('btnHome').addEventListener('click', () => {
+  if (isDirty() && !confirm('Máš neuložené změny. Opravdu odejít na hlavní stránku?')) return;
+  window.location.href = '../index.html';
+});
+
+/* =============================================================================
+   PROJECT STORAGE — shared contract with bar-chart.
+   ============================================================================= */
+function loadAllProjects() {
+  try { return JSON.parse(localStorage.getItem(LS_KEY) || '[]'); }
+  catch (e) { return []; }
+}
+function saveAllProjects(list) {
+  localStorage.setItem(LS_KEY, JSON.stringify(list));
+}
+function snapshotState() {
+  return {
+    template: TEMPLATE_ID,
+    title: state.title,
+    source: state.source,
+    unit: state.unit,
+    xLabels: [...state.xLabels],
+    series: state.series.map(s => ({
+      label:           s.label,
+      color:           s.color,
+      values:          [...(s.values || [])],
+      highlights:      [...(s.highlights || [])],
+      calloutOffsets:  s.calloutOffsets ? { ...s.calloutOffsets } : {},
+    })),
+    branding: state.branding,
+    duration: DURATION,
+    fps: FPS,
+  };
+}
+function applySnapshot(snap) {
+  if (!snap) return;
+  state.title  = snap.title  ?? state.title;
+  state.source = snap.source ?? state.source;
+  state.unit   = snap.unit   ?? state.unit ?? '';
+  if (Array.isArray(snap.xLabels) && snap.xLabels.length > 0) {
+    state.xLabels = [...snap.xLabels];
+  }
+  if (Array.isArray(snap.series) && snap.series.length > 0) {
+    const N = state.xLabels.length;
+    state.series = snap.series.map(s => ({
+      label:  s.label  || '',
+      color:  s.color  || '#DC0F2E',
+      values: Array.isArray(s.values) ? [...s.values] : [],
+      // Backfill highlights from older saves that didn't have them
+      highlights: Array.isArray(s.highlights)
+        ? [...s.highlights]
+        : Array.from({ length: N }, () => false),
+      // Per-point callout offsets ({idx -> {dx,dy}}); empty for older saves
+      calloutOffsets: (s.calloutOffsets && typeof s.calloutOffsets === 'object')
+        ? { ...s.calloutOffsets }
+        : {},
+    }));
+  }
+  const rawBranding = snap.branding ?? 'preview';
+  state.branding = (rawBranding === 'live' || rawBranding === 'preview') ? 'preview' : 'export';
+  if (snap.duration) DURATION = snap.duration;
+  if (snap.fps === 25 || snap.fps === 50) FPS = snap.fps;
+  setDuration(DURATION); setFps(FPS);
+
+  // Sync UI
+  $('inTitle').value    = state.title;
+  $('inSource').value   = state.source;
+  $('inUnit').value     = state.unit || '';
+  $('inDuration').value = DURATION;
+  rebuildXLabelsRow();
+  rebuildSeriesList();
+  document.querySelectorAll('#brandingToggle button').forEach(b => {
+    b.classList.toggle('active', b.dataset.value === state.branding);
+  });
+  document.querySelectorAll('#fpsToggle button').forEach(b => {
+    b.classList.toggle('active', parseInt(b.dataset.value,10) === FPS);
+  });
+  state.frame = TOTAL_FRAMES - 1;
+  els.scrubber.value = state.frame;
+  applyBrandingMode();
+}
+function isDirty() {
+  return lastSavedSnapshot !== JSON.stringify(snapshotState());
+}
+function updateProjectMeta() {
+  const el = $('projMeta');
+  if (!currentProjectId) {
+    el.innerHTML = '<span>nový</span>';
+  } else {
+    el.innerHTML = isDirty() ? '<span class="dirty">● neuloženo</span>' : '<span class="saved">✓ uloženo</span>';
+  }
+}
+function saveProject(id, name) {
+  const all = loadAllProjects();
+  const now = Date.now();
+  const snap = snapshotState();
+  if (!id) {
+    id = 'p_' + now.toString(36) + '_' + Math.random().toString(36).slice(2, 6);
+    all.push({ id, name, createdAt: now, updatedAt: now, state: snap });
+  } else {
+    const idx = all.findIndex(p => p.id === id);
+    if (idx >= 0) {
+      all[idx].name = name;
+      all[idx].updatedAt = now;
+      all[idx].state = snap;
+    } else {
+      all.push({ id, name, createdAt: now, updatedAt: now, state: snap });
+    }
+  }
+  saveAllProjects(all);
+  currentProjectId = id;
+  localStorage.setItem(LS_CURRENT, id);
+  lastSavedSnapshot = JSON.stringify(snap);
+  updateProjectMeta();
+  return id;
+}
+function loadProject(id) {
+  const p = loadAllProjects().find(x => x.id === id);
+  if (!p) return;
+  applySnapshot(p.state);
+  currentProjectId = p.id;
+  $('projName').value = p.name;
+  localStorage.setItem(LS_CURRENT, id);
+  lastSavedSnapshot = JSON.stringify(snapshotState());
+  updateProjectMeta();
+  render();
+  showToast(`Otevřeno: ${p.name}`, 'success');
+}
+function deleteProject(id) {
+  const all = loadAllProjects().filter(p => p.id !== id);
+  saveAllProjects(all);
+  if (currentProjectId === id) {
+    currentProjectId = null;
+    localStorage.removeItem(LS_CURRENT);
+    updateProjectMeta();
+  }
+  renderProjectList();
+}
+
+// ---------- Modal UI ----------
+function renderProjectList() {
+  const list = $('projList');
+  // Show only projects for this template (or legacy untagged) — avoids
+  // bar-chart projects leaking into the quote template's Open dialog.
+  const all = loadAllProjects()
+    .filter(p => (p.state?.template || 'bar-chart-01') === TEMPLATE_ID)
+    .sort((a, b) => b.updatedAt - a.updatedAt);
+  if (all.length === 0) {
+    list.innerHTML = '<div class="proj-empty">Žádné uložené projekty v této šabloně.<br>Použij „Uložit jako…" pro vytvoření.</div>';
+    return;
+  }
+  list.innerHTML = all.map(p => {
+    const d = new Date(p.updatedAt);
+    const dateStr = d.toLocaleString('cs-CZ', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' });
+    const isCurrent = p.id === currentProjectId ? ' (current)' : '';
+    return `<div class="proj-item" data-id="${p.id}">
+      <div class="proj-info">
+        <div class="proj-title">${escapeHtml(p.name)}${isCurrent}</div>
+        <div class="proj-date">${dateStr}</div>
+      </div>
+      <button class="proj-btn load" data-action="load" data-id="${p.id}">Otevřít</button>
+      <button class="proj-btn del" data-action="delete" data-id="${p.id}" title="Smazat">Smazat</button>
+    </div>`;
+  }).join('');
+  list.querySelectorAll('.proj-btn').forEach(btn => {
+    btn.addEventListener('click', e => {
+      const id = e.target.dataset.id;
+      if (e.target.dataset.action === 'load') { closeProjModal(); loadProject(id); }
+      else if (e.target.dataset.action === 'delete') {
+        const p = loadAllProjects().find(x => x.id === id);
+        if (p && confirm(`Smazat projekt „${p.name}"?`)) deleteProject(id);
+      }
+    });
+  });
+}
+function openProjModal()  { renderProjectList(); $('projModal').classList.add('show'); }
+function closeProjModal() { $('projModal').classList.remove('show'); }
+
+$('projSave').addEventListener('click', () => {
+  const name = $('projName').value.trim() || 'Untitled';
+  saveProject(currentProjectId, name);
+  showToast(`Uloženo: ${name}`, 'success');
+});
+$('projSaveAs').addEventListener('click', () => {
+  const base = $('projName').value.trim() || 'Untitled';
+  const name = prompt('Název projektu:', `${base} copy`);
+  if (!name || !name.trim()) return;
+  $('projName').value = name.trim();
+  saveProject(null, name.trim());
+  showToast(`Vytvořeno: ${name.trim()}`, 'success');
+});
+$('projOpen').addEventListener('click', openProjModal);
+$('projNew').addEventListener('click', () => {
+  if (isDirty() && !confirm('Zahodit neuložené změny?')) return;
+  applySnapshot({
+    title: 'Podíl dokončených rekonstrukcí',
+    source: 'zdroj: Facebook',
+    unit: '%',
+    xLabels: ['2021', '2022', '2023', '2024', '2025'],
+    series: [
+      { label: 'červená', color: '#DC0F2E', values: [25, 16, 25, 52, 56], highlights: [false, false, false, false, true] },
+      { label: 'modrá',   color: '#2668AC', values: [62, 56, 45, 32, 41], highlights: [true, false, false, false, false] },
+    ],
+    branding: 'preview', duration: 2.4, fps: 25,
+  });
+  currentProjectId = null;
+  localStorage.removeItem(LS_CURRENT);
+  $('projName').value = 'Untitled';
+  lastSavedSnapshot = JSON.stringify(snapshotState());
+  updateProjectMeta();
+  render();
+  showToast('Nový projekt', 'success');
+});
+$('projModalClose').addEventListener('click', closeProjModal);
+$('projModal').addEventListener('click', e => {
+  if (e.target.id === 'projModal') closeProjModal();
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeProjModal();
+  if (e.key === ' ' && e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
+    e.preventDefault(); togglePlay();
+  }
+});
+$('projName').addEventListener('input', updateProjectMeta);
+setInterval(updateProjectMeta, 1000);
+
+/* =============================================================================
+   EXPORT — the entire graphic is already in <canvas>, so we just toBlob
+   for PNG and captureStream + MediaRecorder for WebM. No DOM rasterization
+   dance. Export flips branding to 'export' first so the top/bottom strips
+   aren't transparent in the file.
+   ============================================================================= */
+
+$('btnExportPNG').addEventListener('click', async () => {
+  const prevBranding = state.branding;
+  state.branding = 'export';
+  applyBrandingMode();
+  await waitFonts();
+  renderFrame(state.frame);
+  try {
+    const blob = await new Promise(r => canvas.toBlob(r, 'image/png'));
+    downloadBlob(blob, `citace_${Date.now()}.png`);
+    showToast('PNG uložen', 'success');
+  } catch (err) {
+    console.error(err);
+    showToast('Export selhal: ' + err.message, 'error');
+  } finally {
+    state.branding = prevBranding;
+    render();
+  }
+});
+
+$('btnExportVideo').addEventListener('click', async () => {
+  const prevBranding = state.branding;
+  state.branding = 'export';
+  applyBrandingMode();
+  stopPlayback();
+  await waitFonts();
+  showToast('Export WebM — připravuji…', 'success');
+  try {
+    // Stream the live canvas directly. 0 = manual frame pump via requestFrame().
+    const stream = canvas.captureStream(0);
+    const track = stream.getVideoTracks()[0];
+    const mimes = ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm'];
+    const mime = mimes.find(m => MediaRecorder.isTypeSupported(m));
+    if (!mime) throw new Error('Prohlížeč nepodporuje WebM nahrávání');
+    const recorder = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 8_000_000 });
+    const chunks = [];
+    recorder.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
+    const stopped = new Promise(r => recorder.onstop = r);
+    recorder.start();
+    for (let i = 0; i < TOTAL_FRAMES; i++) {
+      renderFrame(i);
+      if (track.requestFrame) track.requestFrame();
+      await new Promise(r => setTimeout(r, 1000 / FPS));
+    }
+    // Hold last frame briefly so the recorder captures it
+    await new Promise(r => setTimeout(r, 200));
+    recorder.stop();
+    await stopped;
+    const blob = new Blob(chunks, { type: mime });
+    downloadBlob(blob, `citace_${Date.now()}.webm`);
+    showToast('Video exportováno', 'success');
+  } catch (err) {
+    console.error(err);
+    showToast('Export selhal: ' + err.message, 'error');
+  } finally {
+    state.branding = prevBranding;
+    render();
+  }
+});
+
+function downloadBlob(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename; a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+/* =============================================================================
+   PNG SEQUENCE (with backdrop) — writes PNGs straight into a user-picked folder
+   via the File System Access API. No zip step. Each frame is composited onto
+   an offscreen canvas: bg (video / flat gradient) first, then the main stage
+   canvas on top. AE-friendly naming: citace_0000.png … citace_NNNN.png.
+   ============================================================================= */
+$('btnExportSeq').addEventListener('click', async () => {
+  if (typeof window.showDirectoryPicker !== 'function') {
+    showToast('PNG sekvenci podporuje jen Chrome/Edge (File System Access API)', 'error');
+    return;
+  }
+
+  let dirHandle;
+  try {
+    dirHandle = await window.showDirectoryPicker({ mode: 'readwrite' });
+  } catch (err) {
+    // User cancelled picker — silent
+    if (err && err.name === 'AbortError') return;
+    console.error(err);
+    showToast('Nelze otevřít složku: ' + err.message, 'error');
+    return;
+  }
+
+  stopPlayback();
+  await waitFonts();
+  const prevBranding = state.branding;
+  // Keep whatever backdrop the user has chosen — we composite it ourselves,
+  // so no need to flip to 'export'. Just make sure the DOM state is sane.
+  applyBrandingMode();
+
+  // Offscreen compositor — same intrinsic size as the stage canvas.
+  const comp = document.createElement('canvas');
+  comp.width = W; comp.height = H;
+  const cctx = comp.getContext('2d');
+
+  // Pre-rasterize the flat gradient once (matches .bg-flat CSS so 'flat' and
+  // 'export' export identically to what designer sees).
+  const flatBg = document.createElement('canvas');
+  flatBg.width = W; flatBg.height = H;
+  const fctx = flatBg.getContext('2d');
+  // Base linear gradient
+  const lg = fctx.createLinearGradient(0, 0, 0, H);
+  lg.addColorStop(0,    '#0a2346');
+  lg.addColorStop(0.5,  '#0a2a4e');
+  lg.addColorStop(1,    '#1a5e6d');
+  fctx.fillStyle = lg; fctx.fillRect(0, 0, W, H);
+  // Top-right deep-blue glow
+  const r2 = fctx.createRadialGradient(W * 0.80, H * 0.10, 0, W * 0.80, H * 0.10, W * 0.50);
+  r2.addColorStop(0, 'rgba(14,62,128,0.6)');
+  r2.addColorStop(1, 'rgba(14,62,128,0)');
+  fctx.fillStyle = r2; fctx.fillRect(0, 0, W, H);
+  // Upper-left cyan glow
+  const r1 = fctx.createRadialGradient(W * 0.30, H * 0.20, 0, W * 0.30, H * 0.20, W * 0.55);
+  r1.addColorStop(0, 'rgba(56,143,230,0.35)');
+  r1.addColorStop(1, 'rgba(56,143,230,0)');
+  fctx.fillStyle = r1; fctx.fillRect(0, 0, W, H);
+
+  // In the new branding scheme, 'preview' = backdrop is video.
+  // 'export' = clean composite (no video baked).
+  const useVideo = (state.branding === 'preview');
+  const video    = els.bgVideo;
+  if (useVideo) {
+    // Rewind & play so frame 0 of the sequence lines up with video frame 0.
+    try { video.currentTime = 0; video.play(); } catch (_) {}
+  }
+
+  showToast(`Export PNG sekvence — ${TOTAL_FRAMES} snímků…`, 'success');
+
+  const pad = String(TOTAL_FRAMES - 1).length;
+  const frameInterval = 1000 / FPS;
+
+  try {
+    for (let i = 0; i < TOTAL_FRAMES; i++) {
+      // 1) backdrop
+      cctx.clearRect(0, 0, W, H);
+      if (useVideo && video.readyState >= 2) {
+        // object-fit: cover math — scale video to fill W×H, crop overflow.
+        const vw = video.videoWidth || W;
+        const vh = video.videoHeight || H;
+        const scale = Math.max(W / vw, H / vh);
+        const dw = vw * scale, dh = vh * scale;
+        const dx = (W - dw) / 2, dy = (H - dh) / 2;
+        cctx.drawImage(video, dx, dy, dw, dh);
+      } else {
+        // flat gradient or export (both render same gradient today)
+        cctx.drawImage(flatBg, 0, 0);
+      }
+
+      // 2) animation frame on top
+      renderFrame(i);
+      cctx.drawImage(canvas, 0, 0);
+
+      // 3) write PNG to folder
+      const blob = await new Promise(r => comp.toBlob(r, 'image/png'));
+      const name = `citace_${String(i).padStart(pad, '0')}.png`;
+      const fh = await dirHandle.getFileHandle(name, { create: true });
+      const w = await fh.createWritable();
+      await w.write(blob);
+      await w.close();
+
+      // Keep video in sync with the frame cadence when recording live bg.
+      if (useVideo) {
+        await new Promise(r => setTimeout(r, frameInterval));
+      }
+    }
+    showToast(`Hotovo — ${TOTAL_FRAMES} PNG snímků`, 'success');
+  } catch (err) {
+    console.error(err);
+    showToast('Export selhal: ' + err.message, 'error');
+  } finally {
+    if (useVideo) { try { video.pause(); } catch (_) {} }
+    state.branding = prevBranding;
+    render();
+  }
+});
+
+/* =============================================================================
+   TOAST
+   ============================================================================= */
+function showToast(msg, kind) {
+  const stack = $('toastStack');
+  const el = document.createElement('div');
+  el.className = 'toast' + (kind ? ' ' + kind : '');
+  el.textContent = msg;
+  stack.appendChild(el);
+  setTimeout(() => {
+    el.style.transition = 'opacity .3s ease';
+    el.style.opacity = '0';
+    setTimeout(() => el.remove(), 300);
+  }, 2400);
+}
+
+/* =============================================================================
+   BOOT
+   ============================================================================= */
+async function waitFonts() {
+  try {
+    await Promise.all([
+      // Title (800 / 54px)
+      document.fonts.load('800 54px "Organica"'),
+      // Source (400 / 28px)
+      document.fonts.load('400 28px "Organica"'),
+      // Row label (500 / 44px) — semibold
+      document.fonts.load('500 44px "Organica"'),
+      // Row mid (400 / 38px) — regular
+      document.fonts.load('400 38px "Organica"'),
+      // Row value (800 / 44px) — heavy bold
+      document.fonts.load('800 44px "Organica"'),
+      // Other sizes used elsewhere or in preview
+      document.fonts.load('800 64px "Organica"'),
+      document.fonts.load('800 56px "Organica"'),
+      document.fonts.load('700 50px "Organica"'),
+      document.fonts.load('400 24px "Organica"'),
+    ]);
+    await document.fonts.ready;
+  } catch (e) { console.warn('Font load:', e); }
+}
+
+// URL params: ?project=<id> (auto-load) and ?preview=1&frame=N (thumbnail mode)
+const _params = new URLSearchParams(window.location.search);
+const _urlProjectId = _params.get('project');
+
+(async function boot() {
+  console.log('%c[TN Line Chart] v2 — filled-color square + draggable callout',
+    'background:#DC0F2E;color:white;padding:4px 8px;font-weight:bold;border-radius:2px');
+  // Drag verification: these MUST exist in this build. If you see UNDEFINED
+  // for any of these, your browser is serving a cached older version.
+  console.log('  drag globals:', {
+    _dragState: typeof _dragState,
+    _calloutHitAreas: Array.isArray(_calloutHitAreas) ? `array (len=${_calloutHitAreas.length})` : 'MISSING',
+    _canvasCoords: typeof _canvasCoords,
+    _hitCalloutAt: typeof _hitCalloutAt,
+  });
+  console.log('  canvas pointer-events:',
+    getComputedStyle(canvas).pointerEvents,
+    '(should be "auto" — if "none", drag will silently fail)');
+  setDuration(DURATION);
+  setFps(FPS);
+  rebuildXLabelsRow();
+  rebuildSeriesList();
+  // Ensure the blue fallback panel is hidden — it's legacy and only ever
+  // visually leaked when video was slow. Real preview uses video or black.
+  if (els.bgFlat) els.bgFlat.style.display = 'none';
+  await waitFonts();
+  fitStage();
+
+  // PREVIEW MODE — used by the launcher's iframe thumbs. Hide chrome + snap
+  // to a representative frame so the card looks settled.
+  if (_params.get('preview') === '1') {
+    document.querySelector('.control').style.display = 'none';
+    document.querySelector('.stage-header').style.display = 'none';
+    document.querySelector('.timeline').style.display = 'none';
+    document.querySelector('.stage-wrap').style.padding = '0';
+    document.querySelector('.app').style.gridTemplateColumns = '1fr';
+    state.branding = 'export';
+    const requestedFrame = parseInt(_params.get('frame') || '60', 10);
+    state.frame = Math.min(requestedFrame, TOTAL_FRAMES - 1);
+    render();
+    fitStage();
+    return;
+  }
+
+  // Load project from URL or last-open
+  const targetId = _urlProjectId || localStorage.getItem(LS_CURRENT);
+  if (targetId) {
+    const all = loadAllProjects();
+    const p = all.find(x => x.id === targetId && (x.state?.template === TEMPLATE_ID));
+    if (p) {
+      applySnapshot(p.state);
+      currentProjectId = p.id;
+      $('projName').value = p.name;
+    }
+  }
+
+  // Safety net: ensure state.series and state.xLabels are sane after load.
+  if (!Array.isArray(state.series) || state.series.length === 0) {
+    console.warn('[Line] state.series empty — restoring defaults');
+    state.series = [
+      { label: 'červená', color: '#DC0F2E', values: [25, 16, 25, 52, 56], highlights: [false, false, false, false, true] },
+      { label: 'modrá',   color: '#2668AC', values: [62, 56, 45, 32, 41], highlights: [true, false, false, false, false] },
+    ];
+    rebuildSeriesList();
+  }
+  if (!Array.isArray(state.xLabels) || state.xLabels.length === 0) {
+    state.xLabels = ['2021', '2022', '2023', '2024', '2025'];
+    rebuildXLabelsRow();
+    rebuildSeriesList();
+  }
+  // Backfill highlights[] on series loaded from older saves (before highlights existed)
+  state.series.forEach(s => {
+    if (!Array.isArray(s.highlights)) {
+      s.highlights = Array.from({ length: state.xLabels.length }, () => false);
+    }
+  });
+
+  lastSavedSnapshot = JSON.stringify(snapshotState());
+  updateProjectMeta();
+
+  state.frame = TOTAL_FRAMES - 1;
+  render();
+  requestAnimationFrame(() => { fitStage(); render(); });
+  setTimeout(() => { fitStage(); render(); }, 150);
+})();
+</script>
+</body>
+</html>
