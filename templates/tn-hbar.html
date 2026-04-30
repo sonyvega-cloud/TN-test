@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>TN Horizontal Bar — Template 07</title>
+<script src="../theme.js"></script>
 <!-- TN CITACE (quote card) — Graph Generator template 06 -->
 <!-- Layout derived from PSD reference (uploads/citace-reference.png): -->
 <!--   1920×1080 stage, light card inset ~60/70/60/110 px, registration corner ticks, -->
@@ -306,6 +307,28 @@
   .toggle-group button.active {
     background: var(--text-0); color: var(--text-inv);
   }
+  /* Show theme dropdown — full-width native <select> styled to match the rest */
+  .select-show {
+    width: 100%;
+    padding: 10px 12px;
+    background: var(--bg-0);
+    border: 1px solid var(--line-2);
+    color: var(--text-0);
+    font-family: var(--font-ui);
+    font-size: 13px;
+    font-weight: 500;
+    border-radius: 2px;
+    outline: none;
+    cursor: pointer;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'><path d='M1 1l5 5 5-5' stroke='%23999' stroke-width='1.5' fill='none'/></svg>");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+  }
+  .select-show:focus { border-color: var(--tn-red); }
+
 
   /* Export buttons */
   .export-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
@@ -587,6 +610,15 @@
     </div>
 
     <div class="section">
+      <h3>Pořad</h3>
+      <div class="field">
+        <label for="inShow">Téma (pozadí + doprovodná barva)</label>
+        <select id="inShow" class="select-show"></select>
+        <div class="help">Volba pořadu přepne backdrop video a doprovodnou barvu (subtitle, callouty, akcenty). Per-projekt — ukládá se s projektem.</div>
+      </div>
+    </div>
+
+    <div class="section">
       <h3>Pozadí / Branding</h3>
       <div class="field">
         <label>Podklad</label>
@@ -705,9 +737,35 @@ const state = {
     { label: 'Řecko',      color: '#3981D6', value: 6.5  },
     { label: 'Portugalsko',color: '#3981D6', value: 5.5  },
   ],
+  show: 'tn',
   branding: 'preview',
   frame: 0,
 };
+
+// ---- Show theme helpers (uses theme.js) ----
+function getAccent() {
+  return (window.TN_THEMES ? TN_THEMES.accent(state.show) : '#2668AC');
+}
+function getThemeVideo() {
+  return (window.TN_THEMES ? TN_THEMES.video(state.show) : '../assets/bg-loop.mp4');
+}
+function populateShowSelect() {
+  if (!window.TN_THEMES) return;
+  const sel = document.getElementById('inShow');
+  if (sel) sel.innerHTML = TN_THEMES.optionsHtml(state.show);
+}
+function applyShowTheme() {
+  if (typeof els !== 'undefined' && els && els.bgVideo && window.TN_THEMES) {
+    const newSrc = TN_THEMES.video(state.show);
+    if (!els.bgVideo.currentSrc || !els.bgVideo.currentSrc.endsWith(newSrc.replace(/^\.\.\//, ''))) {
+      els.bgVideo.src = newSrc;
+      els.bgVideo.load();
+      try { els.bgVideo.play(); } catch (_) {}
+    }
+  }
+  if (typeof render === 'function') render();
+}
+
 
 let FPS = 25;
 let DURATION = 2.4;                     // seconds (animation finishes ~1.6s, +0.8s hold)
@@ -768,7 +826,9 @@ function markVideoReady(source) {
   const dur = isFinite(els.bgVideo.duration) ? els.bgVideo.duration.toFixed(1) + 's' : '?s';
   setBackdropStatus(`${dur} OK`, 'ok');
   console.log(`[Backdrop] Ready (via ${source}), readyState=${els.bgVideo.readyState}`);
+  populateShowSelect();
   applyBrandingMode();
+  applyShowTheme();
 }
 function markVideoFailed(source, detail) {
   if (videoFailed || videoReady) return;
@@ -838,6 +898,7 @@ function syncVideoToFrame() {
 function applyBrandingMode() {
   console.log('[Backdrop] applyBrandingMode:', {
     branding: state.branding,
+    show: state.show,
     videoReady,
     videoFailed,
     videoReadyState: els.bgVideo.readyState,
@@ -871,6 +932,22 @@ const ctx = canvas.getContext('2d');
 
 // (Tabulka template doesn't use a default portrait — left side is a user-
 // uploaded illustration that defaults to TN red fill when empty.)
+
+// =============================================================================
+// GLOBAL TN BRAND COLORS — share these across every template. Whenever a
+// template needs a brand color, pull from here, never invent a custom hex.
+// =============================================================================
+const TN_COLORS = {
+  red:           '#DC0F2E',  // TN editorial red
+  blue:          '#2668AC',  // TN editorial blue (subtitles, tags)
+  barBlue:       '#3981D6',  // Default bar color (matches Graf 4 reference)
+  textPrimary:   '#0a0a0a',
+  textSecondary: '#222222',
+  axisLine:      'rgba(120, 140, 165, 0.55)',
+  divider:       'rgba(120, 140, 165, 0.45)',
+  panelGray:     '#e0e0e0',
+  titleBandGray: 'rgba(242, 242, 242, 0.95)',
+};
 
 // LAYOUT — HORIZONTAL BAR CHART
 // Same outer frame as bar-chart (top black 0..134, white title band 135..222,
@@ -1040,12 +1117,19 @@ function drawAxis(t) {
 }
 
 // ---------- Bars + labels + values ----------
-// Each row: category label (right-aligned at catLabelRightX), blue bar
-// extending from axisX to (axisX + barWidth_for_this_value), and value
-// number BOLD right-aligned at sourceX (1805).
+// Each row: category label (right-aligned at catLabelRightX), bar extending
+// from axisX to (axisX + barWidth_for_this_value), and value number BOLD
+// right-aligned at sourceX (1805).
 //
-// Bar grow animation: stagger each bar 0.10s, fill 0.55s with easeOutCubic.
-// Value number fades in once the bar finishes growing.
+// LABEL FITTING: long labels (e.g. "Spojené království Velké Británie") could
+// overflow off the left edge if we used a fixed catLabelRightX. The function
+// dynamically measures every label, then either:
+//   1) pushes the whole axis (and label right edge) further right to fit all
+//      labels at the default font size, OR
+//   2) if pushing would eat too much of the bar area (axis would go past
+//      a reasonable limit), shrinks the label font progressively until it fits
+// This keeps long labels visible without surprise truncation, while preserving
+// at least minimal bar plot width for readability.
 function drawBars(t) {
   const bars = (state.bars || []).filter(b => b.value != null && !isNaN(b.value));
   if (bars.length === 0) return;
@@ -1053,10 +1137,56 @@ function drawBars(t) {
   // Y layout — distribute bars evenly inside barAreaTop..barAreaBot
   const areaH = LAYOUT.barAreaBot - LAYOUT.barAreaTop;
   const slotH = areaH / bars.length;
-  // Bar height: scale with slot, clamped by min/max
   const barH = Math.max(LAYOUT.barMinHeight, Math.min(LAYOUT.barMaxHeight, slotH * 0.65));
 
-  // Determine max value for scaling (so longest bar reaches plotRight)
+  // === LABEL FITTING ===
+  // Frame safe-left margin: how close to x=0 we allow text to start.
+  const SAFE_LEFT_X    = 60;
+  const LABEL_AXIS_GAP = 30;     // px gap between label right edge and axis
+  // Maximum X we allow the axis to slide to (so bars don't get crushed).
+  // If even this isn't enough, we start shrinking the font.
+  const AXIS_MAX_X     = 700;
+  const FONT_DEFAULT   = 44;
+  const FONT_MIN       = 24;
+
+  // Measure widest label at default font
+  let widest = 0;
+  ctx.save();
+  let labelFont = FONT_DEFAULT;
+  ctx.font = `500 ${labelFont}px "Organica", sans-serif`;
+  for (const b of bars) {
+    const w = ctx.measureText(b.label || '').width;
+    if (w > widest) widest = w;
+  }
+
+  // Required axis position so the widest label fits with the gap.
+  let axisX = Math.max(LAYOUT.axisX, SAFE_LEFT_X + widest + LABEL_AXIS_GAP);
+
+  // If axis would push too far right, shrink the font until labels fit.
+  if (axisX > AXIS_MAX_X) {
+    const availableLabelW = AXIS_MAX_X - SAFE_LEFT_X - LABEL_AXIS_GAP;
+    // Linear shrink approximation — measure at smaller fonts in 2 px steps.
+    while (labelFont > FONT_MIN) {
+      labelFont -= 2;
+      ctx.font = `500 ${labelFont}px "Organica", sans-serif`;
+      let w2 = 0;
+      for (const b of bars) {
+        const w = ctx.measureText(b.label || '').width;
+        if (w > w2) w2 = w;
+      }
+      if (w2 <= availableLabelW) {
+        widest = w2;
+        break;
+      }
+    }
+    axisX = AXIS_MAX_X;
+  }
+  ctx.restore();
+
+  const labelRightX = axisX - LABEL_AXIS_GAP;
+
+  // === Bar plot range ===
+  // Determine max value for scaling
   let maxV = 0;
   for (const b of bars) {
     const v = Math.abs(+b.value || 0);
@@ -1064,7 +1194,29 @@ function drawBars(t) {
   }
   if (maxV <= 0) maxV = 1;
 
-  const plotW = LAYOUT.plotRight - LAYOUT.axisX;
+  const plotW = LAYOUT.plotRight - axisX;
+
+  // === Left axis line (drawn here so it picks up the dynamic axisX) ===
+  // (drawAxis() in renderFrame draws the original at LAYOUT.axisX. We
+  // override here by re-stroking at the dynamic position.)
+  // To avoid a double line we DON'T re-stroke if axisX equals LAYOUT.axisX.
+  if (axisX !== LAYOUT.axisX) {
+    const axisP = easeOutCubic(clamp01((t - 0.40) / 0.40));
+    if (axisP > 0) {
+      // Erase the old line (paint gray panel over it) then redraw at new pos
+      ctx.save();
+      ctx.fillStyle = TN_COLORS.panelGray;
+      ctx.fillRect(LAYOUT.axisX - 2, LAYOUT.barAreaTop - 18, 4, (LAYOUT.barAreaBot - LAYOUT.barAreaTop) + 36);
+      ctx.globalAlpha = axisP;
+      ctx.strokeStyle = TN_COLORS.axisLine;
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(axisX, LAYOUT.barAreaTop - 18);
+      ctx.lineTo(axisX, LAYOUT.barAreaBot + 18);
+      ctx.stroke();
+      ctx.restore();
+    }
+  }
 
   bars.forEach((b, i) => {
     const cy = LAYOUT.barAreaTop + slotH * (i + 0.5);
@@ -1073,27 +1225,27 @@ function drawBars(t) {
     // Per-row stagger
     const start = 0.55 + i * 0.10;
 
-    // === Category label (left of axis) — fades in 0.10s before its bar
+    // === Category label (right-aligned at labelRightX, dynamic font)
     const labelP = easeOutCubic(clamp01((t - (start - 0.10)) / 0.40));
     if (labelP > 0) {
       ctx.save();
       ctx.globalAlpha = labelP;
       ctx.fillStyle = TN_COLORS.textPrimary;
-      ctx.font = '500 44px "Organica", sans-serif';
+      ctx.font = `500 ${labelFont}px "Organica", sans-serif`;
       ctx.textAlign = 'right';
       ctx.textBaseline = 'middle';
-      ctx.fillText(b.label || '', LAYOUT.catLabelRightX, cy);
+      ctx.fillText(b.label || '', labelRightX, cy);
       ctx.restore();
     }
 
-    // === Bar grow — width animates from 0 to its target
+    // === Bar grow
     const growP = easeOutCubic(clamp01((t - start) / 0.55));
     if (growP > 0) {
       const targetW = (Math.abs(+b.value) / maxV) * plotW;
       const barW = targetW * growP;
       ctx.save();
       ctx.fillStyle = b.color || '#3981D6';
-      ctx.fillRect(LAYOUT.axisX, barTop, barW, barH);
+      ctx.fillRect(axisX, barTop, barW, barH);
       ctx.restore();
     }
 
@@ -1187,6 +1339,17 @@ function togglePlay() { playing ? stopPlayback() : startPlayback(); }
    ============================================================================= */
 $('inTitle').addEventListener('input', e => { state.title = e.target.value; render(); });
 $('inSource').addEventListener('input', e => { state.source = e.target.value; render(); });
+
+// Show theme listener
+(function () {
+  const sel = document.getElementById('inShow');
+  if (sel) sel.addEventListener('change', e => {
+    state.show = e.target.value;
+    applyShowTheme();
+  });
+  populateShowSelect();
+})();
+
 $('inDuration').addEventListener('input', e => {
   const v = parseFloat(e.target.value);
   if (!isNaN(v) && v > 0) { setDuration(v); render(); }
@@ -1333,6 +1496,10 @@ function applySnapshot(snap) {
   }
   const rawBranding = snap.branding ?? 'preview';
   state.branding = (rawBranding === 'live' || rawBranding === 'preview') ? 'preview' : 'export';
+  // Show theme — fall back to default 'tn' if missing or unknown.
+  const candidateShow = snap.show ?? state.show;
+  state.show = (window.TN_THEMES && TN_THEMES.SHOWS_BY_ID[candidateShow])
+    ? candidateShow : (window.TN_THEMES ? TN_THEMES.DEFAULT_SHOW_ID : 'tn');
   if (snap.duration) DURATION = snap.duration;
   if (snap.fps === 25 || snap.fps === 50) FPS = snap.fps;
   setDuration(DURATION); setFps(FPS);
@@ -1476,7 +1643,7 @@ $('projNew').addEventListener('click', () => {
       { label: 'Řecko',      color: '#3981D6', value: 6.5  },
       { label: 'Portugalsko',color: '#3981D6', value: 5.5  },
     ],
-    branding: 'preview', duration: 2.4, fps: 25,
+    branding: 'preview', show: 'tn', duration: 2.4, fps: 25,
   });
   currentProjectId = null;
   localStorage.removeItem(LS_CURRENT);
@@ -1739,6 +1906,17 @@ const _urlProjectId = _params.get('project');
     'background:#3981D6;color:white;padding:4px 8px;font-weight:bold;border-radius:2px');
   setDuration(DURATION);
   setFps(FPS);
+  // URL ?show= override — when launcher links us with a specific show, use it
+  // as the initial theme. Per-projekt overrides may still apply later (when a
+  // saved project loads).
+  try {
+    const urlShow = _params.get('show');
+    if (urlShow && window.TN_THEMES && TN_THEMES.SHOWS_BY_ID[urlShow]) {
+      state.show = urlShow;
+    }
+  } catch (_) {}
+    populateShowSelect();
+  applyShowTheme();
   rebuildBarsList();
   if (els.bgFlat) els.bgFlat.style.display = 'none';
   await waitFonts();

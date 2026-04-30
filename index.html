@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>TN Graphics Engine</title>
+<script src="theme.js"></script>
 <!-- TN LAUNCHER — template picker + saved projects -->
 
 <style>
@@ -98,6 +99,69 @@
     padding: 2px 8px;
     border-radius: 2px;
     letter-spacing: 0.1em;
+  }
+
+  /* ===== Show selector — full-width banner above the templates grid =====
+     Visually loud: the chosen show's accent color washes the entire bar so
+     you can never miss which show you're producing for. */
+  .show-bar {
+    margin-bottom: 36px;
+    padding: 28px 36px;
+    border-radius: 4px;
+    background: var(--show-accent, #762929);
+    color: #fff;
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 28px;
+    transition: background 250ms ease;
+  }
+  .show-bar .show-bar-label {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    opacity: 0.85;
+  }
+  .show-bar .show-bar-name {
+    font-size: 32px;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+    line-height: 1;
+  }
+  .show-bar select {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background: rgba(0,0,0,0.25);
+    border: 1px solid rgba(255,255,255,0.4);
+    color: #fff;
+    font-family: var(--font-ui);
+    font-size: 16px;
+    font-weight: 600;
+    padding: 14px 48px 14px 18px;
+    border-radius: 3px;
+    cursor: pointer;
+    outline: none;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'><path d='M1 1l5 5 5-5' stroke='%23ffffff' stroke-width='1.5' fill='none'/></svg>");
+    background-repeat: no-repeat;
+    background-position: right 16px center;
+    min-width: 240px;
+  }
+  .show-bar select:hover { background-color: rgba(0,0,0,0.4); }
+  .show-bar select option {
+    background: #1a1a1a;
+    color: #fff;
+  }
+  .show-bar .show-bar-meta {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    opacity: 0.75;
+    margin-top: 6px;
   }
 
   /* ===== Template grid ===== */
@@ -345,6 +409,16 @@
 <main class="page">
   <!-- LEFT: templates -->
   <section>
+    <div class="show-bar" id="showBar">
+      <div>
+        <div class="show-bar-label">Aktivní pořad</div>
+        <div class="show-bar-name" id="showBarName">TN</div>
+        <div class="show-bar-meta" id="showBarMeta">Televizní Noviny · doprovodná barva #762929</div>
+      </div>
+      <div></div>
+      <select id="showSelect"></select>
+    </div>
+
     <div class="section-label">
       New project · pick a template
       <span class="count" id="tplCount">6 templates</span>
@@ -441,8 +515,17 @@ const TEMPLATES = [
     ready: true,
   },
   {
-    id: 'stacked-bar-01',
+    id: 'tn-kartoteka-01',
     num: '08',
+    name: 'TN kartotéka',
+    desc: 'Karty kandidátů / svědků / hostů. 1–8 karet, layout adaptivní (1, 2×1, 1×3, 2×2, 2×3, 2×4). Default modrá silueta nebo upload vlastní fotky per karta.',
+    url: 'templates/tn-kartoteka.html',
+    previewUrl: 'templates/tn-kartoteka.html?preview=1&frame=55',
+    ready: true,
+  },
+  {
+    id: 'stacked-bar-01',
+    num: '09',
     name: 'Stacked / Grouped Bar',
     desc: 'Dvě dimenze najednou — např. rozložení hlasů v čase nebo srovnání víc kategorií mezi obdobími.',
     ready: false,
@@ -500,18 +583,65 @@ function openProject(p) {
   window.location.href = `${tpl.url}?project=${encodeURIComponent(p.id)}`;
 }
 
+/* ==================== SHOW THEME (global launcher selector) ==================== */
+const LS_SHOW_KEY = 'tn_graphics_engine_active_show_v1';
+let _currentShow = (() => {
+  try {
+    const stored = localStorage.getItem(LS_SHOW_KEY);
+    if (stored && window.TN_THEMES && TN_THEMES.SHOWS_BY_ID[stored]) return stored;
+  } catch (_) {}
+  return window.TN_THEMES ? TN_THEMES.DEFAULT_SHOW_ID : 'tn';
+})();
+
+function getShow() { return _currentShow; }
+function setShow(id) {
+  if (!window.TN_THEMES) return;
+  if (!TN_THEMES.SHOWS_BY_ID[id]) return;
+  _currentShow = id;
+  try { localStorage.setItem(LS_SHOW_KEY, id); } catch (_) {}
+  applyShowBarVisuals();
+  renderTemplates();        // re-render so card hrefs + iframe srcs include ?show=
+}
+
+function applyShowBarVisuals() {
+  if (!window.TN_THEMES) return;
+  const show = TN_THEMES.get(_currentShow);
+  const bar = document.getElementById('showBar');
+  bar.style.setProperty('--show-accent', show.accent);
+  document.getElementById('showBarName').textContent = show.name;
+  document.getElementById('showBarMeta').textContent =
+    `doprovodná barva ${show.accent}  ·  backdrop ${show.video.replace('../', '')}`;
+}
+
+function populateShowBar() {
+  if (!window.TN_THEMES) return;
+  const sel = document.getElementById('showSelect');
+  sel.innerHTML = TN_THEMES.optionsHtml(_currentShow);
+  sel.addEventListener('change', e => setShow(e.target.value));
+  applyShowBarVisuals();
+}
+
+// Append `?show=...` (or `&show=...`) to a template URL/preview URL
+function withShow(url) {
+  if (!url) return url;
+  const sep = url.includes('?') ? '&' : '?';
+  return `${url}${sep}show=${encodeURIComponent(_currentShow)}`;
+}
+
 /* ==================== RENDER: TEMPLATES ==================== */
 function renderTemplates() {
   const grid = document.getElementById('tplGrid');
   document.getElementById('tplCount').textContent = `${TEMPLATES.length} templates`;
   grid.innerHTML = TEMPLATES.map(t => {
     // Prefer explicit previewUrl when given; otherwise build from url + frame.
-    // This lets each template choose its own settled preview moment.
+    // This lets each template choose its own settled preview moment. We also
+    // append ?show=<id> so the iframe preview reflects the current theme.
     let preview;
     if (t.ready) {
-      const src = t.previewUrl
+      const baseSrc = t.previewUrl
         ? t.previewUrl
         : `${t.url}?preview=1&frame=${t.previewFrame ?? 49}`;
+      const src = withShow(baseSrc);
       preview = `<iframe src="${src}" loading="lazy" title="${t.name} preview"></iframe>`;
     } else {
       preview = `<div class="placeholder">
@@ -522,9 +652,10 @@ function renderTemplates() {
            Coming soon
          </div>`;
     }
+    const href = t.ready ? `href="${withShow(t.url)}"` : '';
     return `
       <a class="tpl-card ${t.ready ? '' : 'coming'}"
-         ${t.ready ? `href="${t.url}"` : ''}
+         ${href}
          data-id="${t.id}">
         <div class="tpl-preview" data-id="${t.id}">${preview}</div>
         <div class="tpl-body">
@@ -614,6 +745,7 @@ function escapeHtml(s) {
 }
 
 /* ==================== BOOT ==================== */
+populateShowBar();
 renderTemplates();
 renderRecents();
 

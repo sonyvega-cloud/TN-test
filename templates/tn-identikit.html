@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>TN Identikit — Template 04</title>
+<script src="../theme.js"></script>
 <!-- TN CITACE (quote card) — Graph Generator template 06 -->
 <!-- Layout derived from PSD reference (uploads/citace-reference.png): -->
 <!--   1920×1080 stage, light card inset ~60/70/60/110 px, registration corner ticks, -->
@@ -306,6 +307,28 @@
   .toggle-group button.active {
     background: var(--text-0); color: var(--text-inv);
   }
+
+  /* Show theme dropdown — full-width native <select> styled to match the rest */
+  .select-show {
+    width: 100%;
+    padding: 10px 12px;
+    background: var(--bg-0);
+    border: 1px solid var(--line-2);
+    color: var(--text-0);
+    font-family: var(--font-ui);
+    font-size: 13px;
+    font-weight: 500;
+    border-radius: 2px;
+    outline: none;
+    cursor: pointer;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'><path d='M1 1l5 5 5-5' stroke='%23999' stroke-width='1.5' fill='none'/></svg>");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+  }
+  .select-show:focus { border-color: var(--tn-red); }
 
   /* Export buttons */
   .export-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
@@ -614,6 +637,15 @@
     </div>
 
     <div class="section">
+      <h3>Pořad</h3>
+      <div class="field">
+        <label for="inShow">Téma (pozadí + doprovodná barva)</label>
+        <select id="inShow" class="select-show"></select>
+        <div class="help">Volba pořadu přepne backdrop video a doprovodnou barvu (subtitle, callouty, akcenty). Per-projekt — ukládá se s projektem.</div>
+      </div>
+    </div>
+
+    <div class="section">
       <h3>Pozadí / Branding</h3>
       <div class="field">
         <label>Podklad</label>
@@ -622,8 +654,8 @@
           <button data-value="export">Export (clean)</button>
         </div>
         <div class="help" id="backdropStatus" style="cursor:pointer" title="Klikni pro reload videa">
-          <strong>Studio preview</strong>: <code>../assets/bg-loop.mp4</code> běží pod grafikou, frame-synced.<br>
-          <strong>Export</strong>: čistě černé pozadí — režie si blue/teal overlay přidá sama.
+          <strong>Studio preview</strong>: backdrop video pořadu běží pod grafikou, frame-synced.<br>
+          <strong>Export</strong>: čistě černé pozadí — režie si overlay přidá sama.
         </div>
       </div>
     </div>
@@ -732,8 +764,18 @@ const state = {
   image: null,             // base64 data URL or null
   imageY: 50,              // 0..100 → cover-fit Y offset percentage
   branding: 'preview',     // 'preview' | 'export'
+  show: 'tn',              // show theme id — see theme.js (TN_THEMES.SHOWS)
   frame: 0,
 };
+
+// Helper: current accent color (replaces hard-coded TN_COLORS.blue everywhere).
+// Falls back to the editorial blue if theme.js failed to load for any reason.
+function getAccent() {
+  return (window.TN_THEMES ? TN_THEMES.accent(state.show) : '#2668AC');
+}
+function getThemeVideo() {
+  return (window.TN_THEMES ? TN_THEMES.video(state.show) : '../assets/bg-loop.mp4');
+}
 
 let FPS = 25;
 let DURATION = 2.4;                     // seconds (animation finishes ~1.6s, +0.8s hold)
@@ -1086,10 +1128,10 @@ function drawNameAndSubtitle(t) {
   ctx.font = '800 64px "Organica", sans-serif';
   ctx.fillText(state.name || '', LAYOUT.textX, LAYOUT.nameY);
 
-  // Subtitle (regular, blue) — TN editorial blue from the global brand table.
-  // Used wherever a template wants the canonical TN blue ("hledaná osoba",
-  // "svědek", "pohřešovaný", any other editorial tag).
-  ctx.fillStyle = TN_COLORS.blue;
+  // Subtitle (regular) — accent color from the active show theme. For TN this
+  // is the editorial blue (#2668AC); for Strepiny it's a cooler blue, for
+  // Za5min12 it's green, etc. See theme.js for the show registry.
+  ctx.fillStyle = getAccent();
   ctx.font = '400 36px "Organica", sans-serif';
   ctx.fillText(state.subtitle || '', LAYOUT.textX, LAYOUT.subtitleY);
 
@@ -1315,6 +1357,30 @@ function togglePlay() { playing ? stopPlayback() : startPlayback(); }
 $('inName').addEventListener('input',     e => { state.name = e.target.value; render(); });
 $('inSubtitle').addEventListener('input', e => { state.subtitle = e.target.value; render(); });
 $('inSource').addEventListener('input',   e => { state.source = e.target.value; render(); });
+
+// Show theme — populate dropdown + handle change
+function populateShowSelect() {
+  if (!window.TN_THEMES) return;
+  $('inShow').innerHTML = TN_THEMES.optionsHtml(state.show);
+}
+function applyShowTheme() {
+  // Swap backdrop video src to match the active show
+  if (els.bgVideo && window.TN_THEMES) {
+    const newSrc = TN_THEMES.video(state.show);
+    // Compare against currentSrc (resolved URL), not src attr (may be relative)
+    if (!els.bgVideo.currentSrc || !els.bgVideo.currentSrc.endsWith(newSrc.replace(/^\.\.\//, ''))) {
+      els.bgVideo.src = newSrc;
+      els.bgVideo.load();
+      try { els.bgVideo.play(); } catch (_) {}
+    }
+  }
+  render();
+}
+$('inShow').addEventListener('change', e => {
+  state.show = e.target.value;
+  applyShowTheme();
+});
+populateShowSelect();
 $('inDuration').addEventListener('input', e => {
   const v = parseFloat(e.target.value);
   if (!isNaN(v) && v > 0) { setDuration(v); render(); }
@@ -1434,6 +1500,7 @@ function snapshotState() {
     image: state.image,
     imageY: state.imageY,
     branding: state.branding,
+    show: state.show,
     duration: DURATION,
     fps: FPS,
   };
@@ -1453,6 +1520,10 @@ function applySnapshot(snap) {
   state.imageY = (typeof snap.imageY === 'number') ? snap.imageY : 50;
   const rawBranding = snap.branding ?? 'preview';
   state.branding = (rawBranding === 'live' || rawBranding === 'preview') ? 'preview' : 'export';
+  // Show theme — fall back to default 'tn' if missing or unknown.
+  const candidateShow = snap.show ?? state.show;
+  state.show = (window.TN_THEMES && TN_THEMES.SHOWS_BY_ID[candidateShow])
+    ? candidateShow : (window.TN_THEMES ? TN_THEMES.DEFAULT_SHOW_ID : 'tn');
   if (snap.duration) DURATION = snap.duration;
   if (snap.fps === 25 || snap.fps === 50) FPS = snap.fps;
   setDuration(DURATION); setFps(FPS);
@@ -1465,6 +1536,7 @@ function applySnapshot(snap) {
   $('inImageY').value   = state.imageY;
   $('outImageY').textContent = `${state.imageY} %`;
   rebuildRowsList();
+  populateShowSelect();
   document.querySelectorAll('#brandingToggle button').forEach(b => {
     b.classList.toggle('active', b.dataset.value === state.branding);
   });
@@ -1474,6 +1546,7 @@ function applySnapshot(snap) {
   state.frame = TOTAL_FRAMES - 1;
   els.scrubber.value = state.frame;
   applyBrandingMode();
+  applyShowTheme();
 }
 function isDirty() {
   return lastSavedSnapshot !== JSON.stringify(snapshotState());
@@ -1599,7 +1672,7 @@ $('projNew').addEventListener('click', () => {
       { label: 'oči',            value: 'modré' },
     ],
     image: null, imageY: 50,
-    branding: 'preview', duration: 2.4, fps: 25,
+    branding: 'preview', show: 'tn', duration: 2.4, fps: 25,
   });
   currentProjectId = null;
   localStorage.removeItem(LS_CURRENT);
@@ -1857,10 +1930,23 @@ const _params = new URLSearchParams(window.location.search);
 const _urlProjectId = _params.get('project');
 
 (async function boot() {
+  console.log('%c[TN Identikit] v2 — show themes',
+    'background:#762929;color:white;padding:4px 8px;font-weight:bold;border-radius:2px');
   setDuration(DURATION);
   setFps(FPS);
   rebuildRowsList();   // populate rows editor with default rows
   $('outImageY').textContent = `${state.imageY} %`;
+  // URL ?show= override — when launcher links us with a specific show, use it
+  // as the initial theme. Per-projekt overrides may still apply later (when a
+  // saved project loads).
+  try {
+    const urlShow = _params.get('show');
+    if (urlShow && window.TN_THEMES && TN_THEMES.SHOWS_BY_ID[urlShow]) {
+      state.show = urlShow;
+    }
+  } catch (_) {}
+    populateShowSelect();
+  applyShowTheme();
   // Ensure the blue fallback panel is hidden — it's legacy and only ever
   // visually leaked when video was slow. Real preview uses video or black.
   if (els.bgFlat) els.bgFlat.style.display = 'none';

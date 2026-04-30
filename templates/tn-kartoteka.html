@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>TN Donut Chart — Template 06</title>
+<title>TN Kartotéka — Template 08</title>
 <script src="../theme.js"></script>
 <!-- TN CITACE (quote card) — Graph Generator template 06 -->
 <!-- Layout derived from PSD reference (uploads/citace-reference.png): -->
@@ -253,67 +253,40 @@
   .upload-btn:hover { background: var(--bg-1); }
   .upload-btn.clear { color: var(--tn-red); border-color: var(--tn-red); }
 
-  /* X-axis labels editor — horizontal row of compact text inputs */
-  .x-labels-row {
-    display: grid;
-    grid-template-columns: repeat(var(--x-cols, 5), minmax(0, 1fr));
-    gap: 4px;
-  }
-  .x-labels-row input {
-    padding: 8px 6px;
-    font-size: 13px;
-    font-family: var(--font-ui);
-    background: var(--bg-0);
-    border: 1px solid var(--line-2);
-    color: var(--text-0);
-    border-radius: 2px;
-    outline: none;
-    text-align: center;
-    min-width: 0;
-    width: 100%;
-    box-sizing: border-box;
-  }
-  /* When >8 columns, shrink the per-input padding so they all fit visibly */
-  .x-labels-row[style*="--x-cols:9"] input,
-  .x-labels-row[style*="--x-cols:10"] input,
-  .x-labels-row[style*="--x-cols:11"] input,
-  .x-labels-row[style*="--x-cols:12"] input,
-  .x-labels-row[style*="--x-cols:13"] input,
-  .x-labels-row[style*="--x-cols:14"] input,
-  .x-labels-row[style*="--x-cols:15"] input {
-    padding: 6px 3px;
-    font-size: 11px;
-  }
-  .x-labels-row input:focus { border-color: var(--tn-red); }
-
-  /* Series editor — one card per line */
-  .series-list { display: flex; flex-direction: column; gap: 12px; }
-  .series-card {
+  /* Cards editor — one card per row in sidebar */
+  .cards-list { display: flex; flex-direction: column; gap: 8px; }
+  .card-item {
     background: var(--bg-1);
     border: 1px solid var(--line);
     border-radius: 3px;
-    padding: 10px;
+    padding: 8px;
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 6px;
   }
-  .series-head {
+  .card-item .card-head {
     display: grid;
-    grid-template-columns: 36px 1fr 28px;
+    grid-template-columns: 56px 1fr 28px;
     gap: 8px;
     align-items: center;
   }
-  .series-head input.color {
-    width: 36px; height: 32px;
-    border: 1px solid var(--line-2);
+  .card-item .card-thumb {
+    width: 56px;
+    height: 56px;
+    background: linear-gradient(180deg, #BCC9D8, #A8B7C9);
+    background-size: cover;
+    background-position: center;
     border-radius: 2px;
-    background: transparent;
-    cursor: pointer;
-    padding: 2px;
+    overflow: hidden;
   }
-  .series-head input.label {
-    padding: 8px 10px;
-    font-size: 13px;
+  .card-item .card-fields {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+  }
+  .card-item input.text {
+    padding: 7px 9px;
+    font-size: 12px;
     font-family: var(--font-ui);
     background: var(--bg-0);
     border: 1px solid var(--line-2);
@@ -322,84 +295,17 @@
     outline: none;
     min-width: 0;
   }
-  .series-head input.label:focus { border-color: var(--tn-red); }
-  .series-values {
-    display: grid;
-    grid-template-columns: repeat(var(--x-cols, 5), minmax(0, 1fr));
-    gap: 4px;
-  }
-  /* Each value cell stacks: numeric input on top + small highlight checkbox row below.
-     The checkbox is a toggle that shows the value as a callout block on the chart. */
-  .value-cell {
+  .card-item input.text:focus { border-color: var(--tn-red); }
+  .card-item .card-actions {
     display: flex;
-    flex-direction: column;
-    gap: 4px;
-    min-width: 0;
+    gap: 6px;
   }
-  .value-cell input.value-num {
-    padding: 6px 4px;
-    font-size: 12px;
-    font-family: var(--font-mono);
-    font-variant-numeric: tabular-nums;
-    background: var(--bg-0);
-    border: 1px solid var(--line-2);
-    color: var(--text-0);
-    border-radius: 2px;
-    outline: none;
-    text-align: right;
-    min-width: 0;
-    width: 100%;
-    box-sizing: border-box;
-    /* Hide the spinner arrows so the input fits even when narrow */
-    -moz-appearance: textfield;
+  .card-item .card-actions .upload-btn {
+    flex: 1;
+    padding: 5px 8px;
+    font-size: 11px;
   }
-  .value-cell input.value-num::-webkit-outer-spin-button,
-  .value-cell input.value-num::-webkit-inner-spin-button {
-    -webkit-appearance: none; margin: 0;
-  }
-  /* Compact mode for many columns */
-  .series-values[style*="--x-cols:9"] input.value-num,
-  .series-values[style*="--x-cols:10"] input.value-num,
-  .series-values[style*="--x-cols:11"] input.value-num,
-  .series-values[style*="--x-cols:12"] input.value-num,
-  .series-values[style*="--x-cols:13"] input.value-num,
-  .series-values[style*="--x-cols:14"] input.value-num,
-  .series-values[style*="--x-cols:15"] input.value-num {
-    padding: 5px 2px;
-    font-size: 10px;
-  }
-  .value-cell input.value-num:focus { border-color: var(--tn-red); }
-  .value-cell label.hl-toggle {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 3px;
-    font-size: 9px;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    color: var(--text-2);
-    cursor: pointer;
-    user-select: none;
-    line-height: 1;
-  }
-  .value-cell label.hl-toggle span { font-size: 9px; }
-  /* When many columns, hide the "HL" word, keep just the checkbox */
-  .series-values[style*="--x-cols:1"][style*="0"] label.hl-toggle span,
-  .series-values[style*="--x-cols:11"] label.hl-toggle span,
-  .series-values[style*="--x-cols:12"] label.hl-toggle span,
-  .series-values[style*="--x-cols:13"] label.hl-toggle span,
-  .series-values[style*="--x-cols:14"] label.hl-toggle span,
-  .series-values[style*="--x-cols:15"] label.hl-toggle span {
-    display: none;
-  }
-  .value-cell label.hl-toggle input[type="checkbox"] {
-    width: 12px; height: 12px;
-    margin: 0;
-    accent-color: var(--tn-red);
-    cursor: pointer;
-  }
-
-  .series-del {
+  .card-del {
     background: transparent;
     border: 1px solid var(--line-2);
     color: var(--text-2);
@@ -407,32 +313,9 @@
     font-size: 14px;
     border-radius: 2px;
     padding: 0;
-    height: 32px;
+    height: 28px;
   }
-  .series-del:hover { color: var(--tn-red); border-color: var(--tn-red); }
-
-  /* X-count step buttons (+/−) next to the section header */
-  .x-step {
-    width: 22px; height: 22px;
-    background: var(--bg-0);
-    border: 1px solid var(--line-2);
-    color: var(--text-0);
-    cursor: pointer;
-    font-size: 13px;
-    font-weight: 700;
-    border-radius: 2px;
-    padding: 0;
-    line-height: 1;
-    vertical-align: middle;
-  }
-  .x-step:hover:not(:disabled) {
-    border-color: var(--tn-red);
-    color: var(--tn-red);
-  }
-  .x-step:disabled {
-    opacity: 0.35;
-    cursor: not-allowed;
-  }
+  .card-del:hover { color: var(--tn-red); border-color: var(--tn-red); }
 
   /* Toggle-group pattern shared with bar-chart */
   .toggle-group {
@@ -542,19 +425,15 @@
   }
   /* The canvas sits ABOVE the bg-video, transparent where режia will later
      composite top/bottom chrome. 1920×1080 intrinsic, stretched to stage.
-     Pointer events ENABLED so user can drag highlight callout blocks. */
+     Pointer events ENABLED so the user can drag inside photo cards. */
   .stage canvas#stage-canvas {
     position: absolute; inset: 0;
     width: 100%; height: 100%;
     z-index: 2;
     pointer-events: auto;
   }
-  .stage canvas#stage-canvas.dragging {
-    cursor: grabbing;
-  }
-  .stage canvas#stage-canvas.over-callout {
-    cursor: grab;
-  }
+  .stage canvas#stage-canvas.dragging { cursor: grabbing; }
+  .stage canvas#stage-canvas.over-photo { cursor: grab; }
   .stage .bg-video,
   .stage .bg-flat {
     z-index: 1;
@@ -722,8 +601,8 @@
         <span class="brand">Graphics Engine</span>
       </div>
       <div class="template-badge">
-        <span class="tpl-num">06 / TEMPLATE</span>
-        <span class="tpl-name">TN donut</span>
+        <span class="tpl-num">08 / TEMPLATE</span>
+        <span class="tpl-name">TN kartotéka</span>
       </div>
     </header>
 
@@ -746,8 +625,7 @@
       <h3>Obsah</h3>
       <div class="field">
         <label for="inTitle">Nadpis</label>
-        <input type="text" id="inTitle" value="Podíl dokončených rekonstrukcí (v %)" />
-        <div class="help">Tip: jednotku napiš přímo do nadpisu (např. „… (v %)" nebo „… v mil. Kč"), aby ji bylo vidět hned na začátku.</div>
+        <input type="text" id="inTitle" value="Kandidáti" />
       </div>
       <div class="field">
         <label for="inSource">Zdroj (top-right)</label>
@@ -755,14 +633,15 @@
       </div>
     </div>
 
-    <!-- Slice editor — 1–8 segments, each with label, color, value -->
+    <!-- Cards editor — 1–8 cards, each with photo + name + role -->
     <div class="section">
-      <h3>Segmenty <span id="sliceCount" style="color:var(--text-2);font-weight:400;font-size:11px">(5)</span></h3>
+      <h3>Karty <span id="cardCount" style="color:var(--text-2);font-weight:400;font-size:11px">(4)</span></h3>
       <div class="help" style="margin-bottom:10px">
-        Každý segment má svou barvu, popisek (do legendy) a hodnotu. Hodnoty se nemusí sčítat na 100 — výseč se počítá poměrně. Pořadí seznamu = pořadí výsečí v grafu (od 12 hodin po směru hodinových ručiček). Maximum 8 segmentů.
+        Každá karta má svou fotku, jméno a funkci. Bez nahrané fotky se zobrazí výchozí silueta. Maximum 8 karet — layout se přizpůsobí (1, 2×1, <strong>1×3</strong>, 2×2, 2×3, 2×4).
+        <strong>V náhledu</strong> můžeš fotku v kartě <strong>chytit a táhnout</strong> pro doladění výřezu (X i Y posun). Dvojklik fotku vrátí na střed.
       </div>
-      <div id="slicesList" class="series-list"></div>
-      <button class="upload-btn" id="btnAddSlice" style="margin-top:8px">+ Přidat segment</button>
+      <div id="cardsList" class="cards-list"></div>
+      <button class="upload-btn" id="btnAddCard" style="margin-top:8px">+ Přidat kartu</button>
     </div>
 
     <div class="section">
@@ -874,24 +753,21 @@
    renderFrame(i) so everything stays in sync.
    ============================================================================= */
 
-const TEMPLATE_ID = 'tn-donut-01';
+const TEMPLATE_ID = 'tn-kartoteka-01';
 const LS_KEY = 'tn_graphics_engine_projects_v2';
 const LS_CURRENT = 'tn_graphics_engine_current_v2';
 
 /* ---- state ---- */
 const state = {
-  title: 'Podíl dokončených rekonstrukcí (v %)',
+  title: 'Kandidáti',
   source: 'zdroj: Facebook',
-  // Slices (1–8). Each has label, color (user-pickable), value (number).
-  // Values are NOT auto-normalized to 100 — they are used as raw weights so
-  // segments take up correct angular share even if they sum to e.g. 100, 87,
-  // or 1.0 (decimals). Empty/null values are skipped.
-  slices: [
-    { label: 'červená část grafu',  color: '#DC0F2E', value: 35 },
-    { label: 'modrá část grafu',    color: '#2668AC', value: 20 },
-    { label: 'zelená část grafu',   color: '#29B935', value: 18 },
-    { label: 'oranžová část grafu', color: '#D97922', value: 17 },
-    { label: 'fialová část grafu',  color: '#8C2FE2', value: 10 },
+  // Cards (1–8). Each card has its own photo (data URL or null = default
+  // silhouette), name, and role. Editor allows per-card upload.
+  cards: [
+    { name: 'Pavel Vavřička', role: 'grafik', image: null },
+    { name: 'Pavel Vavřička', role: 'grafik', image: null },
+    { name: 'Pavel Vavřička', role: 'grafik', image: null },
+    { name: 'Pavel Vavřička', role: 'grafik', image: null },
   ],
   show: 'tn',
   branding: 'preview',
@@ -938,7 +814,6 @@ let playStartFrame = 0;
 /* ---- DOM refs ---- */
 const $ = id => document.getElementById(id);
 const els = {
-  imageThumb: $('imageThumb'),
   bgVideo: $('bgVideo'),
   bgFlat: $('bgFlat'),
   scrubber: $('scrubber'),
@@ -1095,19 +970,33 @@ const ctx = canvas.getContext('2d');
 // template needs a brand color, pull from here, never invent a custom hex.
 // =============================================================================
 const TN_COLORS = {
-  red:           '#DC0F2E',  // TN editorial red (lines, accents)
-  blue:          '#2668AC',  // TN editorial blue (lines, subtitles, tags)
-  textPrimary:   '#0a0a0a',
-  textSecondary: '#222222',
-  axisLine:      'rgba(120, 140, 165, 0.55)',  // X axis 0-line and Y grid lines
-  panelGray:     '#e0e0e0',
-  titleBandGray: 'rgba(242, 242, 242, 0.95)',
+  red:           '#FE0000',  // Image quad fallback fill, masthead, accents
+  blue:          '#2668AC',  // Editorial blue — subtitles, tags ("hledaná osoba"
+                             // "svědek", "pohřešovaný" etc.). Used wherever a
+                             // template wants the canonical TN blue. Do NOT
+                             // sample from rendered PSDs — they shift via JPEG
+                             // compression; this is the brand-spec value.
+  textPrimary:   '#0a0a0a',  // Main copy (names, titles, labels)
+  textSecondary: '#222222',  // Source captions, secondary copy
+  divider:       'rgba(120, 140, 165, 0.45)',  // Row dividers across rows-style templates
+  panelGray:     '#e0e0e0',  // Gray content panels (95% opacity in preview)
+  titleBandGray: 'rgba(242, 242, 242, 0.95)',  // White-ish title band (bar-chart, tabulka)
 };
 
-// LAYOUT — DONUT CHART
-// Same outer frame as bar-chart / line-chart (top black 0..134, white title
-// band 135..222, gray panel 222..992). Inside the gray panel: donut on the
-// left half, legend on the right half.
+// LAYOUT — TN KARTOTÉKA (multi-card grid)
+// Same outer frame as bar-chart (top black 0..134, white title band 135..222,
+// gray panel 222..992). Inside the gray panel: a responsive grid of 1–8 cards.
+//
+// Grid rules:
+//   1 card   → 1 wide centered card (large photo)
+//   2 cards  → 1×2 (side by side) — same height as 4-card grid
+//   3 cards  → 1×3 (single row, three columns)
+//   4 cards  → 2×2 grid (each card uses half-width, photo card 386 px wide)
+//   5–6      → 2×3 grid (3 columns × 2 rows)
+//   7–8      → 2×4 grid (4 rows × 2 columns) — photo card 192 px square
+//
+// Cards: blue silhouette photo (square or portrait) on the left, name + role
+// stacked on the right. Photo bg is light-blue gradient (#BCC9D8 → #2D5588).
 const LAYOUT = {
   topBlackH:     135,
   titleBandTop:  135,
@@ -1115,26 +1004,15 @@ const LAYOUT = {
   titleBandBot:  222,
   chartTop:      222,
   chartBottom:   992,
-  // Title text positioning
+  // Title text
   titleX:        115,
   titleY:        198,
   sourceX:       1805,   // GLOBAL TN right-edge alignment
-  // Donut geometry (measured 1:1 from PSD reference)
-  donutCx:       536,    // center X
-  donutCy:       607,    // center Y (inside chart area, slightly below middle)
-  donutOuterR:   300,    // outer radius
-  donutInnerR:   175,    // inner radius (ratio 0.583)
-  donutGap:        4,    // small gap between adjacent slices, in pixels along arc
-  // Legend area (right half of gray panel)
-  legendX:      1100,    // left edge of legend column (color square sits here)
-  legendRight:  1805,    // global TN right-edge — value numbers right-align here
-  legendTop:     408,    // top of first row's bounding cell
-  legendBot:     818,    // bottom of last row's cell (clear of TN logo box)
-  legendRowH:     90,    // base row spacing (matches reference 90 px)
-  legendMinRowH:  60,    // min row spacing for many slices
-  legendRectW:    52,    // color square width
-  legendRectH:    32,    // color square height
-  legendGapRect:  28,    // gap between square and label text
+  // Inner safe-area for the grid (some breathing room below title band)
+  gridLeft:      116,    // matches reference card-row left margin
+  gridRight:     1805,   // global TN right edge
+  gridTop:       222,    // top of gray panel (cards may extend full height)
+  gridBot:       992,
   // TN red logo box reservation
   logoBoxW:      270,
   logoBoxH:      155,
@@ -1185,22 +1063,224 @@ function easeOutCubic(x)  { return 1 - Math.pow(1 - x, 3); }
 function easeOutQuart(x)  { return 1 - Math.pow(1 - x, 4); }
 
 // =============================================================================
-// DONUT CHART RENDER
+// SVG SILHOUETTE — embedded as data URL so cards render the default avatar
+// instantly without any network round-trip. Light-blue gradient matches the
+// reference (LinkedIn-style placeholder).
+// =============================================================================
+const DEFAULT_SILHOUETTE_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 240">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#BCC9D8"/>
+      <stop offset="1" stop-color="#A8B7C9"/>
+    </linearGradient>
+    <linearGradient id="fg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#5A82B5"/>
+      <stop offset="1" stop-color="#2D5588"/>
+    </linearGradient>
+  </defs>
+  <rect width="200" height="240" fill="url(#bg)"/>
+  <g fill="url(#fg)">
+    <!-- Head -->
+    <ellipse cx="100" cy="98" rx="38" ry="44"/>
+    <!-- Hair tufts on top -->
+    <path d="M 70 70 Q 78 50 90 56 Q 100 48 112 56 Q 124 50 132 70 Q 130 80 124 76 Q 118 64 108 66 Q 100 60 92 66 Q 82 64 76 76 Q 70 80 70 70 Z"/>
+    <!-- Shoulders / torso -->
+    <path d="M 30 240 Q 30 180 56 165 Q 70 158 80 158 Q 100 154 120 158 Q 130 158 144 165 Q 170 180 170 240 Z"/>
+  </g>
+</svg>`;
+const DEFAULT_SILHOUETTE_DATAURL = 'data:image/svg+xml;utf8,' +
+  encodeURIComponent(DEFAULT_SILHOUETTE_SVG);
+
+// =============================================================================
+// SILHOUETTE SOURCE — try a couple of likely paths under /assets first, then
+// fall back to the embedded SVG so the cards always render something even
+// when the user hasn't provided a custom silhouette file. We probe each path
+// once on boot and remember the winner.
+// =============================================================================
+const SILHOUETTE_CANDIDATES = [
+  // Absolute paths from server root (recommended — independent of which folder
+  // the HTML lives in)
+  '/assets/kartoteka-silhouette.png',
+  '/assets/kartoteka-silhouette.jpg',
+  '/assets/kartoteka-silhouette.svg',
+  '/assets/silhouette.png',
+  '/assets/silhouette.jpg',
+  '/assets/silhouette.svg',
+  // Relative-to-template (legacy) — for HTML opened directly via file://
+  '../assets/kartoteka-silhouette.png',
+  '../assets/kartoteka-silhouette.jpg',
+  '../assets/kartoteka-silhouette.svg',
+  '../assets/silhouette.png',
+  '../assets/silhouette.jpg',
+  '../assets/silhouette.svg',
+  // Relative-to-current-folder (in case HTML moved into assets dir)
+  'assets/kartoteka-silhouette.png',
+  'assets/silhouette.png',
+];
+let RESOLVED_SILHOUETTE = DEFAULT_SILHOUETTE_DATAURL;   // overridden once probed
+let _silhouetteProbed = false;
+
+function probeSilhouette() {
+  if (_silhouetteProbed) return;
+  _silhouetteProbed = true;
+  let i = 0;
+  const tryNext = () => {
+    if (i >= SILHOUETTE_CANDIDATES.length) {
+      console.log('%c[Kartotéka] No custom silhouette found in /assets — using embedded SVG fallback',
+        'color:#888');
+      console.log('  Tried:', SILHOUETTE_CANDIDATES.join(', '));
+      console.log('  Place a PNG at one of those paths to override.');
+      return;
+    }
+    const path = SILHOUETTE_CANDIDATES[i++];
+    const probe = new Image();
+    probe.onload = () => {
+      console.log(`%c[Kartotéka] Default silhouette → ${path}`,
+        'color:#0a8754;font-weight:bold');
+      RESOLVED_SILHOUETTE = path;
+      // Wipe any cached entry for the OLD silhouette URL so the next render
+      // pulls the freshly-resolved one. Without this, _imageCache still has
+      // the embedded data: URL and the new path never gets fetched.
+      _imageCache.delete(DEFAULT_SILHOUETTE_DATAURL);
+      // Reset diagnostic log so we see the new path in Console
+      _loggedSrcs.clear();
+      // Pre-warm the cache with the new path so the very next renderFrame
+      // call already has the image ready.
+      _getImage(RESOLVED_SILHOUETTE);
+      // Refresh sidebar thumbs + canvas
+      if (typeof rebuildCardsList === 'function') rebuildCardsList();
+      renderFrame(state.frame);
+    };
+    probe.onerror = () => {
+      console.log(`  [Kartotéka] probe miss: ${path}`);
+      tryNext();
+    };
+    probe.src = path;
+  };
+  tryNext();
+}
+
+// Async image cache — one HTMLImageElement per unique src so we don't reload
+// on every render. Used for both default silhouette and user uploads.
+//
+// NOTE: we deliberately DO NOT set crossOrigin here. Setting crossOrigin on a
+// same-origin image triggers a CORS preflight that some servers (including
+// Python's http.server) don't satisfy, which silently breaks the load and
+// falls through to the embedded SVG fallback. Since we only ever use these
+// images for `drawImage` (no pixel readback / canvas tainting concerns),
+// dropping crossOrigin makes loads "just work" on localhost and any host.
+const _imageCache = new Map();   // src -> { el, ready }
+const _loggedSrcs = new Set();   // diagnostic: which srcs we've logged once
+function _getImage(src) {
+  if (!src) return null;
+  let entry = _imageCache.get(src);
+  if (entry) return entry.ready ? entry.el : null;
+  entry = { el: new Image(), ready: false };
+  entry.el.onload  = () => {
+    entry.ready = true;
+    renderFrame(state.frame);
+  };
+  entry.el.onerror = () => {
+    entry.ready = false;
+    console.warn(`[Kartotéka] Image load failed: ${src}`);
+  };
+  entry.el.src = src;
+  _imageCache.set(src, entry);
+  return null;   // not ready yet — caller should fall back / draw placeholder
+}
+
+// =============================================================================
+// CARD GRID LAYOUT — measured 1:1 from the reference renders (Hlavy_4 + Hlavy_8).
+//
+// KEY RULES (do not change without re-measuring references):
+//   • NO GAPS between cards. Photo columns extend the full panel height as one
+//     continuous light-blue strip. Cards stack edge-to-edge horizontally and
+//     vertically. The reference shows a single uninterrupted blue column from
+//     y=222 to y=992, which means the row-gap and col-gap are BOTH zero.
+//   • FIXED FONT SIZES across ALL grid configurations. Reference Hlavy_4 and
+//     Hlavy_8 use the same name (~52 px) and role (~36 px) font sizes — the
+//     photo gets smaller as we add cards, but text stays the same so it's
+//     always readable. No per-card scaling.
+//   • PHOTO is a square that fills its row's full height (panelH / rows). The
+//     photo COLUMN width is fixed at half of the row-cell so it stays a square.
+// =============================================================================
+function computeCardGrid(n) {
+  let cols, rows;
+  if      (n <= 1) { cols = 1; rows = 1; }
+  else if (n <= 2) { cols = 2; rows = 1; }
+  else if (n <= 3) { cols = 1; rows = 3; }   // 3 cards stacked vertically — full-width text room
+  else if (n <= 4) { cols = 2; rows = 2; }
+  else if (n <= 6) { cols = 2; rows = 3; }
+  else             { cols = 2; rows = 4; }
+
+  // No gaps — cards are flush to the gray panel edges and to each other.
+  const totalW = LAYOUT.gridRight - LAYOUT.gridLeft;
+  const totalH = LAYOUT.gridBot - LAYOUT.gridTop;
+  const cellW = totalW / cols;
+  const cellH = totalH / rows;
+
+  // Photo is a square — width equals the row's height. This means the LEFT
+  // half of each cell is the photo, the RIGHT half is the text panel. For
+  // tall thin cells (e.g. 1-card), photoSide caps at cellW * 0.5.
+  const photoSide = Math.min(cellH, cellW * 0.5);
+
+  // Fixed font sizes (matches reference 1:1)
+  const NAME_FONT = 52;
+  const ROLE_FONT = 36;
+  const NAME_ROLE_GAP = 18;   // px between name baseline and role top
+
+  const rects = [];
+  for (let i = 0; i < n; i++) {
+    const c = i % cols;
+    const r = Math.floor(i / cols);
+    const x = LAYOUT.gridLeft + c * cellW;
+    const y = LAYOUT.gridTop  + r * cellH;
+
+    // Photo card on left of this cell — full row height, square width
+    const photoX = x;
+    const photoY = y;
+    const photoW = photoSide;
+    const photoH = cellH;       // photo extends full row height (no gap)
+
+    // Text area starts immediately after photo (small breathing room).
+    const TEXT_GAP = 36;        // gap from photo right edge to name's first letter
+    const textX = photoX + photoW + TEXT_GAP;
+    const textRight = x + cellW;
+    const textW = textRight - textX;
+
+    // Vertical centering: align the (name + gap + role) block to the cell center
+    const totalTextH = NAME_FONT + NAME_ROLE_GAP + ROLE_FONT;
+    const cy = photoY + photoH / 2;
+    const nameY = cy - totalTextH / 2 + NAME_FONT;        // baseline
+    const roleY = nameY + NAME_ROLE_GAP + ROLE_FONT;
+
+    rects.push({
+      idx: i,
+      x, y, w: cellW, h: cellH,
+      photoX, photoY, photoW, photoH,
+      textX, textW, nameY, roleY,
+      nameFont: NAME_FONT, roleFont: ROLE_FONT,
+    });
+  }
+  return rects;
+}
+
+// =============================================================================
+// RENDER
 // =============================================================================
 function renderFrame(f) {
   state.frame = f;
-  const t = f / FPS;   // seconds elapsed
+  const t = f / FPS;
 
   ctx.save();
   ctx.clearRect(0, 0, W, H);
 
-  // EXPORT clean: opaque black under everything
   if (state.branding === 'export') {
     ctx.fillStyle = '#000';
     ctx.fillRect(0, 0, W, H);
   }
 
-  // === BLOCK SCALE-Y intro (anchor y=135) ===
+  // Block scale-Y intro
   const blockP = clamp01(t / 0.44);
   const blockScale = easeInOut(blockP);
   ctx.translate(0, BLOCK_ANCHOR_Y);
@@ -1214,11 +1294,11 @@ function renderFrame(f) {
     ctx.fillRect(0, LAYOUT.chartBottom, W, H - LAYOUT.chartBottom);
   }
 
-  // === White title band ===
+  // White title band
   ctx.fillStyle = TN_COLORS.titleBandGray;
   ctx.fillRect(0, LAYOUT.titleBandTop, W, LAYOUT.titleBandH);
 
-  // === Title + source — fade-in 0.48..0.88s
+  // Title + source
   const titleP = easeOutCubic(clamp01((t - 0.48) / 0.40));
   if (titleP > 0) {
     ctx.save();
@@ -1235,7 +1315,7 @@ function renderFrame(f) {
     ctx.restore();
   }
 
-  // === Gray chart panel — fade in 0.20..0.55s
+  // Gray panel
   const panelP = easeOutCubic(clamp01((t - 0.20) / 0.35));
   if (panelP > 0) {
     ctx.save();
@@ -1246,11 +1326,8 @@ function renderFrame(f) {
   }
   if (panelP <= 0) { ctx.restore(); return; }
 
-  // === Donut — slices animate (sweep) 0.55..1.20s
-  drawDonut(t);
-
-  // === Legend rows on the right — stagger 1.00s+
-  drawLegendRows(t);
+  // Cards grid
+  drawCards(t);
 
   ctx.restore();
 
@@ -1258,151 +1335,264 @@ function renderFrame(f) {
   els.tlRead.textContent = `${f + 1} / ${TOTAL_FRAMES}  ·  ${t.toFixed(2)}s`;
 }
 
-// ---------- Donut renderer ----------
-// Slices sweep CCW->CW from 12 o'clock (top of circle) in source order.
-// We use full ring stroke (no anti-aliased seams) by drawing arc paths
-// filled between outer and inner radii.
-function drawDonut(t) {
-  const slices = (state.slices || []).filter(s => s.value != null && !isNaN(s.value) && s.value > 0);
-  if (slices.length === 0) return;
+// ---------- Cards ----------
+function drawCards(t) {
+  const cards = state.cards || [];
+  if (cards.length === 0) return;
 
-  const total = slices.reduce((a, s) => a + (+s.value), 0);
-  if (total <= 0) return;
+  const grid = computeCardGrid(cards.length);
 
-  // Slice fade/sweep window. Whole donut sweeps in 0.65s starting at 0.55s,
-  // with each slice unwrapping in sequence (proportional to its share).
-  const SWEEP_START = 0.55;
-  const SWEEP_DUR   = 0.75;
-  const sweepP = easeOutCubic(clamp01((t - SWEEP_START) / SWEEP_DUR));
-  if (sweepP <= 0) return;
+  // Reset hit-area registry for drag-on-photo. drawCardImage pushes one entry
+  // per card so the canvas pointer handler can resolve which photo to drag.
+  _photoHitAreas.length = 0;
 
-  const cx = LAYOUT.donutCx;
-  const cy = LAYOUT.donutCy;
-  const rOut = LAYOUT.donutOuterR;
-  const rIn  = LAYOUT.donutInnerR;
+  cards.forEach((card, i) => {
+    const r = grid[i];
+    if (!r) return;
 
-  // Start angle = -90deg (top of circle). Going clockwise.
-  let startAng = -Math.PI / 2;
-  // Compute revealed angle (0..2π) based on sweepP
-  const revealedTotalAng = sweepP * Math.PI * 2;
-
-  // Walk slices, drawing each up to the revealed limit.
-  let consumed = 0;   // total angle drawn so far
-  for (let i = 0; i < slices.length; i++) {
-    const s = slices[i];
-    const fraction = s.value / total;
-    const sliceAng = fraction * Math.PI * 2;
-
-    // How much of THIS slice should be drawn?
-    const drawAng = Math.max(0, Math.min(sliceAng, revealedTotalAng - consumed));
-    if (drawAng <= 0.0001) {
-      consumed += sliceAng;
-      continue;
-    }
-
-    const a0 = startAng;
-    const a1 = startAng + drawAng;
+    // Per-card stagger — pure clip-reveal, no movement (no slide, no opacity
+    // fade). The card is "wiped" left-to-right by clipping the canvas to a
+    // rect that grows from 0 to full cell width.
+    const start = 0.55 + i * 0.08;
+    const cardP = easeOutCubic(clamp01((t - start) / 0.50));
+    if (cardP <= 0) return;
 
     ctx.save();
-    ctx.fillStyle = s.color || TN_COLORS.red;
+    // Clip to the visible portion of THIS cell — left-to-right reveal
     ctx.beginPath();
-    ctx.arc(cx, cy, rOut, a0, a1, false);
-    ctx.arc(cx, cy, rIn,  a1, a0, true);
-    ctx.closePath();
-    ctx.fill();
-    ctx.restore();
+    ctx.rect(r.x, r.y, r.w * cardP, r.h);
+    ctx.clip();
 
-    startAng += sliceAng;
-    consumed += sliceAng;
-    if (consumed >= revealedTotalAng) break;
-  }
-}
+    // === Photo card background (light blue gradient)
+    const grad = ctx.createLinearGradient(r.photoX, r.photoY, r.photoX, r.photoY + r.photoH);
+    grad.addColorStop(0, '#BCC9D8');
+    grad.addColorStop(1, '#A8B7C9');
+    ctx.fillStyle = grad;
+    ctx.fillRect(r.photoX, r.photoY, r.photoW, r.photoH);
 
-// ---------- Legend rows ----------
-// Right-side list mirroring the slices: color square + label (left), value
-// number (right, BOLD, right-aligned at LAYOUT.legendRight = 1805).
-// Divider line under each row (TN editorial style).
-function drawLegendRows(t) {
-  const slices = state.slices || [];
-  if (slices.length === 0) return;
+    // === Photo content (user image or default silhouette)
+    drawCardImage(card, r);
 
-  // Legend rows fade in slightly behind donut (gives the eye time to settle
-  // on the chart first), staggered between rows.
-  const ROW_START   = 1.00;
-  const ROW_STAGGER = 0.08;
-  const ROW_FADE    = 0.36;
-  const ROW_SLIDE   = 24;
-
-  // Vertical layout: distribute rows evenly inside legendTop..legendBot.
-  // If they don't fit at base spacing, compress.
-  const areaH = LAYOUT.legendBot - LAYOUT.legendTop;
-  let rowH = LAYOUT.legendRowH;
-  if (slices.length * rowH > areaH) {
-    rowH = Math.max(LAYOUT.legendMinRowH, areaH / slices.length);
-  }
-  const groupH = slices.length * rowH;
-  const groupTop = LAYOUT.legendTop + (areaH - groupH) / 2;
-
-  slices.forEach((s, i) => {
-    const rowStart = ROW_START + i * ROW_STAGGER;
-    const p = easeOutCubic(clamp01((t - rowStart) / ROW_FADE));
-    if (p <= 0) return;
-
-    const cy = groupTop + i * rowH + rowH / 2 + ROW_SLIDE * (1 - p);
-
-    ctx.save();
-    ctx.globalAlpha = p;
-    ctx.textBaseline = 'middle';
-
-    // Color square (left)
-    const rectX = LAYOUT.legendX;
-    ctx.fillStyle = s.color || TN_COLORS.red;
-    ctx.fillRect(rectX, cy - LAYOUT.legendRectH/2, LAYOUT.legendRectW, LAYOUT.legendRectH);
-
-    // Label (next to square)
+    // === Name (bold)
     ctx.fillStyle = TN_COLORS.textPrimary;
-    ctx.font = '500 44px "Organica", sans-serif';
+    ctx.font = `800 ${r.nameFont}px "Organica", sans-serif`;
+    ctx.textBaseline = 'alphabetic';
     ctx.textAlign = 'left';
-    ctx.fillText(s.label || '', rectX + LAYOUT.legendRectW + LAYOUT.legendGapRect, cy);
+    drawClippedText(card.name || '', r.textX, r.nameY, r.textW);
 
-    // Value (right, BOLD, right-aligned at sourceX)
+    // === Role (regular)
     ctx.fillStyle = TN_COLORS.textPrimary;
-    ctx.font = '800 44px "Organica", sans-serif';
-    ctx.textAlign = 'right';
-    ctx.fillText(formatLegendNumber(s.value), LAYOUT.legendRight, cy);
-
-    // Divider line under each row (matches reference)
-    const lineY = groupTop + (i + 1) * rowH;
-    ctx.strokeStyle = TN_COLORS.divider || 'rgba(120, 140, 165, 0.45)';
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(rectX, lineY);
-    ctx.lineTo(LAYOUT.legendRight, lineY);
-    ctx.stroke();
+    ctx.font = `400 ${r.roleFont}px "Organica", sans-serif`;
+    drawClippedText(card.role || '', r.textX, r.roleY, r.textW);
 
     ctx.restore();
+
+    // === Register photo hit-area for drag (only when card is fully revealed)
+    if (cardP >= 0.999) {
+      _photoHitAreas.push({
+        idx: i,
+        x: r.photoX, y: r.photoY,
+        w: r.photoW, h: r.photoH,
+      });
+    }
   });
 }
 
-function formatLegendNumber(v) {
-  if (v == null || isNaN(v)) return '';
-  if (Math.abs(v) >= 1000) return Math.round(v).toLocaleString('cs-CZ').replace(/,/g, ' ');
-  if (Math.abs(v - Math.round(v)) < 0.01) return String(Math.round(v));
-  return v.toFixed(1).replace('.', ',');
+// Truncate text to fit within max width (canvas measureText). Uses ellipsis if
+// it would overflow. Keeps long names visible without breaking the grid.
+function drawClippedText(text, x, baseline, maxW) {
+  if (!text) return;
+  let w = ctx.measureText(text).width;
+  if (w <= maxW) {
+    ctx.fillText(text, x, baseline);
+    return;
+  }
+  // Trim until it fits, leaving room for ellipsis
+  let s = text;
+  const ellipsis = '…';
+  while (s.length > 0) {
+    s = s.slice(0, -1);
+    const candidate = s + ellipsis;
+    if (ctx.measureText(candidate).width <= maxW) {
+      ctx.fillText(candidate, x, baseline);
+      return;
+    }
+  }
+  ctx.fillText(ellipsis, x, baseline);
+}
+
+// Draw the photo content inside the card's photo rect. Uses cover-fit so the
+// image fills the box without distortion. Falls back to default silhouette
+// when card has no image OR while a user-uploaded image is still loading.
+function drawCardImage(card, r) {
+  const src = card.image || RESOLVED_SILHOUETTE;
+  // Diagnostic: log once per unique src so we can see in Console which image
+  // path the card is actually trying to use. Helps debug "why isn't my
+  // silhouette showing up?" type issues.
+  if (!_loggedSrcs.has(src)) {
+    _loggedSrcs.add(src);
+    const isDataUrl = src.startsWith('data:');
+    console.log(`[Kartotéka] Card ${r.idx} drawing with src: ${isDataUrl ? '<embedded SVG>' : src}`);
+  }
+  const img = _getImage(src);
+  // Per-card drag offset (in source-image pixels). {x:0, y:0} = centered cover-fit.
+  // Positive values shift the visible crop to the right / down (i.e. the
+  // viewer "sees more of the right/bottom side" of the source image).
+  const off = card.imageOffset || { x: 0, y: 0 };
+  if (!img) {
+    const fallback = _getImage(RESOLVED_SILHOUETTE);
+    if (fallback) drawCoverImage(fallback, r.photoX, r.photoY, r.photoW, r.photoH, off);
+    return;
+  }
+  drawCoverImage(img, r.photoX, r.photoY, r.photoW, r.photoH, off);
+}
+
+// Cover-fit (centered crop) with optional offset {x,y} in source-image pixels.
+// Offset shifts the source-rect — clamped so we never crop past the edges.
+function drawCoverImage(img, x, y, w, h, offset) {
+  const iw = img.naturalWidth || img.width;
+  const ih = img.naturalHeight || img.height;
+  if (!iw || !ih) return;
+  const sa = iw / ih;
+  const da = w / h;
+  let sx, sy, sw, sh;
+  if (sa > da) {
+    // Image wider than slot → crop sides (horizontal panning available)
+    sh = ih;
+    sw = ih * da;
+    sx = (iw - sw) / 2;
+    sy = 0;
+  } else {
+    // Image taller → crop top/bottom (vertical panning available)
+    sw = iw;
+    sh = iw / da;
+    sx = 0;
+    sy = (ih - sh) / 2;
+  }
+  // Apply user offset (in source-image px). Clamp so the crop window stays
+  // within the source image bounds — no black edges.
+  if (offset) {
+    sx = Math.max(0, Math.min(iw - sw, sx + offset.x));
+    sy = Math.max(0, Math.min(ih - sh, sy + offset.y));
+  }
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(x, y, w, h);
+  ctx.clip();
+  ctx.drawImage(img, sx, sy, sw, sh, x, y, w, h);
+  ctx.restore();
 }
 
 // =============================================================================
-// (Donut has no draggable callouts — keep stub globals so any leftover
-// references in shared code don't crash.)
+// PHOTO DRAG (pan inside photo card to reposition the cropped image)
+// drawCards() pushes one entry per visible photo into _photoHitAreas. The
+// pointer handlers resolve a click against this list and pan the image's
+// per-card offset (in source-image pixels) on drag.
 // =============================================================================
-const _calloutHitAreas = [];
-let _dragState = null;
+const _photoHitAreas = [];      // cleared at start of drawCards()
+let _photoDragState = null;     // { idx, startMouseX, startMouseY, startOffX, startOffY, photoW, photoH }
 
-// ---------- render() ----------
+function _canvasCoords(e) {
+  const rect = canvas.getBoundingClientRect();
+  const sx = W / rect.width;
+  const sy = H / rect.height;
+  return {
+    x: (e.clientX - rect.left) * sx,
+    y: (e.clientY - rect.top)  * sy,
+  };
+}
+function _hitPhotoAt(cx, cy) {
+  for (let i = _photoHitAreas.length - 1; i >= 0; i--) {
+    const a = _photoHitAreas[i];
+    if (cx >= a.x && cx <= a.x + a.w && cy >= a.y && cy <= a.y + a.h) return a;
+  }
+  return null;
+}
+
+canvas.addEventListener('pointermove', (e) => {
+  if (_photoDragState) {
+    const c = _canvasCoords(e);
+    // Pan: 1 px of pointer movement = 1 px of source-image movement scaled
+    // by the ratio of source-rect to display-rect. We compute that ratio
+    // each frame from the cached image's natural size.
+    const card = state.cards[_photoDragState.idx];
+    if (!card) return;
+    const src = card.image || RESOLVED_SILHOUETTE;
+    const img = _getImage(src);
+    if (!img) return;
+    const iw = img.naturalWidth || img.width;
+    const ih = img.naturalHeight || img.height;
+    if (!iw || !ih) return;
+
+    // Same cover-fit math as drawCoverImage — find sw/sh
+    const sa = iw / ih;
+    const da = _photoDragState.photoW / _photoDragState.photoH;
+    let sw, sh;
+    if (sa > da) { sh = ih; sw = ih * da; }
+    else         { sw = iw; sh = iw / da; }
+    // Display→source scaling: 1 display px = (sw/photoW) source px
+    const scaleX = sw / _photoDragState.photoW;
+    const scaleY = sh / _photoDragState.photoH;
+    // Drag direction: dragging right should reveal MORE of the LEFT side of
+    // the source image, so source offset goes NEGATIVE. (Like Photoshop's
+    // hand tool — pulling the image right means scrolling its left edge in.)
+    const dxSrc = -(c.x - _photoDragState.startMouseX) * scaleX;
+    const dySrc = -(c.y - _photoDragState.startMouseY) * scaleY;
+    if (!card.imageOffset) card.imageOffset = { x: 0, y: 0 };
+    card.imageOffset.x = _photoDragState.startOffX + dxSrc;
+    card.imageOffset.y = _photoDragState.startOffY + dySrc;
+    renderFrame(state.frame);
+    e.preventDefault();
+    return;
+  }
+  // Idle hover — show grab cursor over a photo
+  const c = _canvasCoords(e);
+  canvas.classList.toggle('over-photo', !!_hitPhotoAt(c.x, c.y));
+});
+
+canvas.addEventListener('pointerdown', (e) => {
+  const c = _canvasCoords(e);
+  const hit = _hitPhotoAt(c.x, c.y);
+  if (!hit) return;
+  const card = state.cards[hit.idx];
+  if (!card) return;
+  const off = card.imageOffset || { x: 0, y: 0 };
+  _photoDragState = {
+    idx: hit.idx,
+    startMouseX: c.x, startMouseY: c.y,
+    startOffX: off.x, startOffY: off.y,
+    photoW: hit.w, photoH: hit.h,
+  };
+  canvas.classList.add('dragging');
+  try { canvas.setPointerCapture(e.pointerId); } catch (_) {}
+  e.preventDefault();
+});
+function _endPhotoDrag(e) {
+  if (!_photoDragState) return;
+  _photoDragState = null;
+  canvas.classList.remove('dragging');
+  try { if (e && e.pointerId != null) canvas.releasePointerCapture(e.pointerId); } catch (_) {}
+}
+canvas.addEventListener('pointerup',     _endPhotoDrag);
+canvas.addEventListener('pointercancel', _endPhotoDrag);
+canvas.addEventListener('pointerleave', () => {
+  if (!_photoDragState) canvas.classList.remove('over-photo');
+});
+// Double-click photo → reset offset
+canvas.addEventListener('dblclick', (e) => {
+  const c = _canvasCoords(e);
+  const hit = _hitPhotoAt(c.x, c.y);
+  if (!hit) return;
+  const card = state.cards[hit.idx];
+  if (card && card.imageOffset) {
+    card.imageOffset = { x: 0, y: 0 };
+    renderFrame(state.frame);
+  }
+});
+
 function render() {
   renderFrame(state.frame);
 }
-
 
 /* =============================================================================
    PLAYBACK
@@ -1481,66 +1671,75 @@ $('inDuration').addEventListener('input', e => {
   if (!isNaN(v) && v > 0) { setDuration(v); render(); }
 });
 
-// === Slice editor ===
-function rebuildSlicesList() {
-  const list = $('slicesList');
-  const slices = state.slices || [];
+// === Cards editor ===
+function rebuildCardsList() {
+  const list = $('cardsList');
+  const cards = state.cards || [];
 
-  list.innerHTML = slices.map((s, sIdx) => {
-    const valDisplay = (s.value == null || isNaN(s.value)) ? '' : String(s.value);
+  list.innerHTML = cards.map((c, i) => {
+    // Thumbnail background — use card.image data URL if present, else default silhouette
+    const thumbBg = c.image
+      ? `background-image:url('${c.image.replace(/'/g, "\\'")}')`
+      : `background-image:url("${RESOLVED_SILHOUETTE}")`;
     return `
-      <div class="series-card" data-sidx="${sIdx}">
-        <div class="series-head" style="grid-template-columns: 36px 1fr 100px 28px">
-          <input type="color" class="color" value="${escapeHtml(s.color || '#DC0F2E')}" />
-          <input type="text"  class="label" placeholder="popisek (legenda)" value="${escapeHtml(s.label || '')}" />
-          <input type="number" step="any" class="value" placeholder="hodnota" value="${escapeHtml(valDisplay)}" />
-          <button class="series-del" title="Smazat segment">×</button>
+      <div class="card-item" data-idx="${i}">
+        <div class="card-head">
+          <div class="card-thumb" style="${thumbBg}; background-size:cover; background-position:center"></div>
+          <div class="card-fields">
+            <input type="text" class="text name" placeholder="jméno" value="${escapeHtml(c.name || '')}" />
+            <input type="text" class="text role" placeholder="funkce" value="${escapeHtml(c.role || '')}" />
+          </div>
+          <button class="card-del" title="Smazat kartu">×</button>
+        </div>
+        <div class="card-actions">
+          <label class="upload-btn" for="cardFile_${i}">Nahrát fotku…</label>
+          <input type="file" id="cardFile_${i}" accept="image/*" style="display:none" />
+          <button class="upload-btn clear card-clear">Odebrat</button>
         </div>
       </div>
     `;
   }).join('');
 
-  list.querySelectorAll('.series-card').forEach((card, sIdx) => {
-    card.querySelector('.color').addEventListener('input', e => {
-      state.slices[sIdx].color = e.target.value;
+  list.querySelectorAll('.card-item').forEach((el, i) => {
+    el.querySelector('input.name').addEventListener('input', e => {
+      state.cards[i].name = e.target.value;
       render();
     });
-    card.querySelector('.label').addEventListener('input', e => {
-      state.slices[sIdx].label = e.target.value;
+    el.querySelector('input.role').addEventListener('input', e => {
+      state.cards[i].role = e.target.value;
       render();
     });
-    card.querySelector('.value').addEventListener('input', e => {
-      const raw = e.target.value;
-      if (raw === '') {
-        state.slices[sIdx].value = null;
-      } else {
-        const parsed = parseFloat(raw.replace(',', '.'));
-        state.slices[sIdx].value = isNaN(parsed) ? null : parsed;
-      }
+    el.querySelector('.card-del').addEventListener('click', () => {
+      if (state.cards.length <= 1) return;
+      state.cards.splice(i, 1);
+      rebuildCardsList();
+      $('cardCount').textContent = `(${state.cards.length})`;
       render();
     });
-    card.querySelector('.series-del').addEventListener('click', () => {
-      if (state.slices.length <= 1) return;
-      state.slices.splice(sIdx, 1);
-      rebuildSlicesList();
-      $('sliceCount').textContent = `(${state.slices.length})`;
+    el.querySelector(`#cardFile_${i}`).addEventListener('change', e => {
+      const f = e.target.files?.[0];
+      if (!f) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        state.cards[i].image = reader.result;
+        rebuildCardsList();
+        render();
+      };
+      reader.readAsDataURL(f);
+    });
+    el.querySelector('.card-clear').addEventListener('click', () => {
+      state.cards[i].image = null;
+      rebuildCardsList();
       render();
     });
   });
-  $('sliceCount').textContent = `(${state.slices.length})`;
+  $('cardCount').textContent = `(${state.cards.length})`;
 }
 
-$('btnAddSlice').addEventListener('click', () => {
-  if (state.slices.length >= 8) return;
-  // Cycle through TN-friendly color palette
-  const palette = ['#DC0F2E', '#2668AC', '#29B935', '#D97922', '#8C2FE2', '#F5C518', '#0FA8A8', '#7B4423'];
-  const color = palette[state.slices.length % palette.length];
-  state.slices.push({
-    label: 'segment ' + (state.slices.length + 1),
-    color,
-    value: 10,
-  });
-  rebuildSlicesList();
+$('btnAddCard').addEventListener('click', () => {
+  if (state.cards.length >= 8) return;
+  state.cards.push({ name: '', role: '', image: null });
+  rebuildCardsList();
   render();
 });
 
@@ -1603,10 +1802,11 @@ function snapshotState() {
     template: TEMPLATE_ID,
     title: state.title,
     source: state.source,
-    slices: state.slices.map(s => ({
-      label: s.label,
-      color: s.color,
-      value: s.value,
+    cards: state.cards.map(c => ({
+      name:  c.name,
+      role:  c.role,
+      image: c.image,
+      imageOffset: c.imageOffset ? { x: c.imageOffset.x, y: c.imageOffset.y } : { x: 0, y: 0 },
     })),
     branding: state.branding,
     duration: DURATION,
@@ -1617,11 +1817,14 @@ function applySnapshot(snap) {
   if (!snap) return;
   state.title  = snap.title  ?? state.title;
   state.source = snap.source ?? state.source;
-  if (Array.isArray(snap.slices) && snap.slices.length > 0) {
-    state.slices = snap.slices.map(s => ({
-      label: s.label || '',
-      color: s.color || '#DC0F2E',
-      value: (typeof s.value === 'number') ? s.value : null,
+  if (Array.isArray(snap.cards) && snap.cards.length > 0) {
+    state.cards = snap.cards.slice(0, 8).map(c => ({
+      name:  c.name  || '',
+      role:  c.role  || '',
+      image: c.image || null,
+      imageOffset: (c.imageOffset && typeof c.imageOffset === 'object')
+        ? { x: c.imageOffset.x || 0, y: c.imageOffset.y || 0 }
+        : { x: 0, y: 0 },
     }));
   }
   const rawBranding = snap.branding ?? 'preview';
@@ -1638,7 +1841,7 @@ function applySnapshot(snap) {
   $('inTitle').value    = state.title;
   $('inSource').value   = state.source;
   $('inDuration').value = DURATION;
-  rebuildSlicesList();
+  rebuildCardsList();
   document.querySelectorAll('#brandingToggle button').forEach(b => {
     b.classList.toggle('active', b.dataset.value === state.branding);
   });
@@ -1763,14 +1966,13 @@ $('projOpen').addEventListener('click', openProjModal);
 $('projNew').addEventListener('click', () => {
   if (isDirty() && !confirm('Zahodit neuložené změny?')) return;
   applySnapshot({
-    title: 'Podíl dokončených rekonstrukcí (v %)',
+    title: 'Kandidáti',
     source: 'zdroj: Facebook',
-    slices: [
-      { label: 'červená část grafu',  color: '#DC0F2E', value: 35 },
-      { label: 'modrá část grafu',    color: '#2668AC', value: 20 },
-      { label: 'zelená část grafu',   color: '#29B935', value: 18 },
-      { label: 'oranžová část grafu', color: '#D97922', value: 17 },
-      { label: 'fialová část grafu',  color: '#8C2FE2', value: 10 },
+    cards: [
+      { name: 'Pavel Vavřička', role: 'grafik', image: null },
+      { name: 'Pavel Vavřička', role: 'grafik', image: null },
+      { name: 'Pavel Vavřička', role: 'grafik', image: null },
+      { name: 'Pavel Vavřička', role: 'grafik', image: null },
     ],
     branding: 'preview', show: 'tn', duration: 2.4, fps: 25,
   });
@@ -2006,20 +2208,19 @@ function showToast(msg, kind) {
 async function waitFonts() {
   try {
     await Promise.all([
-      // Title (800 / 54px)
-      document.fonts.load('800 54px "Organica"'),
-      // Source (400 / 28px)
-      document.fonts.load('400 28px "Organica"'),
-      // Row label (500 / 44px) — semibold
-      document.fonts.load('500 44px "Organica"'),
-      // Row mid (400 / 38px) — regular
-      document.fonts.load('400 38px "Organica"'),
-      // Row value (800 / 44px) — heavy bold
-      document.fonts.load('800 44px "Organica"'),
-      // Other sizes used elsewhere or in preview
+      // Name "Pavel Vavřička" (800 / 64px) — biggest weight
       document.fonts.load('800 64px "Organica"'),
-      document.fonts.load('800 56px "Organica"'),
-      document.fonts.load('700 50px "Organica"'),
+      // Subtitle "hledaná osoba" (400 / 36px) blue
+      document.fonts.load('400 36px "Organica"'),
+      // Source caption (400 / 28px)
+      document.fonts.load('400 28px "Organica"'),
+      // Row label (400 / 44px) regular
+      document.fonts.load('400 44px "Organica"'),
+      // Row value (800 / 44px) bold
+      document.fonts.load('800 44px "Organica"'),
+      // Other sizes used elsewhere
+      document.fonts.load('800 54px "Organica"'),
+      document.fonts.load('500 44px "Organica"'),
       document.fonts.load('400 24px "Organica"'),
     ]);
     await document.fonts.ready;
@@ -2031,8 +2232,8 @@ const _params = new URLSearchParams(window.location.search);
 const _urlProjectId = _params.get('project');
 
 (async function boot() {
-  console.log('%c[TN Donut Chart] v1',
-    'background:#DC0F2E;color:white;padding:4px 8px;font-weight:bold;border-radius:2px');
+  console.log('%c[TN Kartotéka] v4 — diagnostic logging + crossOrigin fix',
+    'background:#2D5588;color:white;padding:4px 8px;font-weight:bold;border-radius:2px');
   setDuration(DURATION);
   setFps(FPS);
   // URL ?show= override — when launcher links us with a specific show, use it
@@ -2046,7 +2247,10 @@ const _urlProjectId = _params.get('project');
   } catch (_) {}
     populateShowSelect();
   applyShowTheme();
-  rebuildSlicesList();
+  // Try to resolve a custom silhouette from /assets/ before first render. If
+  // none is found, RESOLVED_SILHOUETTE stays at the embedded SVG default.
+  probeSilhouette();
+  rebuildCardsList();
   if (els.bgFlat) els.bgFlat.style.display = 'none';
   await waitFonts();
   fitStage();
@@ -2076,24 +2280,27 @@ const _urlProjectId = _params.get('project');
     }
   }
 
-  // Safety net: ensure state.slices is sane after load.
-  if (!Array.isArray(state.slices) || state.slices.length === 0) {
-    console.warn('[Donut] state.slices empty — restoring defaults');
-    state.slices = [
-      { label: 'červená část grafu',  color: '#DC0F2E', value: 35 },
-      { label: 'modrá část grafu',    color: '#2668AC', value: 20 },
-      { label: 'zelená část grafu',   color: '#29B935', value: 18 },
-      { label: 'oranžová část grafu', color: '#D97922', value: 17 },
-      { label: 'fialová část grafu',  color: '#8C2FE2', value: 10 },
+  // Safety net
+  if (!Array.isArray(state.cards) || state.cards.length === 0) {
+    console.warn('[Kartotéka] state.cards empty — restoring defaults');
+    state.cards = [
+      { name: 'Pavel Vavřička', role: 'grafik', image: null },
+      { name: 'Pavel Vavřička', role: 'grafik', image: null },
+      { name: 'Pavel Vavřička', role: 'grafik', image: null },
+      { name: 'Pavel Vavřička', role: 'grafik', image: null },
     ];
-    rebuildSlicesList();
+    rebuildCardsList();
   }
 
   lastSavedSnapshot = JSON.stringify(snapshotState());
   updateProjectMeta();
 
+  // Open on the SETTLED end frame (like Bar Chart does) so the stage isn't
+  // empty on first paint — the block scale-Y intro is at 0 at frame 0.
   state.frame = TOTAL_FRAMES - 1;
   render();
+  // Stage scale needs a second pass once the control panel settles.
+  // Layout can measure 0 on first paint before the flex grid stabilizes.
   requestAnimationFrame(() => { fitStage(); render(); });
   setTimeout(() => { fitStage(); render(); }, 150);
 })();
