@@ -4,7 +4,6 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>TN Tabulka — Template 03</title>
-<script src="../coi-serviceworker.js"></script>
 <script src="../theme.js"></script>
 <!-- TN CITACE (quote card) — Graph Generator template 06 -->
 <!-- Layout derived from PSD reference (uploads/citace-reference.png): -->
@@ -2324,112 +2323,7 @@ $('btnExportSeq')?.addEventListener('click', async () => {
   });
   // Main MP4 button — for now reuses the WebM/Video pipeline
   // (TODO: implement true H.264 encoding via ffmpeg.wasm with TV/web bitrates)
-  document.getElementById('btnExportMP4')?.addEventListener('click', async () => {
-    stopPlayback();
-    await waitFonts();
-    showToast?.('Připravuji ffmpeg.wasm (poprvé ~30 MB stažení)…', 'info');
-
-    let ff;
-    try {
-      ff = await loadFFmpeg();
-    } catch (err) {
-      console.error('[Export MP4] Load failed:', err);
-      showToast?.('ffmpeg.wasm load failed — zkontroluj internet', 'error');
-      return;
-    }
-
-    showToast?.(`Renderuji ${TOTAL_FRAMES} snímků pro MP4…`, 'info');
-
-    // Composite each frame: bg video underneath, then canvas on top.
-    const useVideo = (state.branding === 'preview') && videoReady && !videoFailed;
-    const video = els.bgVideo;
-    const comp = document.createElement('canvas');
-    comp.width = W; comp.height = H;
-    const cctx = comp.getContext('2d');
-
-    if (useVideo) {
-      try { video.currentTime = 0; await video.play(); } catch (_) {}
-    }
-
-    try {
-      const pad4 = n => String(n).padStart(4, '0');
-
-      for (let i = 0; i < TOTAL_FRAMES; i++) {
-        // 1) backdrop layer (black if no video, otherwise cover-fit current video frame)
-        cctx.fillStyle = '#000';
-        cctx.fillRect(0, 0, W, H);
-        if (useVideo && video.readyState >= 2) {
-          const vw = video.videoWidth || W;
-          const vh = video.videoHeight || H;
-          const scale = Math.max(W / vw, H / vh);
-          const dw = vw * scale, dh = vh * scale;
-          const dx = (W - dw) / 2, dy = (H - dh) / 2;
-          cctx.drawImage(video, dx, dy, dw, dh);
-        }
-
-        // 2) animation frame on top
-        renderFrame(i);
-        cctx.drawImage(canvas, 0, 0);
-
-        // 3) write PNG into ffmpeg MEMFS
-        const blob = await new Promise(r => comp.toBlob(r, 'image/png'));
-        const buf = new Uint8Array(await blob.arrayBuffer());
-        await ff.writeFile(`f${pad4(i)}.png`, buf);
-
-        // Pace video advance to FPS so backdrop animates frame-accurate
-        if (useVideo) {
-          await new Promise(r => setTimeout(r, 1000 / FPS));
-        } else if (i % 50 === 0) {
-          // Yield occasionally so the UI stays responsive
-          await new Promise(r => setTimeout(r, 0));
-        }
-
-        // Toast progress every ~10% or final frame
-        if (i % Math.max(1, Math.floor(TOTAL_FRAMES / 10)) === 0) {
-          showToast?.(`Snímek ${i + 1} / ${TOTAL_FRAMES}`, 'info');
-        }
-      }
-
-      if (useVideo) { try { video.pause(); } catch (_) {} }
-
-      // 4) Encode H.264. Bitrate scales by FPS — 50 = TV broadcast, 30 = web.
-      const isTV = (FPS === 50);
-      const bitrate = isTV ? '16M' : '4M';
-      const maxrate = isTV ? '18M' : '5M';
-      const bufsize = isTV ? '24M' : '8M';
-      showToast?.(`Enkóduji H.264 (${isTV ? 'TV' : 'web'}, ${bitrate})…`, 'info');
-
-      await ff.exec([
-        '-framerate', String(FPS),
-        '-i', 'f%04d.png',
-        '-c:v', 'libx264',
-        '-preset', 'medium',
-        '-b:v', bitrate,
-        '-maxrate', maxrate,
-        '-bufsize', bufsize,
-        '-pix_fmt', 'yuv420p',
-        '-movflags', '+faststart',
-        'out.mp4'
-      ]);
-
-      // 5) Read output, trigger download
-      const data = await ff.readFile('out.mp4');
-      const mp4Blob = new Blob([data.buffer], { type: 'video/mp4' });
-      downloadBlob(mp4Blob, `tabulka_${Date.now()}.mp4`);
-
-      // 6) Cleanup MEMFS so next export starts fresh
-      for (let i = 0; i < TOTAL_FRAMES; i++) {
-        try { await ff.deleteFile(`f${pad4(i)}.png`); } catch (_) {}
-      }
-      try { await ff.deleteFile('out.mp4'); } catch (_) {}
-
-      showToast?.('MP4 H.264 exportováno', 'success');
-    } catch (err) {
-      console.error('[Export MP4]', err);
-      showToast?.('MP4 export selhal: ' + err.message, 'error');
-    }
-  });
-})();
+  })();
 
 
 /* =============================================================================
@@ -2570,115 +2464,179 @@ document.getElementById('btnBack')?.addEventListener('click', () => {
 });
 
 
+
+
 /* =============================================================================
-   MP4 EXPORT — H.264 via ffmpeg.wasm (lazy-loaded on first use, ~30 MB).
-   Frames are composited (backdrop video + canvas) into an offscreen canvas,
-   PNG-encoded, then encoded to MP4 with TV/web bitrate scaling.
+   MP4 EXPORT — H.264 via WebCodecs API + mp4-muxer (~28 KB lib).
+   Native browser API — no SharedArrayBuffer, no coi-serviceworker, no
+   ffmpeg.wasm. Hardware-accelerated on Chrome/Edge/Safari 16.4+.
    ============================================================================= */
-let _ffmpegInstance = null;
-async function loadFFmpeg() {
-  if (_ffmpegInstance) return _ffmpegInstance;
-
-  // Pre-flight diagnostics
-  console.log('[ffmpeg] preflight: SAB=', typeof SharedArrayBuffer !== 'undefined',
-              'crossOriginIsolated=', !!self.crossOriginIsolated,
-              'origin=', location.origin);
-
-  if (typeof SharedArrayBuffer === 'undefined') {
-    throw new Error('SharedArrayBuffer is not available — page is not cross-origin isolated. ' +
-      'Make sure coi-serviceworker.js is loaded and the page reloaded after SW install.');
-  }
-
-  const VER = '0.12.10';
-  const CORE_VER = '0.12.6';
-
-  // CDN fallbacks: try unpkg first, then jsdelivr
+let _mp4MuxerLoaded = false;
+async function loadMp4Muxer() {
+  if (_mp4MuxerLoaded || window.Mp4Muxer) { _mp4MuxerLoaded = true; return; }
   const CDNS = [
-    {
-      base: `https://unpkg.com/@ffmpeg/ffmpeg@${VER}/dist/umd`,
-      coreBase: `https://unpkg.com/@ffmpeg/core@${CORE_VER}/dist/umd`,
-    },
-    {
-      base: `https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@${VER}/dist/umd`,
-      coreBase: `https://cdn.jsdelivr.net/npm/@ffmpeg/core@${CORE_VER}/dist/umd`,
-    },
+    'https://cdn.jsdelivr.net/npm/mp4-muxer@5.1.5/build/mp4-muxer.min.js',
+    'https://unpkg.com/mp4-muxer@5.1.5/build/mp4-muxer.min.js',
   ];
-
-  // Helper: fetch a URL and turn the response into a blob: URL.
-  // This sidesteps CORS/CORP issues — the Worker script becomes same-origin (blob:).
-  async function toBlobURL(url, mime) {
-    console.log('[ffmpeg] fetching', url);
-    const resp = await fetch(url);
-    if (!resp.ok) throw new Error(`HTTP ${resp.status} for ${url}`);
-    const buf = await resp.arrayBuffer();
-    return URL.createObjectURL(new Blob([buf], { type: mime }));
-  }
-
-  // Step 1: Try each CDN until one works for the shim
-  let cdn = null;
-  let lastErr = null;
-  for (const c of CDNS) {
+  let lastErr;
+  for (const url of CDNS) {
     try {
-      console.log('[ffmpeg] loading shim from', c.base);
+      console.log('[mp4-muxer] loading from', url);
       await new Promise((resolve, reject) => {
-        if (window.FFmpegWASM) return resolve();
         const s = document.createElement('script');
-        s.src = `${c.base}/ffmpeg.js`;
+        s.src = url;
         s.onload = resolve;
-        s.onerror = () => reject(new Error('script onerror: ' + s.src));
+        s.onerror = () => reject(new Error('script onerror: ' + url));
         document.head.appendChild(s);
       });
-      cdn = c;
-      console.log('[ffmpeg] shim loaded ✓');
-      break;
+      if (window.Mp4Muxer) {
+        _mp4MuxerLoaded = true;
+        console.log('[mp4-muxer] ready');
+        return;
+      }
     } catch (err) {
-      console.warn('[ffmpeg] shim load failed:', err.message);
       lastErr = err;
+      console.warn('[mp4-muxer] CDN failed:', err.message);
     }
   }
-  if (!cdn) {
-    throw new Error('Failed to load ffmpeg.js from any CDN: ' + (lastErr?.message || '?'));
+  throw new Error('mp4-muxer CDN load failed: ' + (lastErr ? lastErr.message : '?'));
+}
+
+async function pickH264Codec(width, height, fps, bitrate) {
+  const candidates = [
+    'avc1.640034',  // High L5.2
+    'avc1.64002A',  // High L4.2 (1080p60)
+    'avc1.640028',  // High L4.0 (1080p30)
+    'avc1.4D0034',  // Main L5.2
+    'avc1.42E028',  // Baseline L4.0
+  ];
+  for (const codec of candidates) {
+    try {
+      const support = await VideoEncoder.isConfigSupported({
+        codec, width, height, bitrate, framerate: fps,
+      });
+      if (support && support.supported) {
+        console.log('[encoder] picked codec:', codec);
+        return codec;
+      }
+    } catch (_) {}
+  }
+  throw new Error('No supported H.264 codec found in WebCodecs');
+}
+
+document.getElementById('btnExportMP4')?.addEventListener('click', async () => {
+  // Browser capability check
+  if (typeof VideoEncoder === 'undefined' || typeof VideoFrame === 'undefined') {
+    showToast?.('Prohlížeč nepodporuje WebCodecs. Použij Chrome/Edge/Safari 16.4+.', 'error');
+    return;
   }
 
-  if (!window.FFmpegWASM || !window.FFmpegWASM.FFmpeg) {
-    throw new Error('FFmpegWASM global missing after script load');
+  stopPlayback();
+  await waitFonts();
+  showToast?.('Načítám mp4-muxer…', 'info');
+  try {
+    await loadMp4Muxer();
+  } catch (err) {
+    console.error('[Export MP4] muxer load:', err);
+    showToast?.('mp4-muxer load failed: ' + err.message, 'error');
+    return;
   }
-  const { FFmpeg } = window.FFmpegWASM;
-  const ff = new FFmpeg();
-  ff.on('log', ({ message }) => console.log('[ffmpeg]', message));
-  ff.on('progress', ({ progress }) => {
-    if (isFinite(progress)) {
-      const pct = Math.max(0, Math.min(100, Math.round(progress * 100)));
-      console.log(`[ffmpeg] encode ${pct}%`);
-    }
+
+  const isTV = (FPS === 50);
+  const bitrate = isTV ? 16000000 : 4000000;
+
+  let codec;
+  try {
+    codec = await pickH264Codec(W, H, FPS, bitrate);
+  } catch (err) {
+    console.error('[Export MP4] codec pick:', err);
+    showToast?.('H.264 codec nedostupný: ' + err.message, 'error');
+    return;
+  }
+
+  const muxer = new Mp4Muxer.Muxer({
+    target: new Mp4Muxer.ArrayBufferTarget(),
+    video: { codec: 'avc', width: W, height: H, frameRate: FPS },
+    fastStart: 'in-memory',
+    firstTimestampBehavior: 'offset',
   });
 
-  // Step 2: Fetch core + wasm as blobs (same-origin Worker construction)
-  console.log('[ffmpeg] fetching core as blob URLs from', cdn.coreBase);
-  let coreURL, wasmURL;
-  try {
-    coreURL = await toBlobURL(`${cdn.coreBase}/ffmpeg-core.js`, 'text/javascript');
-    wasmURL = await toBlobURL(`${cdn.coreBase}/ffmpeg-core.wasm`, 'application/wasm');
-  } catch (err) {
-    // Fallback to second CDN if the first fails on core fetch
-    console.warn('[ffmpeg] primary CDN failed for core, trying fallback:', err.message);
-    const alt = CDNS.find(c => c.coreBase !== cdn.coreBase);
-    if (!alt) throw err;
-    coreURL = await toBlobURL(`${alt.coreBase}/ffmpeg-core.js`, 'text/javascript');
-    wasmURL = await toBlobURL(`${alt.coreBase}/ffmpeg-core.wasm`, 'application/wasm');
+  const encoderErrors = [];
+  const encoder = new VideoEncoder({
+    output: (chunk, meta) => muxer.addVideoChunk(chunk, meta),
+    error: (e) => { encoderErrors.push(e); console.error('[encoder]', e); },
+  });
+
+  encoder.configure({
+    codec, width: W, height: H, bitrate, framerate: FPS,
+    avc: { format: 'avc' },
+  });
+
+  // Composite: bg video underneath, animation canvas on top.
+  const useVideo = (state.branding === 'preview') && videoReady && !videoFailed;
+  const video = els.bgVideo;
+  const comp = document.createElement('canvas');
+  comp.width = W; comp.height = H;
+  const cctx = comp.getContext('2d');
+
+  if (useVideo) {
+    try { video.currentTime = 0; await video.play(); } catch (_) {}
   }
 
-  console.log('[ffmpeg] loading core (single-threaded)…');
+  showToast?.('Enkóduji ' + TOTAL_FRAMES + ' snímků (H.264 ' + (isTV ? 'TV' : 'web') + ')…', 'info');
+
   try {
-    await ff.load({ coreURL, wasmURL });
+    for (let i = 0; i < TOTAL_FRAMES; i++) {
+      cctx.fillStyle = '#000';
+      cctx.fillRect(0, 0, W, H);
+      if (useVideo && video.readyState >= 2) {
+        const vw = video.videoWidth || W;
+        const vh = video.videoHeight || H;
+        const scale = Math.max(W / vw, H / vh);
+        const dw = vw * scale, dh = vh * scale;
+        const dx = (W - dw) / 2, dy = (H - dh) / 2;
+        cctx.drawImage(video, dx, dy, dw, dh);
+      }
+      renderFrame(i);
+      cctx.drawImage(canvas, 0, 0);
+
+      const frame = new VideoFrame(comp, {
+        timestamp: Math.round(i * 1000000 / FPS),
+      });
+      encoder.encode(frame, { keyFrame: i % FPS === 0 });
+      frame.close();
+
+      if (useVideo) {
+        await new Promise(r => setTimeout(r, 1000 / FPS));
+      } else if (i % 30 === 0) {
+        await new Promise(r => setTimeout(r, 0));
+      }
+
+      if (i % Math.max(1, Math.floor(TOTAL_FRAMES / 10)) === 0) {
+        showToast?.('Snímek ' + (i + 1) + ' / ' + TOTAL_FRAMES, 'info');
+      }
+    }
+
+    if (useVideo) { try { video.pause(); } catch (_) {} }
+
+    showToast?.('Finalizuji MP4…', 'info');
+    await encoder.flush();
+    muxer.finalize();
+    encoder.close();
+
+    if (encoderErrors.length) {
+      throw new Error('Encoder errors: ' + encoderErrors[0].message);
+    }
+
+    const blob = new Blob([muxer.target.buffer], { type: 'video/mp4' });
+    downloadBlob(blob, 'tabulka_' + Date.now() + '.mp4');
+    showToast?.('MP4 H.264 exportováno', 'success');
   } catch (err) {
-    console.error('[ffmpeg] core load failed:', err);
-    throw err;
+    console.error('[Export MP4]', err);
+    showToast?.('MP4 export selhal: ' + err.message, 'error');
+    try { encoder.close(); } catch (_) {}
   }
-  console.log('[ffmpeg] core ready ✓');
-  _ffmpegInstance = ff;
-  return ff;
-}
+});
 </script>
 </body>
 </html>
