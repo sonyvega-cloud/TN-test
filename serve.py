@@ -25,6 +25,17 @@ class CORSHandler(http.server.SimpleHTTPRequestHandler):
         self.send_header('Access-Control-Allow-Origin', '*')
         # Cross-Origin-Resource-Policy lets images/videos load across origins
         self.send_header('Cross-Origin-Resource-Policy', 'cross-origin')
+        # ===== Cross-Origin Isolation =====
+        # ffmpeg.wasm 0.12+ requires SharedArrayBuffer, which the browser only
+        # exposes when the page is "cross-origin isolated". That requires BOTH:
+        #   • COOP: same-origin
+        #   • COEP: require-corp  (or credentialless)
+        # Without these the browser strips SharedArrayBuffer and the H.264
+        # encoder fails with "SharedArrayBuffer is not defined".
+        # `credentialless` is the lenient mode — lets cross-origin <script>
+        # from CDNs (unpkg, jsdelivr) load without the CDN setting CORP itself.
+        self.send_header('Cross-Origin-Opener-Policy', 'same-origin')
+        self.send_header('Cross-Origin-Embedder-Policy', 'credentialless')
         # No caching during dev so Ctrl+R actually fetches fresh files
         self.send_header('Cache-Control', 'no-cache, no-store, must-revalidate')
         self.send_header('Pragma', 'no-cache')
