@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>TN Graphics Engine</title>
+<script src="./coi-serviceworker.js"></script>
 <script src="theme.js"></script>
 <!-- TN LAUNCHER — template picker + saved projects -->
 
@@ -454,7 +455,7 @@ const TEMPLATES = [
   {
     id: 'bar-chart-01',
     num: '01',
-    name: 'Bar Chart',
+    name: 'Graf',
     desc: 'Sloupcový graf s časovou řadou a anotovanými hodnotami. Produkčně použito pro Televizní Noviny.',
     url: 'templates/bar-chart.html',
     previewUrl: 'templates/bar-chart.html?preview=1&frame=55',
@@ -463,7 +464,7 @@ const TEMPLATES = [
   {
     id: 'tn-citace-01',
     num: '02',
-    name: 'TN citace',
+    name: 'Citace',
     desc: 'Citát s fotografií, jménem a funkcí. Světlá karta na Nova TN pozadí s registračními značkami.',
     url: 'templates/tn-citace.html',
     previewUrl: 'templates/tn-citace.html?preview=1&frame=60',
@@ -472,7 +473,7 @@ const TEMPLATES = [
   {
     id: 'tn-tabulka-01',
     num: '03',
-    name: 'TN tabulka',
+    name: 'Tabulka',
     desc: 'Tabulka s ilustrační fotkou vlevo a 1–10 řádky vpravo (3 sloupce). Stejný frame jako citace, řádky se postupně rozkreslují.',
     url: 'templates/tn-tabulka.html',
     previewUrl: 'templates/tn-tabulka.html?preview=1&frame=55',
@@ -481,7 +482,7 @@ const TEMPLATES = [
   {
     id: 'tn-identikit-01',
     num: '04',
-    name: 'TN identikit',
+    name: 'Identikit',
     desc: 'Identikit hledané osoby — fotka vlevo, jméno + popis (výška, oči, postava…) vpravo. Editovatelná tabulka.',
     url: 'templates/tn-identikit.html',
     previewUrl: 'templates/tn-identikit.html?preview=1&frame=55',
@@ -490,7 +491,7 @@ const TEMPLATES = [
   {
     id: 'tn-line-chart-01',
     num: '05',
-    name: 'TN line chart',
+    name: 'Liniový graf',
     desc: 'Trend / časová řada jako křivka. 1–5 sérií, color-pick, jednotka u poslední hodnoty (%, Kč, mil. Kč, …). Adaptivní Y osa.',
     url: 'templates/tn-line-chart.html',
     previewUrl: 'templates/tn-line-chart.html?preview=1&frame=55',
@@ -499,7 +500,7 @@ const TEMPLATES = [
   {
     id: 'tn-donut-01',
     num: '06',
-    name: 'TN donut',
+    name: 'Donut',
     desc: 'Kruhový (donut) graf s 1–8 segmenty. Color-pick, vlastní popisky, hodnoty se nemusí sčítat na 100 — výseč se počítá poměrně. Legenda vpravo.',
     url: 'templates/tn-donut.html',
     previewUrl: 'templates/tn-donut.html?preview=1&frame=55',
@@ -508,7 +509,7 @@ const TEMPLATES = [
   {
     id: 'tn-hbar-01',
     num: '07',
-    name: 'TN horizontal bar',
+    name: 'Vodorovný graf',
     desc: 'Vodorovný sloupcový graf. 1–8 řádků, vlastní barvy, hodnoty se počítají poměrně. Kategorie vlevo, hodnoty vpravo zarovnané na TN safe edge 1805 px.',
     url: 'templates/tn-hbar.html',
     previewUrl: 'templates/tn-hbar.html?preview=1&frame=55',
@@ -517,7 +518,7 @@ const TEMPLATES = [
   {
     id: 'tn-kartoteka-01',
     num: '08',
-    name: 'TN kartotéka',
+    name: 'Kartotéka',
     desc: 'Karty kandidátů / svědků / hostů. 1–8 karet, layout adaptivní (1, 2×1, 1×3, 2×2, 2×3, 2×4). Default modrá silueta nebo upload vlastní fotky per karta.',
     url: 'templates/tn-kartoteka.html',
     previewUrl: 'templates/tn-kartoteka.html?preview=1&frame=55',
@@ -604,17 +605,30 @@ function setShow(id) {
 }
 
 function applyShowBarVisuals() {
-  if (!window.TN_THEMES) return;
+  if (!window.TN_THEMES) {
+    console.error('[Launcher] window.TN_THEMES is missing — theme.js failed to load');
+    document.getElementById('showBarName').textContent = 'theme.js chybí';
+    document.getElementById('showBarMeta').textContent =
+      'Polož theme.js do rootu projektu (vedle index.html)';
+    document.getElementById('showBar').style.setProperty('--show-accent', '#888');
+    return;
+  }
   const show = TN_THEMES.get(_currentShow);
   const bar = document.getElementById('showBar');
   bar.style.setProperty('--show-accent', show.accent);
   document.getElementById('showBarName').textContent = show.name;
   document.getElementById('showBarMeta').textContent =
     `doprovodná barva ${show.accent}  ·  backdrop ${show.video.replace('../', '')}`;
+  console.log(`[Launcher] Active show: ${show.name} (${show.id}) · accent ${show.accent}`);
 }
 
 function populateShowBar() {
-  if (!window.TN_THEMES) return;
+  console.log('[Launcher] populateShowBar called. window.TN_THEMES =',
+    typeof window.TN_THEMES);
+  if (!window.TN_THEMES) {
+    applyShowBarVisuals();   // shows the error message
+    return;
+  }
   const sel = document.getElementById('showSelect');
   sel.innerHTML = TN_THEMES.optionsHtml(_currentShow);
   sel.addEventListener('change', e => setShow(e.target.value));

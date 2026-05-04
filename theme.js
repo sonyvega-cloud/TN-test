@@ -14,37 +14,43 @@
     {
       id:     'tn',
       name:   'TN',
-      accent: '#762929',                      // doprovodná barva (subtitle, callouts, …)
+      accent: '#2668AC',                      // doprovodná barva (subtitle, callouts, …)
+      fontColor: '#0a0a0a',                   // primary text — neutral black for TN
       video:  '../assets/bg-loop.mp4',        // path relative to a /templates/*.html file
     },
     {
       id:     'tn-mapy',
       name:   'TN mapy',
-      accent: '#762929',
+      accent: '#2668AC',
+      fontColor: '#0a0a0a',
       video:  '../assets/bg-loop-blur.mp4',
     },
     {
       id:     'strepiny',
       name:   'Střepiny',
-      accent: '#315CD1',
+      accent: '#762929',
+      fontColor: '#2d0e0e',                   // very dark wine — tonally ties to vinová accent
       video:  '../assets/bg-strepiny-loop.mp4',
     },
     {
       id:     'nvs',
       name:   'Na Vaší Straně',
-      accent: '#306DB8',
+      accent: '#315CD1',
+      fontColor: '#08152e',                   // very dark navy — tonally ties to royal blue
       video:  '../assets/bg-nvs-loop.mp4',
     },
     {
       id:     'za512',
       name:   'Za 5min12',
-      accent: '#24604A',
+      accent: '#306DB8',
+      fontColor: '#0a1d33',                   // very dark blue
       video:  '../assets/bg-za512-loop.mp4',
     },
     {
       id:     'sh',
       name:   'Školní Hlášení',
       accent: '#837B00',
+      fontColor: '#1a1900',                   // very dark olive
       video:  '../assets/bg-sh-loop.mp4',
     },
   ];
@@ -66,6 +72,12 @@
     return get(showId).video;
   }
 
+  // Primary text color for a show. Templates use this for titles, names, row
+  // values, etc. Defaults to dark (#0a0a0a) when a show doesn't define its own.
+  function fontColor(showId) {
+    return get(showId).fontColor || '#0a0a0a';
+  }
+
   // Render the <option> list for a sidebar dropdown.
   function optionsHtml(currentId) {
     return SHOWS.map(s =>
@@ -80,6 +92,7 @@
     get,
     accent,
     video,
+    fontColor,
     optionsHtml,
   };
 })(typeof window !== 'undefined' ? window : globalThis);
