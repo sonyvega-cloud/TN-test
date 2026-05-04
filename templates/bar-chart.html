@@ -4,6 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>TN Template Test</title>
+<script src="../coi-serviceworker.js"></script>
+<script src="../theme.js"></script>
 <!-- TN TEMPLATE TEST — Graph Generator POC v0.7 -->
 <!-- Single-file, self-contained. Organica fonts embedded as base64. -->
 <!-- Layout pixel-measured from reference render. Video backdrop via ./assets/bg-loop.mp4. -->
@@ -646,6 +648,229 @@
     padding: 1px 5px;
     border-radius: 2px;
   }
+  /* ===== Info tooltip bubble (i) ===== */
+  .info-tip {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px; height: 16px;
+    margin-left: 6px;
+    border-radius: 50%;
+    background: var(--bg-2, #2a2a2a);
+    color: var(--text-2, #999);
+    font-family: var(--font-mono, monospace);
+    font-size: 10px;
+    font-weight: 700;
+    font-style: italic;
+    cursor: help;
+    user-select: none;
+    position: relative;
+    vertical-align: middle;
+    line-height: 1;
+    transition: background 0.15s, color 0.15s;
+  }
+  .info-tip:hover { background: var(--text-0, #f0f0f0); color: var(--text-inv, #1a1a1a); }
+  .info-tip::after {
+    content: attr(data-tip);
+    position: absolute;
+    bottom: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: #1a1a1a;
+    color: #f0f0f0;
+    padding: 8px 12px;
+    border-radius: 4px;
+    font-family: var(--font-ui, sans-serif);
+    font-size: 12px;
+    font-weight: 400;
+    font-style: normal;
+    line-height: 1.4;
+    letter-spacing: normal;
+    text-transform: none;
+    white-space: normal;
+    width: 240px;
+    z-index: 1000;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.15s, visibility 0.15s;
+    pointer-events: none;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  }
+  .info-tip::before {
+    content: '';
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 6px solid transparent;
+    border-top-color: #1a1a1a;
+    margin-bottom: 2px;
+    z-index: 1001;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.15s, visibility 0.15s;
+  }
+  .info-tip:hover::after, .info-tip:hover::before { opacity: 1; visibility: visible; }
+
+  /* Show theme dropdown */
+  .select-show {
+    width: 100%;
+    padding: 8px 12px;
+    background: var(--bg-2, #2a2a2a);
+    border: 1px solid var(--line, #3a3a3a);
+    color: var(--text-0, #f0f0f0);
+    font-family: var(--font-ui, sans-serif);
+    font-size: 13px;
+    font-weight: 500;
+    border-radius: 3px;
+    outline: none;
+    cursor: pointer;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'><path d='M1 1l5 5 5-5' stroke='%23999' stroke-width='1.5' fill='none'/></svg>");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+  }
+  .select-show:focus { border-color: var(--tn-red, #DC0F2E); }
+
+  /* ===== FPS pill ===== */
+  .fps-pill { position: relative; display: inline-block; }
+  .fps-pill-active {
+    background: var(--bg-2, #2a2a2a);
+    border: 1px solid var(--line, #3a3a3a);
+    color: var(--text-0, #f0f0f0);
+    font-family: var(--font-mono, monospace);
+    font-size: 12px;
+    font-weight: 700;
+    padding: 8px 14px;
+    border-radius: 3px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    letter-spacing: 0.05em;
+  }
+  .fps-pill-active:hover { background: var(--text-0, #f0f0f0); color: var(--text-inv, #1a1a1a); }
+  .fps-pill-hint {
+    font-size: 9px;
+    font-weight: 600;
+    opacity: 0.6;
+    letter-spacing: 0.1em;
+  }
+  .fps-pill-menu {
+    display: none;
+    position: absolute;
+    top: calc(100% + 4px);
+    right: 0;
+    background: #1a1a1a;
+    border: 1px solid var(--line, #3a3a3a);
+    border-radius: 3px;
+    z-index: 100;
+    min-width: 180px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  }
+  .fps-pill:hover .fps-pill-menu { display: block; }
+  .fps-pill-menu button {
+    display: block;
+    width: 100%;
+    text-align: left;
+    background: transparent;
+    border: 0;
+    color: #f0f0f0;
+    padding: 10px 14px;
+    cursor: pointer;
+    font-family: var(--font-mono, monospace);
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.05em;
+  }
+  .fps-pill-menu button:hover { background: rgba(255,255,255,0.1); }
+  .fps-pill-menu button.active { background: var(--tn-red, #DC0F2E); color: white; }
+
+  /* ===== Export split-button ===== */
+  .export-split {
+    position: relative;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 1px;
+  }
+  .export-split .btn-export.primary {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 12px 16px;
+    background: var(--tn-red, #DC0F2E);
+    color: white;
+    border: 0;
+    border-radius: 3px 0 0 3px;
+    cursor: pointer;
+    font-family: var(--font-ui, sans-serif);
+    transition: background 0.15s;
+  }
+  .export-split .btn-export.primary:hover { background: #b80825; }
+  .export-split .btn-export.primary .btn-main {
+    font-size: 14px; font-weight: 700; letter-spacing: 0.02em;
+  }
+  .export-split .btn-export.primary .btn-sub {
+    font-size: 10px; opacity: 0.85; margin-top: 2px;
+    font-family: var(--font-mono, monospace); letter-spacing: 0.05em;
+  }
+  .btn-export-more {
+    background: var(--tn-red, #DC0F2E);
+    color: white;
+    border: 0;
+    border-radius: 0 3px 3px 0;
+    padding: 0 14px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 700;
+    border-left: 1px solid rgba(255,255,255,0.2);
+    transition: background 0.15s;
+  }
+  .btn-export-more:hover { background: #b80825; }
+  .export-menu {
+    display: none;
+    position: absolute;
+    top: calc(100% + 4px);
+    right: 0;
+    background: #1a1a1a;
+    border: 1px solid var(--line, #3a3a3a);
+    border-radius: 3px;
+    z-index: 100;
+    min-width: 240px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  }
+  .export-menu.open { display: block; }
+  .export-menu button {
+    display: block;
+    width: 100%;
+    text-align: left;
+    background: transparent;
+    border: 0;
+    color: #f0f0f0;
+    padding: 10px 14px;
+    cursor: pointer;
+    font-family: var(--font-ui, sans-serif);
+    font-size: 13px;
+  }
+  .export-menu button:hover { background: rgba(255,255,255,0.1); }
+
+  /* ===== ZPĚT button (top-right of control-header, mirrors tn-mark on left) ===== */
+  .back-btn {
+    position: absolute;
+    top: 22px; right: 24px;
+    background: var(--text-inv); color: var(--tn-red);
+    font-family: var(--font-mono);
+    font-weight: 700; font-size: 11px;
+    letter-spacing: 0.12em;
+    padding: 7px 14px;
+    border: 0; cursor: pointer;
+    transition: transform .1s ease, background .15s ease;
+    display: inline-flex; align-items: center; gap: 4px;
+  }
+  .back-btn:hover { transform: translateX(-3px); }
+  .back-btn:active { transform: scale(0.95); }
 </style>
 </head>
 <body>
@@ -660,6 +885,7 @@
         <span class="tpl-num">TEMPLATE 01</span>
         <span class="tpl-name">Bar Chart</span>
       </div>
+      <button class="back-btn" id="btnBack" title="Zpět na rozcestník">‹ ZPĚT</button>
     </div>
 
     <!-- Project management bar -->
@@ -678,22 +904,30 @@
     </div>
 
     <div class="status">
-      <div class="status-item"><span class="status-label">FPS</span><span class="status-value" id="stFps">25</span></div>
+      <div class="status-item"><span class="status-label">FPS</span><span class="status-value" id="stFps">50</span></div>
       <div class="status-item"><span class="status-label">Res</span><span class="status-value">1920×1080</span></div>
-      <div class="status-item"><span class="status-label">Dur</span><span class="status-value" id="stDur">2.00s</span></div>
+      <div class="status-item"><span class="status-label">Dur</span><span class="status-value" id="stDur">20.00s</span></div>
       <div class="status-item"><span class="status-label">Backdrop</span><span class="status-value" id="stBackdrop" style="cursor:pointer" title="Click to retry">…</span></div>
     </div>
 
     <div class="section">
-      <div class="section-head"><span class="section-title">Backdrop</span></div>
-      <div class="toggle-group" id="brandingToggle">
-        <button data-value="export">Export (clean)</button>
-        <button data-value="preview" class="active">Studio preview</button>
+      <div class="section-head">
+        <span class="section-title">Pořad</span>
+        <span class="info-tip" data-tip="Volba pořadu přepne backdrop video a doprovodnou barvu (default barva sloupců). Per-projekt — ukládá se s projektem.">i</span>
       </div>
-      <div class="note" style="margin-top: 10px;">
-        <strong>Studio preview</strong>: <code>./assets/bg-loop.mp4</code> běží pod blokem, frame-synced. Video nikdy neprosakuje do exportů.<br>
-        <strong>Export</strong>: čistě černé pozadí pro režii, blok na 95% opacity (exported pixely pak sedí s referencí).<br>
-        Všechny 4 vrstvy bloku (top/title/chart/bottom) jsou 95% — v preview módu video prosvítá skrz celý graf. Top a bottom pásy režie později překryje svými blue/teal overlaye.
+      <div class="field">
+        <label>Téma (pozadí + barva grafu)</label>
+        <select id="inShow" class="select-show"></select>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-head">
+        <span class="section-title">Pozadí</span>
+        <span class="info-tip" data-tip="Backdrop video se mění automaticky podle vybraného pořadu (sekce Pořad). Studio preview je vždy zapnutý — režii dodá clean export přímo z časové osy.">i</span>
+      </div>
+      <div class="note" id="backdropStatus" style="cursor:pointer; margin-top: 10px;" title="Klikni pro reload videa">
+        <strong>Aktivní:</strong> <code id="backdropPath">../assets/bg-loop.mp4</code>
       </div>
     </div>
 
@@ -753,26 +987,29 @@
     </div>
 
     <div class="section">
-      <div class="section-head"><span class="section-title">Timing</span></div>
+      <div class="section-head">
+        <span class="section-title">Animace &amp; Časování</span>
+        <span class="info-tip" data-tip="Délka určuje celkovou dobu animace. FPS volí počet snímků za sekundu — 50 FPS pro TV výstup (broadcast), 30 FPS pro web (sociální sítě). Auto-fit přizpůsobí délku počtu sloupců.">i</span>
+      </div>
       <div class="row2">
-        <div class="field"><label>Frame rate</label>
-          <div class="toggle-group" id="fpsToggle">
-            <button data-value="25" class="active">25 fps</button>
-            <button data-value="50">50 fps</button>
-          </div>
-        </div>
+        <div class="field"><label>Délka (s) <span class="info-tip" data-tip="Celková délka animace v sekundách. Default 20 s.">i</span></label>
+          <input type="number" id="inDuration" value="20" min="0.5" max="60" step="0.1"></div>
         <div class="field"><label>Auto-fit</label>
           <div class="toggle-group" id="autoFitToggle">
-            <button data-value="on" class="active">Auto</button>
-            <button data-value="off">Manual</button>
+            <button data-value="on">Auto</button>
+            <button data-value="off" class="active">Manual</button>
           </div>
         </div>
       </div>
-      <div class="field"><label>Duration (s)</label>
-        <input type="number" id="inDuration" value="2.00" min="0.5" max="30" step="0.1"></div>
-      <div class="note" style="margin-top: 10px;">
-        <strong>25 fps</strong>: broadcast CZ/EU standard (PAL). <strong>50 fps</strong>: smoother motion, same seconds — frame count doubles.<br>
-        Timing in <em>seconds</em> stays identical between 25/50 — all animation beats scale to the chosen frame rate.
+      <div class="field" style="margin-top:10px">
+        <label>FPS</label>
+        <div class="fps-pill" id="fpsPill">
+          <button class="fps-pill-active" id="fpsActiveBtn" data-fps="50">50 FPS<span class="fps-pill-hint">TV</span></button>
+          <div class="fps-pill-menu">
+            <button data-fps="50">50 FPS · TV výstup</button>
+            <button data-fps="30">30 FPS · web výstup</button>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -789,26 +1026,35 @@
       </div>
     </div>
 
-    <div class="actions">
+    <div class="section">
+      <div class="section-head">
+        <span class="section-title">Export</span>
+        <span class="info-tip" data-tip="Hlavní tlačítko: vyrenderuje MP4 H.264 s aktuálním pozadím. Bitrate se škáluje podle FPS — 50 FPS = vysoký bitrate (TV broadcast), 30 FPS = nižší bitrate (web). Šipka napravo nabídne další formáty.">i</span>
+      </div>
       <div class="field" style="margin-bottom: 8px;">
-        <label style="margin-bottom: 8px;">Export options</label>
+        <label>Pozadí v exportu <span class="info-tip" data-tip="Clean = pro režii (čisté černé pozadí). With backdrop = video pozadí zapečené do exportu.">i</span></label>
         <div class="toggle-group" id="bakeToggle">
-          <button data-value="off" class="active">Clean (режie)</button>
-          <button data-value="on">With backdrop</button>
+          <button data-value="off">Clean (režie)</button>
+          <button data-value="on" class="active">With backdrop</button>
         </div>
       </div>
-      <button class="btn" id="btnExportFrame">
-        <span>Export still</span><span class="hint">PNG · current frame</span>
-      </button>
-      <button class="btn" id="btnExportSeq">
-        <span>Export PNG sequence</span><span class="hint">pick folder → write frames</span>
-      </button>
-      <button class="btn" id="btnExportVideo">
-        <span>Export video</span><span class="hint">WebM · VP9</span>
-      </button>
-      <button class="btn primary" id="btnExportMP4">
-        <span>Export MP4</span><span class="hint">H.264 via ffmpeg.wasm · ~30MB first use</span>
-      </button>
+      <div class="export-split">
+        <button class="btn-export primary" id="btnExportMP4">
+          <span class="btn-main">Export MP4</span>
+          <span class="btn-sub" id="btnExportSubLabel">50 FPS · TV bitrate</span>
+        </button>
+        <button class="btn-export-more" id="btnExportMore" title="Další možnosti">▾</button>
+        <div class="export-menu" id="exportMenu">
+          <button data-format="png">Aktuální snímek (PNG)</button>
+          <button data-format="seq">PNG sekvence (do složky)</button>
+          <button data-format="webm">WebM (browser native)</button>
+        </div>
+      </div>
+      <!-- Legacy export buttons: hidden but kept in DOM so existing JS handlers
+           can attach. The dropdown menu items above dispatch click() to these. -->
+      <button id="btnExportFrame" style="display:none"></button>
+      <button id="btnExportSeq"   style="display:none"></button>
+      <button id="btnExportVideo" style="display:none"></button>
     </div>
   </aside>
 
@@ -875,8 +1121,8 @@
 // as frame counts AT 25 fps; runtime values are scaled by (FPS/25) so the
 // animation always takes the same SECONDS regardless of fps. Higher fps =
 // smoother motion with same duration.
-let FPS = 25;
-let DURATION = 2.0;                            // seconds — dynamic
+let FPS = 50;
+let DURATION = 20.0;                            // seconds — dynamic
 let TOTAL_FRAMES = Math.round(FPS * DURATION); // dynamic
 const W = 1920, H = 1080;
 
@@ -915,20 +1161,28 @@ const TIMING = {
 };
 
 // ==================== STATE ====================
+// Project storage keys + template ID — must be defined BEFORE anything calls
+// snapshotState() (e.g. via setInterval callback or async boot waitpoint).
+const LS_KEY = 'tn_graphics_engine_projects_v2';
+const LS_CURRENT = 'tn_graphics_engine_current_v2';
+const TEMPLATE_ID = 'bar-chart-01';
+
 const state = {
   title: "Podíl dokončených rekonstrukcí (v %)",
   source: "Facebook",
   maxY: 40,
+  minY: 0,                          // 0 by default; goes negative when bars have negative values
   stepY: 10,
   decimals: 0,
   barColor: "#3b82c0",
+  show: 'tn',                     // show theme id — see theme.js (TN_THEMES.SHOWS)
   branding: "preview",
   showSafeArea: false,
-  autoDuration: true,
+  autoDuration: false,            // user-set duration default 20s — auto-fit needs explicit opt-in
   autoMaxY: true,                 // auto-compute maxY and stepY from bar values
   autoPlotLeft: true,             // auto-shift plotLeft to avoid Y-axis label overlap
   plotLeftOffset: 0,              // additional manual fine-tune (px, +/-)
-  exportIncludesBackdrop: false,  // bake video backdrop into PNG/video exports      // when true, duration recomputes to fit all bars
+  exportIncludesBackdrop: true,   // bake video backdrop into PNG/video exports — default ON
   bars: [
     { label: "2018", value: 35 },
     { label: "2019", value: 21 },
@@ -939,8 +1193,50 @@ const state = {
     { label: "2024", value: 3  },
     { label: "2025", value: 2  },
   ],
-  frame: 49,
+  frame: 0,
 };
+
+// ==================== SHOW THEME (theme.js) ====================
+function getAccent() {
+  return (window.TN_THEMES ? TN_THEMES.accent(state.show) : '#2668AC');
+}
+function getThemeVideo() {
+  return (window.TN_THEMES ? TN_THEMES.video(state.show) : '../assets/bg-loop.mp4');
+}
+function populateShowSelect() {
+  if (!window.TN_THEMES) return;
+  const sel = document.getElementById('inShow');
+  if (sel) sel.innerHTML = TN_THEMES.optionsHtml(state.show);
+}
+function applyShowTheme() {
+  // Swap backdrop video src
+  const bgVideo = document.getElementById('bgVideo');
+  if (bgVideo && window.TN_THEMES) {
+    const newSrc = TN_THEMES.video(state.show);
+    if (!bgVideo.currentSrc || !bgVideo.currentSrc.endsWith(newSrc.replace(/^\.\.\//, ''))) {
+      bgVideo.src = newSrc;
+      bgVideo.load();
+      try { bgVideo.play(); } catch (_) {}
+    }
+  }
+  // Sync bar color to theme accent unless user picked a custom one
+  if (window.TN_THEMES) {
+    const newAccent = TN_THEMES.accent(state.show);
+    if (!state._lastThemeAccent || state.barColor === state._lastThemeAccent) {
+      state.barColor = newAccent;
+      const colorInput = document.getElementById('inBarColor');
+      if (colorInput) colorInput.value = newAccent;
+    }
+    state._lastThemeAccent = newAccent;
+  }
+  if (typeof setBackdropStatus === 'function') setBackdropStatus(null);
+  if (typeof render === 'function') render();
+}
+
+function getFontColor() {
+  return (window.TN_THEMES ? TN_THEMES.fontColor(state.show) : '#0a0a0a');
+}
+
 
 const canvas = document.getElementById('stage');
 const ctx = canvas.getContext('2d');
@@ -979,6 +1275,7 @@ const LAYOUT = {
 const BLOCK_ANCHOR_Y = 135;
 
 function renderFrame(frame) {
+  try {
   ctx.save();
   ctx.clearRect(0, 0, W, H);
 
@@ -1053,6 +1350,9 @@ function renderFrame(frame) {
   if (state.showSafeArea) {
     drawSafeAreaGuides();
   }
+  } catch (e) {
+    console.error('[renderFrame] frame=' + frame, e, e.stack);
+  }
 }
 
 // SMPTE broadcast safe area guides (title-safe 90% + action-safe 93%)
@@ -1092,6 +1392,60 @@ function drawSafeAreaGuides() {
 }
 
 // --------- Title band ---------
+// =============================================================================
+// AUTO-FIT TITLE — measures the title at default font size, shrinks if it
+// would overflow into the source caption area (right side, anchored to
+// LAYOUT.sourceX). Keeps a minimum gap of 50 px between title end and source
+// start. Source caption font/position never changes.
+// =============================================================================
+function autoFitTitle(titleText, sourceText, baseFont) {
+  // Defensive: if anything goes wrong (ctx not ready, LAYOUT missing),
+  // just return the baseFont — caller will use the original size.
+  try {
+    const MIN_FONT = 32;
+    const STEP = 2;
+    const MIN_GAP = 50;
+    ctx.save();
+    ctx.font = '400 28px "Organica", sans-serif';
+    const sourceW = sourceText ? ctx.measureText(sourceText).width : 0;
+    const sourceLeftEdge = LAYOUT.sourceX - sourceW;
+    let font = baseFont;
+    while (font >= MIN_FONT) {
+      ctx.font = `800 ${font}px "Organica", sans-serif`;
+      const titleW = ctx.measureText(titleText || '').width;
+      const titleRightEdge = LAYOUT.titleX + titleW;
+      if (titleRightEdge + MIN_GAP <= sourceLeftEdge) break;
+      font -= STEP;
+    }
+    ctx.restore();
+    return font;
+  } catch (_) {
+    return baseFont;
+  }
+}
+
+// =============================================================================
+// FIT FONT — generic shrink-to-fit helper. Returns the largest font size ≤
+// baseFont (in px, integer) at which `text` fits within `maxWidth`. Floor at
+// minFont. Used for row cells, value labels, segment labels — anywhere a
+// dynamic string might overflow its column.
+// =============================================================================
+function fitFont(text, maxWidth, baseFont, weight, minFont, step) {
+  weight = weight || 800;
+  minFont = minFont || 24;
+  step = step || 2;
+  try {
+    let f = baseFont;
+    while (f >= minFont) {
+      ctx.font = `${weight} ${f}px "Organica", sans-serif`;
+      if (ctx.measureText(text || '').width <= maxWidth) return f;
+      f -= step;
+    }
+    return minFont;
+  } catch (_) { return baseFont; }
+}
+
+
 function drawTitle(frame) {
   const p = easeOutQuart(clamp01((frame - TIMING.titleIn.start) / TIMING.titleIn.dur));
   if (p <= 0) return;
@@ -1100,8 +1454,10 @@ function drawTitle(frame) {
   ctx.globalAlpha = p;
 
   // Title (OrganicaM-Bold, weight 800) — aligned to baseline y=198 (measured)
-  ctx.fillStyle = '#000';
-  ctx.font = '800 54px "Organica", sans-serif';
+  // Auto-fit: shrinks 54→32px if it would collide with the right-aligned source caption.
+  ctx.fillStyle = getFontColor();
+  const sourceCaption = `zdroj: ${state.source}`;
+  ctx.font = `800 ${autoFitTitle(state.title || '', sourceCaption, 54)}px "Organica", sans-serif`;
   ctx.textBaseline = 'alphabetic';
   ctx.textAlign = 'left';
   ctx.fillText(state.title, LAYOUT.titleX, LAYOUT.titleY);
@@ -1111,7 +1467,7 @@ function drawTitle(frame) {
   ctx.fillStyle = '#222';
   ctx.font = '400 28px "Organica", sans-serif';
   ctx.textAlign = 'right';
-  ctx.fillText(`zdroj: ${state.source}`, LAYOUT.sourceX, LAYOUT.titleY);
+  ctx.fillText(sourceCaption, LAYOUT.sourceX, LAYOUT.titleY);
   ctx.restore();
 }
 
@@ -1124,18 +1480,23 @@ function drawGrid(frame) {
   const plotLeft = computePlotLeft();
   const plotW = LAYOUT.plotRight - plotLeft;
 
+  // Y-axis spans state.minY..state.maxY. yForValue maps any value to pixel-y.
+  const yRange = state.maxY - state.minY;
+  const yForValue = v => LAYOUT.plotBottom - ((v - state.minY) / yRange) * plotH;
+
   ctx.save();
   ctx.globalAlpha = p;
 
   // Y-axis tick labels — LEFT aligned to title guide (x=115)
-  ctx.fillStyle = '#000';
+  ctx.fillStyle = getFontColor();
   ctx.font = '700 44px "Organica", sans-serif';
   ctx.textAlign = 'left';
   ctx.textBaseline = 'middle';
 
   const step = state.stepY;
-  for (let v = 0; v <= state.maxY + 0.0001; v += step) {
-    const y = LAYOUT.plotBottom - (v / state.maxY) * plotH;
+  // Walk from minY (might be negative) up to maxY, including both endpoints.
+  for (let v = state.minY; v <= state.maxY + 0.0001; v += step) {
+    const y = yForValue(v);
     ctx.fillText(formatNumber(v), LAYOUT.titleX, y);
     // Horizontal gridline — measured reference color ~(208, 211, 216) ≈ 12% black on gray.
     ctx.strokeStyle = 'rgba(0, 0, 0, 0.12)';
@@ -1159,55 +1520,78 @@ function drawBars(frame) {
   const slot = plotW / count;
   const barW = slot * (159 / 184);                    // measured: 159/184 = 0.864
 
+  // Y-axis range mapping — when minY is 0 (no negatives) this collapses to old logic
+  const yRange = state.maxY - state.minY;
+  const yForValue = v => LAYOUT.plotBottom - ((v - state.minY) / yRange) * plotH;
+  const baselineY = yForValue(0);  // pixel-y of the zero line
+
   state.bars.forEach((bar, i) => {
     const x = plotLeft + slot * i + (slot - barW) / 2;
-    const targetH = (bar.value / state.maxY) * plotH;
+    // Signed full height — positive: grows up from baseline; negative: grows down.
+    const fullSignedH = ((bar.value - 0) / yRange) * plotH; // > 0 ↦ up
 
     // === BAR GROWTH (AE null "move" controller) ===
     const barStart = TIMING.barFirst + i * TIMING.barStagger;
     const barP = clamp01((frame - barStart) / TIMING.barGrow);
     const barEased = easeOutExpo(barP);
-    const h = targetH * barEased;
+    const h = fullSignedH * barEased;                  // signed animated height
 
-    if (h > 0.5) {
+    if (Math.abs(h) > 0.5) {
       ctx.fillStyle = state.barColor;
-      ctx.fillRect(x, LAYOUT.plotBottom - h, barW, h);
+      // For positive h, top is baselineY - h, height = h
+      // For negative h, top is baselineY, height = -h (Math.abs handles both)
+      const yTop = h >= 0 ? baselineY - h : baselineY;
+      ctx.fillRect(x, yTop, barW, Math.abs(h));
     }
 
-    // === VALUE NUMBER — locked 1:1 to the bar underneath ===
-    // Number sits directly on top of the bar as it grows. Same start frame,
-    // same easing curve, same end frame, same progress. The y-position tracks
-    // the bar top continuously — so the label rides the bar up at exactly the
-    // speed the bar is rising. Count-up uses barEased: 80 % height = 80 % value.
+    // === VALUE NUMBER — locked 1:1 to the bar tip ===
     if (barP > 0) {
       ctx.save();
-      ctx.globalAlpha = barP;                           // simple linear fade tied to growth
-      const y = LAYOUT.plotBottom - h - 22;             // always sitting 22px above bar top
-      const shownVal = bar.value * barEased;            // identical curve to bar
-
-      ctx.fillStyle = '#000';
-      ctx.font = '700 52px "Organica", sans-serif';
+      ctx.globalAlpha = barP;
+      // POSITIVE bar: label sits 22 px ABOVE the bar tip (outside plot, top side).
+      // NEGATIVE bar: label sits 22 px BELOW the baseline (inside the bar's
+      //   region, pointing down) so it never collides with category labels
+      //   which are always rendered at LAYOUT.plotBottom + 28.
+      let labelY, baseline;
+      if (h >= 0) {
+        labelY = baselineY - h - 22;
+        baseline = 'bottom';
+      } else {
+        labelY = baselineY + 22;       // 22 px under zero-line, inside the negative bar
+        baseline = 'top';
+      }
+      const shownVal = bar.value * barEased;
+      ctx.fillStyle = getFontColor();
+      // Auto-fit: shrinks if the formatted number is wider than barW + 30 px.
+      // Long values (1 234 567) get 700 52px → 700 36px instead of bleeding.
+      const valueText = formatNumber(shownVal);
+      const valueFont = fitFont(valueText, barW + 30, 52, 700, 26, 2);
+      ctx.font = `700 ${valueFont}px "Organica", sans-serif`;
       ctx.textAlign = 'center';
-      ctx.textBaseline = 'bottom';
-      ctx.fillText(formatNumber(shownVal), x + barW / 2, y);
+      ctx.textBaseline = baseline;
+      ctx.fillText(valueText, x + barW / 2, labelY);
       ctx.restore();
     }
 
-    // === LABEL below baseline (year / category) ===
+    // === LABEL below baseline (year / category) — always at plotBottom ===
     const labelP = clamp01((frame - barStart) / 6);
     if (labelP > 0) {
       ctx.save();
       ctx.globalAlpha = labelP;
-      ctx.fillStyle = '#000';
-      ctx.font = '700 42px "Organica", sans-serif';
+      ctx.fillStyle = getFontColor();
+      // Auto-fit: shrinks the category label if it would bleed into the next bar.
+      const catText = bar.label || '';
+      const catFont = fitFont(catText, barW + 10, 42, 700, 22, 2);
+      ctx.font = `700 ${catFont}px "Organica", sans-serif`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'top';
-      ctx.fillText(bar.label, x + barW / 2, LAYOUT.plotBottom + 28);
+      ctx.fillText(catText, x + barW / 2, LAYOUT.plotBottom + 28);
       ctx.restore();
     }
   });
 
-  // Baseline (x-axis) — neutral dark, no white-over-video AA artifact
+  // Baseline (x-axis) — drawn at the zero line, which may be raised when
+  // negatives are present.
   const axisP = clamp01((frame - TIMING.gridIn.start) / TIMING.gridIn.dur);
   if (axisP > 0) {
     ctx.save();
@@ -1215,8 +1599,8 @@ function drawBars(frame) {
     ctx.strokeStyle = 'rgba(0, 0, 0, 0.45)';
     ctx.lineWidth = 2.5;
     ctx.beginPath();
-    ctx.moveTo(plotLeft, LAYOUT.plotBottom);
-    ctx.lineTo(LAYOUT.plotRight, LAYOUT.plotBottom);
+    ctx.moveTo(plotLeft, baselineY);
+    ctx.lineTo(LAYOUT.plotRight, baselineY);
     ctx.stroke();
     ctx.restore();
   }
@@ -1300,7 +1684,21 @@ document.getElementById('inStepY').addEventListener('input', e => {
   });
   render();
 });
-document.getElementById('inBarColor').addEventListener('input', e => { state.barColor = e.target.value; render(); });
+document.getElementById('inBarColor').addEventListener('input', e => {
+  state.barColor = e.target.value;
+  state._lastThemeAccent = '__user_picked__';   // disable theme follow
+  render();
+});
+
+// Show theme — populate dropdown + listen for changes
+(function () {
+  const sel = document.getElementById('inShow');
+  if (sel) sel.addEventListener('change', e => {
+    state.show = e.target.value;
+    applyShowTheme();
+  });
+  populateShowSelect();
+})();
 document.getElementById('inDecimals').addEventListener('change', e => { state.decimals = +e.target.value; render(); });
 
 // Auto-scale Y-axis toggle
@@ -1323,6 +1721,66 @@ document.querySelectorAll('#autoPlotLeftToggle button').forEach(btn => {
     render();
   });
 });
+
+// =============================================================================
+// FPS PILL — main button = currently selected FPS, hover reveals alternatives
+// Available: 50 (TV broadcast), 30 (web), 25 (legacy/preserved).
+// =============================================================================
+function updateFpsPillUI() {
+  try {
+    const pill = document.getElementById('fpsActiveBtn');
+    if (!pill) return;
+    pill.innerHTML = `${FPS} FPS<span class="fps-pill-hint">${FPS === 50 ? 'TV' : 'WEB'}</span>`;
+    document.querySelectorAll('.fps-pill-menu button').forEach(b => {
+      b.classList.toggle('active', parseInt(b.dataset.fps, 10) === FPS);
+    });
+    const subLabel = document.getElementById('btnExportSubLabel');
+    if (subLabel) subLabel.textContent = `${FPS} FPS · ${FPS === 50 ? 'TV bitrate' : 'web bitrate'}`;
+  } catch (_) {}
+}
+document.querySelectorAll('.fps-pill-menu button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const newFps = parseInt(btn.dataset.fps, 10);
+    if (newFps !== 30 && newFps !== 50) return;
+    if (newFps === FPS) return;
+    const currentSec = state.frame / FPS;
+    FPS = newFps;
+    const stFps = document.getElementById('stFps');
+    if (stFps) stFps.textContent = String(FPS);
+    updateDuration();
+    state.frame = Math.min(TOTAL_FRAMES - 1, Math.round(currentSec * FPS));
+    const sc = document.getElementById('scrubber');
+    if (sc) sc.value = state.frame;
+    updateFpsPillUI();
+    render();
+    showToast?.(`Frame rate: ${FPS} fps`, 'success');
+  });
+});
+
+// =============================================================================
+// EXPORT MENU — split button: main = MP4, dropdown ▾ = other formats
+// =============================================================================
+const _exportMenuEl = document.getElementById('exportMenu');
+document.getElementById('btnExportMore')?.addEventListener('click', e => {
+  e.stopPropagation();
+  if (_exportMenuEl) _exportMenuEl.classList.toggle('open');
+});
+document.addEventListener('click', e => {
+  if (!_exportMenuEl) return;
+  if (!e.target.closest('.export-split')) _exportMenuEl.classList.remove('open');
+});
+// Dispatch dropdown items to legacy buttons (which still exist in JS even
+// though their UI cells were removed from the sidebar).
+document.querySelectorAll('#exportMenu button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const fmt = btn.dataset.format;
+    if (_exportMenuEl) _exportMenuEl.classList.remove('open');
+    if (fmt === 'png')  document.getElementById('btnExportFrame')?.click();
+    if (fmt === 'webm') document.getElementById('btnExportVideo')?.click();
+    if (fmt === 'seq')  document.getElementById('btnExportSeq')?.click();
+  });
+});
+
 
 // Manual fine-tune offset (works in both Auto and Manual modes — adds on top)
 document.getElementById('inPlotLeftOffset').addEventListener('input', e => {
@@ -1359,31 +1817,7 @@ document.querySelectorAll('#autoFitToggle button').forEach(btn => {
 // FPS toggle — switches between 25 and 50 fps. Duration in SECONDS is preserved;
 // frame count doubles at 50 fps. Current playback frame is remapped so the
 // user stays at the same time position.
-document.querySelectorAll('#fpsToggle button').forEach(btn => {
-  btn.addEventListener('click', () => {
-    const newFps = parseInt(btn.dataset.value, 10);
-    if (newFps === FPS) return;
 
-    // Remap current scrubber frame to new fps (keep time position identical)
-    const currentSec = state.frame / FPS;
-
-    document.querySelectorAll('#fpsToggle button').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    FPS = newFps;
-
-    // Status pill + recomputation
-    const stFps = document.getElementById('stFps');
-    if (stFps) stFps.textContent = String(FPS);
-
-    updateDuration();  // recomputes TOTAL_FRAMES + scrubber max
-    state.frame = Math.min(TOTAL_FRAMES - 1, Math.round(currentSec * FPS));
-    const sc = document.getElementById('scrubber');
-    if (sc) sc.value = state.frame;
-
-    render();
-    showToast(`Frame rate: ${FPS} fps`, 'success');
-  });
-});
 
 // First-bar offset toggle — Auto recalculates from Y-label widths, Manual uses fixed + offset
 document.querySelectorAll('#autoPlotLeftToggle button').forEach(btn => {
@@ -1418,30 +1852,83 @@ let _ffmpegInstance = null;
 
 async function loadFFmpeg() {
   if (_ffmpegInstance) return _ffmpegInstance;
+
+  // Pre-flight diagnostics — log environment so failures are easy to read
+  console.log('[ffmpeg] preflight: SAB=', typeof SharedArrayBuffer !== 'undefined',
+              'crossOriginIsolated=', !!self.crossOriginIsolated,
+              'origin=', location.origin);
+
   const VER = '0.12.10';
   const CORE_VER = '0.12.6';
-  const BASE = `https://unpkg.com/@ffmpeg/ffmpeg@${VER}/dist/umd`;
-  const CORE_BASE = `https://unpkg.com/@ffmpeg/core@${CORE_VER}/dist/umd`;
+  // CDN fallbacks: try unpkg first, then jsdelivr if it 404s or errors
+  const CDNS = [
+    {
+      base: `https://unpkg.com/@ffmpeg/ffmpeg@${VER}/dist/umd`,
+      coreBase: `https://unpkg.com/@ffmpeg/core@${CORE_VER}/dist/umd`,
+    },
+    {
+      base: `https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@${VER}/dist/umd`,
+      coreBase: `https://cdn.jsdelivr.net/npm/@ffmpeg/core@${CORE_VER}/dist/umd`,
+    },
+  ];
 
-  await new Promise((resolve, reject) => {
-    if (window.FFmpegWASM) return resolve();
-    const s = document.createElement('script');
-    s.src = `${BASE}/ffmpeg.js`;
-    s.onload = resolve;
-    s.onerror = () => reject(new Error('Failed to load ffmpeg.wasm from CDN'));
-    document.head.appendChild(s);
-  });
+  // Step 1: load the ffmpeg.js shim from one of the CDNs
+  let cdn = null;
+  let lastErr = null;
+  for (const c of CDNS) {
+    try {
+      console.log('[ffmpeg] loading shim from', c.base);
+      await new Promise((resolve, reject) => {
+        if (window.FFmpegWASM) return resolve();
+        const s = document.createElement('script');
+        s.src = `${c.base}/ffmpeg.js`;
+        s.onload = resolve;
+        s.onerror = () => reject(new Error('script onerror: ' + s.src));
+        document.head.appendChild(s);
+      });
+      cdn = c;
+      console.log('[ffmpeg] shim loaded ✓');
+      break;
+    } catch (err) {
+      console.warn('[ffmpeg] shim load failed:', err.message);
+      lastErr = err;
+    }
+  }
+  if (!cdn) {
+    throw new Error('Failed to load ffmpeg.js from any CDN: ' + (lastErr?.message || '?'));
+  }
 
+  // Step 2: instantiate FFmpeg + load core (single-thread, no SAB needed)
+  if (!window.FFmpegWASM || !window.FFmpegWASM.FFmpeg) {
+    throw new Error('FFmpegWASM global missing after script load — bad shim?');
+  }
   const { FFmpeg } = window.FFmpegWASM;
   const ff = new FFmpeg();
   ff.on('log', ({ message }) => console.log('[ffmpeg]', message));
   ff.on('progress', ({ progress }) => {
-    if (isFinite(progress)) setProgress(Math.max(0, Math.min(1, progress)), `encoding ${Math.round(progress * 100)}%`);
+    if (isFinite(progress)) {
+      const pct = Math.max(0, Math.min(100, Math.round(progress * 100)));
+      console.log(`[ffmpeg] encode ${pct}%`);
+    }
   });
-  await ff.load({
-    coreURL: `${CORE_BASE}/ffmpeg-core.js`,
-    wasmURL: `${CORE_BASE}/ffmpeg-core.wasm`,
-  });
+
+  console.log('[ffmpeg] loading core from', cdn.coreBase);
+  try {
+    await ff.load({
+      coreURL: `${cdn.coreBase}/ffmpeg-core.js`,
+      wasmURL: `${cdn.coreBase}/ffmpeg-core.wasm`,
+    });
+  } catch (err) {
+    console.error('[ffmpeg] core load failed:', err);
+    // Useful diagnostic — most common reason: SharedArrayBuffer missing
+    if (typeof SharedArrayBuffer === 'undefined') {
+      throw new Error('ffmpeg core requires SharedArrayBuffer (cross-origin-isolated headers). '
+        + 'On localhost serve with COOP/COEP headers, or deploy on a host that sets them. '
+        + 'GitHub Pages does NOT set these. Original error: ' + err.message);
+    }
+    throw err;
+  }
+  console.log('[ffmpeg] core ready ✓');
   _ffmpegInstance = ff;
   return ff;
 }
@@ -1454,8 +1941,26 @@ let videoReady = false;
 let videoFailed = false;
 
 function setBackdropStatus(text, cls) {
-  stBackdrop.textContent = text;
-  stBackdrop.className = 'status-value ' + (cls || '');
+  // Update both the status pill (top of sidebar) and the new Pozadí section readout
+  if (stBackdrop) {
+    stBackdrop.textContent = text;
+    stBackdrop.className = 'status-value ' + (cls || '');
+  }
+  // New Pozadí readout: show active video path from theme
+  const bdEl = document.getElementById('backdropStatus');
+  if (bdEl) {
+    const videoPath = (window.TN_THEMES ? TN_THEMES.video(state.show) : '../assets/bg-loop.mp4');
+    const prefix = `<strong>Aktivní:</strong> <code id="backdropPath">${videoPath}</code>`;
+    if (!text || text === 'LOADING…') {
+      bdEl.innerHTML = prefix;
+    } else {
+      const color = cls === 'warn' ? '#c89522'
+                  : cls === 'loading' ? '#888'
+                  : cls === 'ok' ? '#3aaa3a'
+                  : '#c89522';
+      bdEl.innerHTML = `<span style="color:${color};font-weight:600">${text}</span><br>${prefix}`;
+    }
+  }
 }
 setBackdropStatus('LOADING…', 'loading');
 
@@ -1595,18 +2100,37 @@ function updateDuration() {
   if (frameTotal) frameTotal.textContent = String(TOTAL_FRAMES - 1);
 }
 
-// ==================== Y-AXIS MAX (DYNAMIC) ====================
-// Round the highest bar value up to a "nice" number (1, 2, 5, 10 × magnitude).
+// ==================== Y-AXIS RANGE (DYNAMIC) ====================
+// When all bar values are >= 0: range is [0, niceMax].
+// When ANY bar is negative: range expands to include the min, so the
+// zero-line moves UP within the plot area and negatives draw downward.
+// Returns { niceMin, niceMax } both rounded to nice multiples.
+function computeNiceMaxMin(bars) {
+  const vals = bars.map(b => +b.value || 0);
+  const rawMax = Math.max(...vals, 0);
+  const rawMin = Math.min(...vals, 0);
+
+  // Helper: round magnitude up to a nice 1/2/5×10^k
+  const niceUp = (v) => {
+    if (v <= 0) return 0;
+    const magnitude = Math.pow(10, Math.floor(Math.log10(v)));
+    const norm = v / magnitude;
+    let nice;
+    if (norm <= 1)      nice = 1;
+    else if (norm <= 2) nice = 2;
+    else if (norm <= 5) nice = 5;
+    else                nice = 10;
+    return nice * magnitude;
+  };
+
+  const niceMax = niceUp(Math.abs(rawMax) > 0 ? rawMax : 0.1);
+  const niceMin = rawMin < 0 ? -niceUp(Math.abs(rawMin)) : 0;
+  return { niceMin, niceMax };
+}
+
+// Backward-compat shim — for any code still calling computeNiceMax(bars)
 function computeNiceMax(bars) {
-  const maxVal = Math.max(...bars.map(b => Math.abs(+b.value) || 0), 0.1);
-  const magnitude = Math.pow(10, Math.floor(Math.log10(maxVal)));
-  const norm = maxVal / magnitude;
-  let nice;
-  if (norm <= 1)      nice = 1;
-  else if (norm <= 2) nice = 2;
-  else if (norm <= 5) nice = 5;
-  else                nice = 10;
-  return nice * magnitude;
+  return computeNiceMaxMin(bars).niceMax;
 }
 
 // Compute a step that gives roughly 4-5 gridlines between 0 and maxY.
@@ -1624,8 +2148,10 @@ function computeNiceStep(maxY) {
 
 function updateAutoMaxY() {
   if (!state.autoMaxY) return;
-  state.maxY  = computeNiceMax(state.bars);
-  state.stepY = computeNiceStep(state.maxY);
+  const range = computeNiceMaxMin(state.bars);
+  state.maxY  = range.niceMax;
+  state.minY  = range.niceMin;
+  state.stepY = computeNiceStep(state.maxY - state.minY);
   const mI = document.getElementById('inMaxY');  if (mI) mI.value = state.maxY;
   const sI = document.getElementById('inStepY'); if (sI) sI.value = state.stepY;
 }
@@ -1658,15 +2184,7 @@ function computePlotLeft() {
   return Math.max(PLOT_LEFT_FIXED, Math.round(computed)) + state.plotLeftOffset;
 }
 
-document.querySelectorAll('#brandingToggle button').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('#brandingToggle button').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    state.branding = btn.dataset.value;
-    applyBrandingMode();
-    render();
-  });
-});
+
 
 document.querySelectorAll('#safeToggle button').forEach(btn => {
   btn.addEventListener('click', () => {
@@ -1750,12 +2268,20 @@ function frameToTC(frame) {
 function pad(n) { return String(n).padStart(2, '0'); }
 
 function render() {
-  renderFrame(state.frame);
-  // Video runs freely in preview mode — only explicit scrub/play actions sync it.
-  scrubber.value = state.frame;
-  scrubberFill.style.width = (state.frame / (TOTAL_FRAMES - 1) * 100) + '%';
-  curFrameEl.textContent = pad(state.frame);
-  curTCEl.textContent = frameToTC(state.frame);
+  if (!window._renderLogged) {
+    console.log('[render] FIRST CALL · frame=' + state.frame + ' TOTAL=' + TOTAL_FRAMES + ' branding=' + state.branding + ' show=' + state.show);
+    window._renderLogged = true;
+  }
+  try {
+    renderFrame(state.frame);
+    // Video runs freely in preview mode — only explicit scrub/play actions sync it.
+    if (scrubber) scrubber.value = state.frame;
+    if (scrubberFill) scrubberFill.style.width = (state.frame / Math.max(1, TOTAL_FRAMES - 1) * 100) + '%';
+    if (curFrameEl) curFrameEl.textContent = pad(state.frame);
+    if (curTCEl) curTCEl.textContent = frameToTC(state.frame);
+  } catch (e) {
+    console.error('[render] frame=' + state.frame, e, e.stack);
+  }
 }
 
 // ==================== EXPORT HELPERS ====================
@@ -1828,7 +2354,7 @@ function downloadBlob(blob, filename) {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
-document.getElementById('btnExportFrame').addEventListener('click', async () => {
+document.getElementById('btnExportFrame')?.addEventListener('click', async () => {
   stopPlayback();
   await waitFonts();
   await withGuidesOff(() => withBakedBackdrop(async (wantBake) => {
@@ -1844,7 +2370,7 @@ document.getElementById('btnExportFrame').addEventListener('click', async () => 
   }));
 });
 
-document.getElementById('btnExportSeq').addEventListener('click', async () => {
+document.getElementById('btnExportSeq')?.addEventListener('click', async () => {
   stopPlayback();
   await waitFonts();
 
@@ -1922,7 +2448,7 @@ async function exportSequenceZIP() {
   hideOverlay();
 }
 
-document.getElementById('btnExportVideo').addEventListener('click', async () => {
+document.getElementById('btnExportVideo')?.addEventListener('click', async () => {
   stopPlayback();
   await waitFonts();
   showOverlay('Recording WebM video');
@@ -1961,7 +2487,7 @@ document.getElementById('btnExportVideo').addEventListener('click', async () => 
   hideOverlay();
 });
 
-document.getElementById('btnExportMP4').addEventListener('click', async () => {
+document.getElementById('btnExportMP4')?.addEventListener('click', async () => {
   stopPlayback();
   await waitFonts();
 
@@ -1993,14 +2519,21 @@ document.getElementById('btnExportMP4').addEventListener('click', async () => {
         await new Promise(r => setTimeout(r, 0));
       }
 
-      // 2) Encode
-      overlayTitle.textContent = 'Encoding MP4 (H.264)';
+      // 2) Encode — bitrate scales by FPS:
+      //    50 FPS = TV broadcast (high bitrate), 30/25 FPS = web (lower bitrate)
+      const isTV = (FPS === 50);
+      const bitrate     = isTV ? '16M' : '4M';
+      const maxrate     = isTV ? '18M' : '5M';
+      const bufsize     = isTV ? '24M' : '8M';
+      overlayTitle.textContent = `Encoding MP4 (H.264 · ${isTV ? 'TV' : 'web'} · ${bitrate})`;
       await ff.exec([
         '-framerate', String(FPS),
         '-i', 'f%04d.png',
         '-c:v', 'libx264',
         '-preset', 'medium',
-        '-crf', '18',
+        '-b:v', bitrate,
+        '-maxrate', maxrate,
+        '-bufsize', bufsize,
         '-pix_fmt', 'yuv420p',
         '-movflags', '+faststart',
         'out.mp4'
@@ -2045,9 +2578,7 @@ async function waitFonts() {
 // Each project is a full snapshot of user-facing state. Saved in localStorage
 // under key LS_KEY as a JSON array. Currently-loaded project id separately.
 // Template identity is embedded so future templates can share this save system.
-const LS_KEY = 'tn_graphics_engine_projects_v2';
-const LS_CURRENT = 'tn_graphics_engine_current_v2';
-const TEMPLATE_ID = 'bar-chart-01';
+// (LS_KEY, LS_CURRENT, TEMPLATE_ID are declared at the top of the script.)
 
 // Auto-load project if ?project=<id> in URL (launched from launcher)
 const _urlProjectId = new URLSearchParams(window.location.search).get('project');
@@ -2064,9 +2595,11 @@ function snapshotState() {
     title: state.title,
     source: state.source,
     maxY: state.maxY,
+    minY: state.minY,
     stepY: state.stepY,
     decimals: state.decimals,
     barColor: state.barColor,
+    show: state.show,
     autoDuration: state.autoDuration,
     autoMaxY: state.autoMaxY,
     autoPlotLeft: state.autoPlotLeft,
@@ -2082,20 +2615,32 @@ function applySnapshot(snap) {
   state.title   = snap.title ?? state.title;
   state.source  = snap.source ?? state.source;
   state.maxY    = snap.maxY ?? state.maxY;
+  state.minY    = snap.minY ?? 0;        // older saves had no minY
   state.stepY   = snap.stepY ?? state.stepY;
   state.decimals = snap.decimals ?? state.decimals;
   state.barColor = snap.barColor ?? state.barColor;
-  state.autoDuration   = snap.autoDuration ?? true;
+  // Show theme — fall back to default 'tn' if missing or unknown
+  const candidateShow = snap.show ?? state.show;
+  state.show = (window.TN_THEMES && TN_THEMES.SHOWS_BY_ID[candidateShow])
+    ? candidateShow : (window.TN_THEMES ? TN_THEMES.DEFAULT_SHOW_ID : 'tn');
+  // autoDuration: defaults to false for new projects (use explicit duration).
+  // Older saves with autoDuration: true keep their behaviour.
+  state.autoDuration   = (snap.autoDuration === true);
   state.autoMaxY       = snap.autoMaxY ?? true;
   state.autoPlotLeft   = snap.autoPlotLeft ?? true;
   state.plotLeftOffset = snap.plotLeftOffset ?? 0;
   if (Array.isArray(snap.bars)) state.bars = snap.bars.map(b => ({ label: b.label, value: b.value }));
   if (snap.duration) DURATION = snap.duration;
-  if (snap.fps === 25 || snap.fps === 50) {
+  // Legacy migration: 25 FPS no longer supported — auto-upgrade to 50 FPS
+  if (snap.fps === 25) snap.fps = 50;
+  if (snap.fps === 30 || snap.fps === 50) {
     FPS = snap.fps;
     const stFps = document.getElementById('stFps');
     if (stFps) stFps.textContent = String(FPS);
   }
+  // Recompute the auto-range so older projects (with negatives saved) get
+  // the correct minY immediately — but only when autoMaxY is on.
+  if (state.autoMaxY) updateAutoMaxY();
 
   // Sync all UI inputs to new state
   document.getElementById('inTitle').value = state.title;
@@ -2115,13 +2660,14 @@ function applySnapshot(snap) {
   setToggle('autoFitToggle', state.autoDuration);
   setToggle('autoMaxYToggle', state.autoMaxY);
   setToggle('autoPlotLeftToggle', state.autoPlotLeft);
-  // FPS toggle uses numeric data-value, not on/off
-  document.querySelectorAll('#fpsToggle button').forEach(b => {
-    b.classList.toggle('active', parseInt(b.dataset.value, 10) === FPS);
-  });
+  // FPS pill — handled by updateFpsPillUI() below
 
   rebuildBars();
   updateDuration();
+  if (typeof populateShowSelect === 'function') populateShowSelect();
+  if (typeof applyShowTheme === 'function') applyShowTheme();
+  if (typeof updateFpsPillUI === 'function') updateFpsPillUI();
+  if (typeof setBackdropStatus === 'function') setBackdropStatus(null);
   state.frame = TOTAL_FRAMES - 1;
   document.getElementById('scrubber').value = state.frame;
 }
@@ -2300,7 +2846,8 @@ document.getElementById('projNew').addEventListener('click', () => {
     source: 'Facebook',
     maxY: 40, stepY: 10, decimals: 0,
     barColor: '#3b82c0',
-    autoDuration: true, autoMaxY: true, autoPlotLeft: true, plotLeftOffset: 0,
+    autoDuration: false, autoMaxY: true, autoPlotLeft: true, plotLeftOffset: 0,
+    duration: 20, fps: 50,
     bars: [
       { label: '2018', value: 35 }, { label: '2019', value: 21 },
       { label: '2020', value: 13 }, { label: '2021', value: 10 },
@@ -2331,10 +2878,40 @@ setInterval(updateProjectMeta, 1000);
 
 // ==================== BOOT ====================
 (async function boot() {
+  console.log('%c[TN Bar Chart] v3 — global UI rebuild',
+    'background:#2668AC;color:white;padding:4px 8px;font-weight:bold;border-radius:2px');
+  console.log('[Boot] starting · FPS=' + FPS + ' DURATION=' + DURATION + ' state.frame=' + state.frame);
   rebuildBars();
+  console.log('[Boot] bars rebuilt, count=' + state.bars.length);
   updateDuration();
+  console.log('[Boot] duration updated · DURATION=' + DURATION + ' TOTAL_FRAMES=' + TOTAL_FRAMES);
+  // Explicitly sync the status pills (stFps + stDur) — defaults in HTML may be stale
+  const _stFps = document.getElementById('stFps');
+  const _stDur = document.getElementById('stDur');
+  if (_stFps) _stFps.textContent = String(FPS);
+  if (_stDur) _stDur.textContent = DURATION.toFixed(2) + 's';
+  // Land on the final frame so the user sees the settled animation, not an empty start.
+  state.frame = TOTAL_FRAMES - 1;
   updateAutoMaxY();
+  console.log('[Boot] autoMaxY · maxY=' + state.maxY + ' minY=' + state.minY);
+
+  // URL ?show= override
+  const _p0 = new URLSearchParams(window.location.search);
+  try {
+    const urlShow = _p0.get('show');
+    if (urlShow && window.TN_THEMES && TN_THEMES.SHOWS_BY_ID[urlShow]) {
+      state.show = urlShow;
+      console.log('[Boot] URL ?show=' + urlShow);
+    }
+  } catch (_) {}
+  populateShowSelect();
+  applyShowTheme();
+  console.log('[Boot] show theme applied · show=' + state.show);
+
+  if (typeof updateFpsPillUI === 'function') updateFpsPillUI();
+  if (typeof setBackdropStatus === 'function') setBackdropStatus(null);
   await waitFonts();
+  console.log('[Boot] fonts loaded');
 
   // PREVIEW MODE: hide chrome, jump to given frame, render static thumbnail.
   // Used by launcher iframe thumbs — ?preview=1&frame=49
@@ -2347,8 +2924,10 @@ setInterval(updateProjectMeta, 1000);
     const box = document.getElementById('canvasBox');
     if (box) { box.style.maxWidth = 'none'; box.style.width = '100%'; box.style.height = '100%'; box.style.boxShadow = 'none'; }
     document.querySelector('.app')?.style.setProperty('grid-template-columns', '1fr');
-    state.branding = 'export';           // clean black backdrop, no video load
-    state.frame = parseInt(_p.get('frame') || '49', 10);
+    // Backdrop ON in preview thumbs (theme video shows behind the graphic)
+    state.branding = 'preview';
+    if (typeof applyBrandingMode === 'function') applyBrandingMode();
+    state.frame = Math.min(parseInt(_p.get('frame') || '49', 10), TOTAL_FRAMES - 1);
     render();
     return;
   }
@@ -2367,9 +2946,21 @@ setInterval(updateProjectMeta, 1000);
   lastSavedSnapshot = JSON.stringify(snapshotState());
   updateProjectMeta();
 
+  // Always land on the final settled frame so the user sees the result, not
+  // an empty intro. applySnapshot() may set state.frame=49 from old saves —
+  // override here unconditionally.
+  state.frame = TOTAL_FRAMES - 1;
+  console.log('[Boot] final state.frame=' + state.frame + ' / TOTAL_FRAMES=' + TOTAL_FRAMES);
+
   render();
   requestAnimationFrame(render);
 })();
+
+// ZPĚT button (top-right of control-header) — proxies to btnHome which already
+// has the unsaved-changes confirm dialog wired up.
+document.getElementById('btnBack')?.addEventListener('click', () => {
+  document.getElementById('btnHome')?.click();
+});
 </script>
 </body>
 </html>

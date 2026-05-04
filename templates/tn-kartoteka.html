@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>TN Kartotéka — Template 08</title>
+<script src="../coi-serviceworker.js"></script>
 <script src="../theme.js"></script>
 <!-- TN CITACE (quote card) — Graph Generator template 06 -->
 <!-- Layout derived from PSD reference (uploads/citace-reference.png): -->
@@ -100,7 +101,7 @@
   .brand {
     font-family: var(--font-mono);
     font-weight: 600;
-    font-size: 11px;
+    font-size: 13px;
     letter-spacing: 0.22em;
     text-transform: uppercase;
     color: rgba(255,255,255,0.82);
@@ -112,7 +113,7 @@
   }
   .tpl-num {
     font-family: var(--font-mono);
-    font-size: 11px; letter-spacing: 0.2em;
+    font-size: 13px; letter-spacing: 0.2em;
     color: rgba(255,255,255,0.7);
     text-transform: uppercase;
   }
@@ -134,7 +135,7 @@
   .pb-row:last-child { margin-bottom: 0; }
   .pb-label {
     font-family: var(--font-mono);
-    font-size: 10px; letter-spacing: 0.2em;
+    font-size: 11px; letter-spacing: 0.2em;
     text-transform: uppercase; color: #a0a0a0;
     flex-shrink: 0;
   }
@@ -145,7 +146,7 @@
     border: 1px solid #3a3a3a;
     color: #f0f0f0;
     font-family: var(--font-ui);
-    font-size: 13px;
+    font-size: 14px;
     border-radius: 2px;
   }
   .pb-name:focus { outline: none; border-color: var(--tn-red); }
@@ -155,7 +156,7 @@
     border: 1px solid #4a4a4a;
     color: #f0f0f0;
     font-family: var(--font-ui);
-    font-size: 12px; font-weight: 600;
+    font-size: 13px; font-weight: 600;
     letter-spacing: 0.02em;
     cursor: pointer;
     border-radius: 2px;
@@ -166,7 +167,7 @@
   .pb-btn.primary:hover { background: var(--tn-red-dk); }
   .pb-meta {
     font-family: var(--font-mono);
-    font-size: 10px;
+    font-size: 11px;
     color: #777;
     letter-spacing: 0.04em;
   }
@@ -180,7 +181,7 @@
   }
   .section:last-child { border-bottom: 0; }
   .section h3 {
-    font-size: 10px;
+    font-size: 11px;
     letter-spacing: 0.24em;
     text-transform: uppercase;
     color: var(--text-2);
@@ -192,7 +193,7 @@
   .field:last-child { margin-bottom: 0; }
   .field label {
     display: block;
-    font-size: 11px;
+    font-size: 13px;
     color: var(--text-1);
     margin-bottom: 5px;
     font-weight: 500;
@@ -206,7 +207,7 @@
     border: 1px solid var(--line-2);
     color: var(--text-0);
     font-family: var(--font-ui);
-    font-size: 13px;
+    font-size: 14px;
     border-radius: 2px;
   }
   .field input[type="text"]:focus,
@@ -222,7 +223,7 @@
     line-height: 1.45;
   }
   .field .help {
-    font-size: 11px;
+    font-size: 13px;
     color: var(--text-2);
     margin-top: 4px;
     font-style: italic;
@@ -245,7 +246,7 @@
   }
   .upload-row .upload-ctrl { flex: 1; display: flex; gap: 6px; flex-wrap: wrap; }
   .upload-btn {
-    padding: 6px 10px; font-size: 11px; font-weight: 600;
+    padding: 6px 10px; font-size: 13px; font-weight: 600;
     background: var(--bg-0); border: 1px solid var(--line-2);
     color: var(--text-0); cursor: pointer; border-radius: 2px;
     font-family: var(--font-ui);
@@ -286,7 +287,7 @@
   }
   .card-item input.text {
     padding: 7px 9px;
-    font-size: 12px;
+    font-size: 13px;
     font-family: var(--font-ui);
     background: var(--bg-0);
     border: 1px solid var(--line-2);
@@ -303,7 +304,7 @@
   .card-item .card-actions .upload-btn {
     flex: 1;
     padding: 5px 8px;
-    font-size: 11px;
+    font-size: 13px;
   }
   .card-del {
     background: transparent;
@@ -331,7 +332,7 @@
     background: transparent;
     border: 0;
     color: var(--text-1);
-    font-size: 12px; font-weight: 600;
+    font-size: 13px; font-weight: 600;
     cursor: pointer;
     font-family: var(--font-ui);
     border-radius: 2px;
@@ -347,7 +348,7 @@
     border: 1px solid var(--line-2);
     color: var(--text-0);
     font-family: var(--font-ui);
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 500;
     border-radius: 2px;
     outline: none;
@@ -369,7 +370,7 @@
     background: var(--text-0); color: var(--text-inv);
     border: 0; border-radius: 2px;
     font-family: var(--font-ui);
-    font-weight: 600; font-size: 12px;
+    font-weight: 600; font-size: 13px;
     letter-spacing: 0.02em;
     cursor: pointer;
   }
@@ -391,7 +392,7 @@
     border-bottom: 1px solid #111;
     color: #aaa;
     font-family: var(--font-mono);
-    font-size: 11px; letter-spacing: 0.12em;
+    font-size: 13px; letter-spacing: 0.12em;
     display: flex; align-items: center; gap: 14px;
     flex-shrink: 0;
   }
@@ -453,7 +454,7 @@
     background: #333; border: 1px solid #444;
     color: #fff; cursor: pointer;
     display: inline-flex; align-items: center; justify-content: center;
-    font-size: 13px;
+    font-size: 14px;
     border-radius: 2px;
   }
   .tl-btn:hover { background: #444; }
@@ -480,7 +481,7 @@
   }
   .tl-readout {
     font-family: var(--font-mono);
-    font-size: 11px;
+    font-size: 13px;
     color: #aaa;
     min-width: 100px;
     text-align: right;
@@ -549,12 +550,12 @@
   }
   .proj-info { flex: 1; min-width: 0; }
   .proj-title {
-    font-weight: 600; font-size: 13px; color: var(--text-0);
+    font-weight: 600; font-size: 14px; color: var(--text-0);
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
-  .proj-date { font-family: var(--font-mono); font-size: 10px; color: var(--text-2); margin-top: 2px; }
+  .proj-date { font-family: var(--font-mono); font-size: 11px; color: var(--text-2); margin-top: 2px; }
   .proj-btn {
-    padding: 6px 10px; font-size: 11px; font-weight: 600;
+    padding: 6px 10px; font-size: 13px; font-weight: 600;
     background: var(--bg-0); border: 1px solid var(--line-2);
     color: var(--text-0); cursor: pointer; border-radius: 2px;
     font-family: var(--font-ui);
@@ -564,7 +565,7 @@
   .proj-btn.del:hover { background: var(--tn-red-sft); }
   .proj-empty {
     text-align: center; padding: 40px 20px;
-    color: var(--text-2); font-size: 13px;
+    color: var(--text-2); font-size: 14px;
   }
 
   /* Toast */
@@ -577,7 +578,7 @@
     padding: 10px 14px;
     background: var(--text-0); color: var(--text-inv);
     border-radius: 2px;
-    font-size: 13px; font-weight: 500;
+    font-size: 14px; font-weight: 500;
     box-shadow: 0 4px 12px rgba(0,0,0,0.3);
     animation: toast-in .25s ease;
     pointer-events: auto;
@@ -588,6 +589,209 @@
     from { transform: translateY(10px); opacity: 0; }
     to { transform: translateY(0); opacity: 1; }
   }
+
+  /* ===== Info tooltip bubble (i) ===== */
+  .info-tip {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px; height: 16px;
+    margin-left: 6px;
+    border-radius: 50%;
+    background: var(--bg-2);
+    color: var(--text-2);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 700;
+    font-style: italic;
+    cursor: help;
+    user-select: none;
+    position: relative;
+    vertical-align: middle;
+    line-height: 1;
+    transition: background 0.15s, color 0.15s;
+  }
+  .info-tip:hover { background: var(--text-0); color: var(--text-inv); }
+  .info-tip::after {
+    content: attr(data-tip);
+    position: absolute;
+    bottom: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: #1a1a1a;
+    color: #f0f0f0;
+    padding: 8px 12px;
+    border-radius: 4px;
+    font-family: var(--font-ui);
+    font-size: 12px;
+    font-weight: 400;
+    font-style: normal;
+    line-height: 1.4;
+    letter-spacing: normal;
+    text-transform: none;
+    white-space: normal;
+    width: 240px;
+    z-index: 1000;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.15s, visibility 0.15s;
+    pointer-events: none;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  }
+  .info-tip::before {
+    content: '';
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 6px solid transparent;
+    border-top-color: #1a1a1a;
+    margin-bottom: 2px;
+    z-index: 1001;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.15s, visibility 0.15s;
+  }
+  .info-tip:hover::after,
+  .info-tip:hover::before { opacity: 1; visibility: visible; }
+
+  /* ===== FPS pill ===== */
+  .fps-pill { position: relative; display: inline-block; }
+  .fps-pill-active {
+    background: var(--bg-2);
+    border: 1px solid var(--line);
+    color: var(--text-0);
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-weight: 700;
+    padding: 8px 14px;
+    border-radius: 3px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    letter-spacing: 0.05em;
+  }
+  .fps-pill-active:hover { background: var(--text-0); color: var(--text-inv); }
+  .fps-pill-hint {
+    font-size: 9px;
+    font-weight: 600;
+    opacity: 0.6;
+    letter-spacing: 0.1em;
+  }
+  .fps-pill-menu {
+    display: none;
+    position: absolute;
+    top: calc(100% + 4px);
+    right: 0;
+    background: #1a1a1a;
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    z-index: 100;
+    min-width: 180px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  }
+  .fps-pill:hover .fps-pill-menu { display: block; }
+  .fps-pill-menu button {
+    display: block;
+    width: 100%;
+    text-align: left;
+    background: transparent;
+    border: 0;
+    color: #f0f0f0;
+    padding: 10px 14px;
+    cursor: pointer;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.05em;
+  }
+  .fps-pill-menu button:hover { background: rgba(255,255,255,0.1); }
+  .fps-pill-menu button.active { background: var(--tn-red); color: white; }
+
+  /* ===== Export split-button ===== */
+  .export-split {
+    position: relative;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 1px;
+  }
+  .export-split .btn-export.primary {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 12px 16px;
+    background: var(--tn-red);
+    color: white;
+    border: 0;
+    border-radius: 3px 0 0 3px;
+    cursor: pointer;
+    font-family: var(--font-ui);
+    transition: background 0.15s;
+  }
+  .export-split .btn-export.primary:hover { background: #b80825; }
+  .export-split .btn-export.primary .btn-main {
+    font-size: 14px; font-weight: 700; letter-spacing: 0.02em;
+  }
+  .export-split .btn-export.primary .btn-sub {
+    font-size: 10px; opacity: 0.85; margin-top: 2px;
+    font-family: var(--font-mono); letter-spacing: 0.05em;
+  }
+  .btn-export-more {
+    background: var(--tn-red);
+    color: white;
+    border: 0;
+    border-radius: 0 3px 3px 0;
+    padding: 0 14px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 700;
+    border-left: 1px solid rgba(255,255,255,0.2);
+    transition: background 0.15s;
+  }
+  .btn-export-more:hover { background: #b80825; }
+  .export-menu {
+    display: none;
+    position: absolute;
+    top: calc(100% + 4px);
+    right: 0;
+    background: #1a1a1a;
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    z-index: 100;
+    min-width: 240px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  }
+  .export-menu.open { display: block; }
+  .export-menu button {
+    display: block;
+    width: 100%;
+    text-align: left;
+    background: transparent;
+    border: 0;
+    color: #f0f0f0;
+    padding: 10px 14px;
+    cursor: pointer;
+    font-family: var(--font-ui);
+    font-size: 13px;
+  }
+  .export-menu button:hover { background: rgba(255,255,255,0.1); }
+
+  /* ===== ZPĚT button (top-right of control-header, mirrors tn-mark on left) ===== */
+  .back-btn {
+    position: absolute;
+    top: 22px; right: 24px;
+    background: var(--text-inv); color: var(--tn-red);
+    font-family: var(--font-mono);
+    font-weight: 700; font-size: 11px;
+    letter-spacing: 0.12em;
+    padding: 7px 14px;
+    border: 0; cursor: pointer;
+    transition: transform .1s ease, background .15s ease;
+    display: inline-flex; align-items: center; gap: 4px;
+  }
+  .back-btn:hover { transform: translateX(-3px); }
+  .back-btn:active { transform: scale(0.95); }
 </style>
 </head>
 <body>
@@ -604,6 +808,8 @@
         <span class="tpl-num">08 / TEMPLATE</span>
         <span class="tpl-name">TN kartotéka</span>
       </div>
+    
+      <button class="back-btn" id="btnBack" title="Zpět na rozcestník">‹ ZPĚT</button>
     </header>
 
     <div class="project-bar">
@@ -654,44 +860,54 @@
     </div>
 
     <div class="section">
-      <h3>Pozadí / Branding</h3>
-      <div class="field">
-        <label>Podklad</label>
-        <div class="toggle-group" id="brandingToggle">
-          <button data-value="preview" class="active">Studio preview</button>
-          <button data-value="export">Export (clean)</button>
-        </div>
-        <div class="help" id="backdropStatus" style="cursor:pointer" title="Klikni pro reload videa">
-          <strong>Studio preview</strong>: <code>../assets/bg-loop.mp4</code> běží pod grafikou, frame-synced.<br>
-          <strong>Export</strong>: čistě černé pozadí — režie si blue/teal overlay přidá sama.
-        </div>
+      <h3>
+        Pozadí
+        <span class="info-tip" data-tip="Backdrop video se mění automaticky podle vybraného pořadu (sekce Pořad). Studio preview je vždy zapnutý — režii dodá clean export přímo z časové osy.">i</span>
+      </h3>
+      <div class="help" id="backdropStatus" style="cursor:pointer" title="Klikni pro reload videa">
+        <strong>Aktivní:</strong> <code id="backdropPath">../assets/bg-loop.mp4</code>
       </div>
     </div>
 
     <div class="section">
-      <h3>Animace &amp; Časování</h3>
+      <h3>
+        Animace &amp; Časování
+        <span class="info-tip" data-tip="Délka určuje celkovou dobu animace. FPS volí počet snímků za sekundu — 50 FPS pro TV výstup (broadcast), 30 FPS pro web (sociální sítě).">i</span>
+      </h3>
       <div class="field">
-        <label>Délka (sekundy)</label>
+        <label>
+          Délka (sekundy)
+          <span class="info-tip" data-tip="Celková délka animace v sekundách. Default 20 s.">i</span>
+        </label>
         <div class="field-row">
-          <input type="text" id="inDuration" value="3" />
-          <div class="toggle-group" id="fpsToggle">
-            <button data-value="25" class="active">25 fps</button>
-            <button data-value="50">50 fps</button>
+          <input type="text" id="inDuration" value="20" />
+          <div class="fps-pill" id="fpsPill">
+            <button class="fps-pill-active" id="fpsActiveBtn" data-fps="50">50 FPS<span class="fps-pill-hint">TV</span></button>
+            <div class="fps-pill-menu">
+              <button data-fps="50">50 FPS · TV výstup</button>
+              <button data-fps="30">30 FPS · web výstup</button>
+            </div>
           </div>
         </div>
       </div>
     </div>
 
     <div class="section">
-      <h3>Export</h3>
-      <div class="export-grid">
-        <button class="btn-export" id="btnExportPNG">Aktuální snímek (PNG)</button>
-        <button class="btn-export primary" id="btnExportVideo">Video (WebM)</button>
-        <button class="btn-export" id="btnExportSeq" style="grid-column: 1 / -1">PNG sekvence s pozadím (do složky)</button>
-      </div>
-      <div class="help" style="margin-top:8px">
-        „Video (WebM)" a „PNG sekvence" obsahují aktuálně zvolené pozadí (video / statické / clean).
-        Sekvence: vybereš složku, snímky se do ní uloží přímo (ideální pro After Effects).
+      <h3>
+        Export
+        <span class="info-tip" data-tip="Hlavní tlačítko: vyrenderuje MP4 H.264 s aktuálním pozadím. Bitrate se škáluje podle FPS — 50 FPS = vysoký bitrate (TV broadcast), 30 FPS = nižší bitrate (web). Šipka napravo nabídne další formáty.">i</span>
+      </h3>
+      <div class="export-split">
+        <button class="btn-export primary" id="btnExportMP4">
+          <span class="btn-main">Export MP4</span>
+          <span class="btn-sub" id="btnExportSubLabel">50 FPS · TV bitrate</span>
+        </button>
+        <button class="btn-export-more" id="btnExportMore" title="Další možnosti">▾</button>
+        <div class="export-menu" id="exportMenu">
+          <button data-format="png">Aktuální snímek (PNG)</button>
+          <button data-format="seq">PNG sekvence (do složky)</button>
+          <button data-format="webm">WebM (browser native)</button>
+        </div>
       </div>
     </div>
   </aside>
@@ -702,8 +918,8 @@
       <span>1920 × 1080 • 16:9</span>
       <span class="meta">Template 06 · TN citace</span>
       <span class="spacer"></span>
-      <span class="pill" id="stFps">25 fps</span>
-      <span class="pill" id="stDur">3.0 s</span>
+      <span class="pill" id="stFps">50 fps</span>
+      <span class="pill" id="stDur">20.00 s</span>
     </div>
 
     <div class="stage-wrap" id="stageWrap">
@@ -798,9 +1014,14 @@ function applyShowTheme() {
   if (typeof render === 'function') render();
 }
 
+function getFontColor() {
+  return (window.TN_THEMES ? TN_THEMES.fontColor(state.show) : '#0a0a0a');
+}
 
-let FPS = 25;
-let DURATION = 2.4;                     // seconds (animation finishes ~1.6s, +0.8s hold)
+
+
+let FPS = 50;
+let DURATION = 20;                     // seconds (animation finishes ~1.6s, +0.8s hold)
 let TOTAL_FRAMES = Math.round(DURATION * FPS);
 const CANVAS_W = 1920, CANVAS_H = 1080;
 
@@ -836,7 +1057,8 @@ let autoplayBlocked = false;
 function setBackdropStatus(msg, kind) {
   // Non-fatal if the status element isn't there (e.g. during partial boot)
   if (!els.backdropStatus) return;
-  const prefix = '<strong>Studio preview</strong>: <code>../assets/bg-loop.mp4</code> běží pod grafikou, frame-synced.<br><strong>Export</strong>: čistě černé pozadí — režie si blue/teal overlay přidá sama.';
+  const videoPath = (window.TN_THEMES ? TN_THEMES.video(state.show) : '../assets/bg-loop.mp4');
+  const prefix = `<strong>Aktivní:</strong> <code id="backdropPath">${videoPath}</code>`;
   if (!msg) { els.backdropStatus.innerHTML = prefix; return; }
   const color = kind === 'error' ? 'var(--tn-red)'
               : kind === 'warn'  ? '#c89522'
@@ -1268,6 +1490,59 @@ function computeCardGrid(n) {
 // =============================================================================
 // RENDER
 // =============================================================================
+
+// =============================================================================
+// AUTO-FIT TITLE — shrinks title font if it would collide with source caption.
+// Returns the font-size to use. Source font/position never changes.
+// =============================================================================
+function autoFitTitle(titleText, sourceText, baseFont) {
+  // Defensive: if anything goes wrong (ctx not ready, LAYOUT missing),
+  // just return the baseFont — caller will use the original size.
+  try {
+    const MIN_FONT = 32;
+    const STEP = 2;
+    const MIN_GAP = 50;
+    ctx.save();
+    ctx.font = '400 28px "Organica", sans-serif';
+    const sourceW = sourceText ? ctx.measureText(sourceText).width : 0;
+    const sourceLeftEdge = LAYOUT.sourceX - sourceW;
+    let font = baseFont;
+    while (font >= MIN_FONT) {
+      ctx.font = `800 ${font}px "Organica", sans-serif`;
+      const titleW = ctx.measureText(titleText || '').width;
+      const titleRightEdge = LAYOUT.titleX + titleW;
+      if (titleRightEdge + MIN_GAP <= sourceLeftEdge) break;
+      font -= STEP;
+    }
+    ctx.restore();
+    return font;
+  } catch (_) {
+    return baseFont;
+  }
+}
+
+// =============================================================================
+// FIT FONT — generic shrink-to-fit helper. Returns the largest font size ≤
+// baseFont (in px, integer) at which `text` fits within `maxWidth`. Floor at
+// minFont. Used for row cells, value labels, segment labels — anywhere a
+// dynamic string might overflow its column.
+// =============================================================================
+function fitFont(text, maxWidth, baseFont, weight, minFont, step) {
+  weight = weight || 800;
+  minFont = minFont || 24;
+  step = step || 2;
+  try {
+    let f = baseFont;
+    while (f >= minFont) {
+      ctx.font = `${weight} ${f}px "Organica", sans-serif`;
+      if (ctx.measureText(text || '').width <= maxWidth) return f;
+      f -= step;
+    }
+    return minFont;
+  } catch (_) { return baseFont; }
+}
+
+
 function renderFrame(f) {
   state.frame = f;
   const t = f / FPS;
@@ -1303,8 +1578,8 @@ function renderFrame(f) {
   if (titleP > 0) {
     ctx.save();
     ctx.globalAlpha = titleP;
-    ctx.fillStyle = TN_COLORS.textPrimary;
-    ctx.font = '800 54px "Organica", sans-serif';
+    ctx.fillStyle = getFontColor();
+    ctx.font = `800 ${autoFitTitle(state.title || '', state.source || '', 54)}px "Organica", sans-serif`;
     ctx.textBaseline = 'alphabetic';
     ctx.textAlign = 'left';
     ctx.fillText(state.title || '', LAYOUT.titleX, LAYOUT.titleY);
@@ -1373,17 +1648,48 @@ function drawCards(t) {
     // === Photo content (user image or default silhouette)
     drawCardImage(card, r);
 
-    // === Name (bold)
-    ctx.fillStyle = TN_COLORS.textPrimary;
+    // === Name — try 1 line first, wrap to 2 lines if overflows.
+    // Vertical layout depends on line count, so recompute name/role baselines here.
+    const NAME_LINE_GAP = 6;          // px between two name lines
     ctx.font = `800 ${r.nameFont}px "Organica", sans-serif`;
+    const nameLines = wrapNameIntoLines(card.name || '', r.textW, r.nameFont);
+    const nLines = nameLines.length;
+
+    // Re-center the (name + gap + role) block vertically inside the photo height.
+    // For 2 lines: nameBlockH = 2*font + 1*lineGap; totalTextH grows accordingly.
+    const NAME_FONT = r.nameFont;
+    const ROLE_FONT = r.roleFont;
+    const NAME_ROLE_GAP = 18;
+    const nameBlockH = nLines * NAME_FONT + (nLines - 1) * NAME_LINE_GAP;
+    const totalTextH = nameBlockH + NAME_ROLE_GAP + ROLE_FONT;
+    const cy = r.photoY + r.photoH / 2;
+    const firstNameY = cy - totalTextH / 2 + NAME_FONT;
+
+    // Draw name lines
+    ctx.fillStyle = getFontColor();
+    ctx.font = `800 ${NAME_FONT}px "Organica", sans-serif`;
     ctx.textBaseline = 'alphabetic';
     ctx.textAlign = 'left';
-    drawClippedText(card.name || '', r.textX, r.nameY, r.textW);
+    for (let li = 0; li < nLines; li++) {
+      const y = firstNameY + li * (NAME_FONT + NAME_LINE_GAP);
+      // Single-line draw uses ellipsis fallback for unbreakable overflow;
+      // multi-line draws each split chunk plain (already pre-fitted).
+      if (nLines === 1) {
+        drawClippedText(nameLines[li], r.textX, y, r.textW);
+      } else {
+        ctx.fillText(nameLines[li], r.textX, y);
+      }
+    }
 
-    // === Role (regular)
-    ctx.fillStyle = TN_COLORS.textPrimary;
-    ctx.font = `400 ${r.roleFont}px "Organica", sans-serif`;
-    drawClippedText(card.role || '', r.textX, r.roleY, r.textW);
+    // === Role (regular) — baseline sits below the LAST name line + gap.
+    // Role uses the show's ACCENT color (TN blue, Strepiny vínová, NVS modrá,
+    // Za512 modrá, Školní hlášení olivová). Same role/subtitle convention as
+    // tn-identikit, where the line under the name is the theme's accent.
+    const lastNameY = firstNameY + (nLines - 1) * (NAME_FONT + NAME_LINE_GAP);
+    const roleY = lastNameY + NAME_ROLE_GAP + ROLE_FONT;
+    ctx.fillStyle = getAccent();
+    ctx.font = `400 ${ROLE_FONT}px "Organica", sans-serif`;
+    drawClippedText(card.role || '', r.textX, roleY, r.textW);
 
     ctx.restore();
 
@@ -1396,6 +1702,68 @@ function drawCards(t) {
       });
     }
   });
+}
+
+// =============================================================================
+// WRAP NAME — fits `text` on 1, 2, or 3 lines. Strategy:
+//   1. Try 1 line — fits within maxW? return [text]
+//   2. Try 2 lines — find best single split (minimizes the wider line). If
+//      both lines fit within maxW, return them.
+//   3. Try 3 lines — find best two-split combination (minimizes the widest of
+//      the three). If all three fit, return them.
+//   4. Fallback — return [text] as a single line; caller ellipsizes via
+//      drawClippedText.
+// Caller should set ctx.font BEFORE calling so measurements use the right size.
+// =============================================================================
+function wrapNameIntoLines(text, maxW, fontSize) {
+  if (!text) return [''];
+  ctx.font = `800 ${fontSize}px "Organica", sans-serif`;
+  if (ctx.measureText(text).width <= maxW) return [text];
+
+  const words = text.trim().split(/\s+/);
+  if (words.length < 2) return [text];   // single word — let ellipsize handle it
+
+  // ---- 2-line attempt ----
+  let bestSplit = -1;
+  let bestMax = Infinity;
+  for (let i = 1; i < words.length; i++) {
+    const w1 = ctx.measureText(words.slice(0, i).join(' ')).width;
+    const w2 = ctx.measureText(words.slice(i).join(' ')).width;
+    const m = Math.max(w1, w2);
+    if (m < bestMax) { bestMax = m; bestSplit = i; }
+  }
+  if (bestSplit > 0 && bestMax <= maxW) {
+    return [
+      words.slice(0, bestSplit).join(' '),
+      words.slice(bestSplit).join(' '),
+    ];
+  }
+
+  // ---- 3-line attempt ----
+  // Need at least 3 words to split into 3 lines.
+  if (words.length >= 3) {
+    let best3i = -1, best3j = -1;
+    let best3Max = Infinity;
+    for (let i = 1; i < words.length - 1; i++) {
+      for (let j = i + 1; j < words.length; j++) {
+        const w1 = ctx.measureText(words.slice(0, i).join(' ')).width;
+        const w2 = ctx.measureText(words.slice(i, j).join(' ')).width;
+        const w3 = ctx.measureText(words.slice(j).join(' ')).width;
+        const m = Math.max(w1, w2, w3);
+        if (m < best3Max) { best3Max = m; best3i = i; best3j = j; }
+      }
+    }
+    if (best3i > 0 && best3Max <= maxW) {
+      return [
+        words.slice(0, best3i).join(' '),
+        words.slice(best3i, best3j).join(' '),
+        words.slice(best3j).join(' '),
+      ];
+    }
+  }
+
+  // Fallback — single line, ellipsized by drawClippedText
+  return [text];
 }
 
 // Truncate text to fit within max width (canvas measureText). Uses ellipsis if
@@ -1594,6 +1962,45 @@ function render() {
   renderFrame(state.frame);
 }
 
+
+// =============================================================================
+// FPS PILL — main button = currently selected FPS, hover reveals alternatives
+// =============================================================================
+function updateFpsPillUI() {
+  try {
+    const pill = document.getElementById('fpsActiveBtn');
+    if (!pill) return;
+    pill.innerHTML = `${FPS} FPS<span class="fps-pill-hint">${FPS === 50 ? 'TV' : 'WEB'}</span>`;
+    document.querySelectorAll('.fps-pill-menu button').forEach(b => {
+      b.classList.toggle('active', parseInt(b.dataset.fps, 10) === FPS);
+    });
+    const subLabel = document.getElementById('btnExportSubLabel');
+    if (subLabel) subLabel.textContent = `${FPS} FPS · ${FPS === 50 ? 'TV bitrate' : 'web bitrate'}`;
+  } catch (_) {}
+}
+document.querySelectorAll('.fps-pill-menu button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const newFps = parseInt(btn.dataset.fps, 10);
+    if (newFps !== 30 && newFps !== 50) return;
+    setFps(newFps);
+    updateFpsPillUI();
+    render();
+  });
+});
+
+// =============================================================================
+// EXPORT MENU — split button
+// =============================================================================
+const _exportMenuEl = document.getElementById('exportMenu');
+document.getElementById('btnExportMore')?.addEventListener('click', e => {
+  e.stopPropagation();
+  if (_exportMenuEl) _exportMenuEl.classList.toggle('open');
+});
+document.addEventListener('click', e => {
+  if (!_exportMenuEl) return;
+  if (!e.target.closest('.export-split')) _exportMenuEl.classList.remove('open');
+});
+
 /* =============================================================================
    PLAYBACK
    ============================================================================= */
@@ -1610,6 +2017,8 @@ function setFps(fps) {
   els.scrubber.max = TOTAL_FRAMES - 1;
   els.stFps.textContent = FPS + ' fps';
   if (state.frame >= TOTAL_FRAMES) state.frame = TOTAL_FRAMES - 1;
+  // Sync new FPS pill UI (50 FPS · TV / 30 FPS · WEB labels)
+  if (typeof updateFpsPillUI === 'function') updateFpsPillUI();
 }
 
 function startPlayback() {
@@ -1744,23 +2153,8 @@ $('btnAddCard').addEventListener('click', () => {
 });
 
 // Toggle groups
-document.querySelectorAll('#brandingToggle button').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('#brandingToggle button').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    state.branding = btn.dataset.value;
-    applyBrandingMode();
-    render();
-  });
-});
-document.querySelectorAll('#fpsToggle button').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('#fpsToggle button').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    setFps(parseInt(btn.dataset.value, 10));
-    render();
-  });
-});
+
+
 
 // Timeline
 els.scrubber.addEventListener('input', () => {
@@ -1834,7 +2228,9 @@ function applySnapshot(snap) {
   state.show = (window.TN_THEMES && TN_THEMES.SHOWS_BY_ID[candidateShow])
     ? candidateShow : (window.TN_THEMES ? TN_THEMES.DEFAULT_SHOW_ID : 'tn');
   if (snap.duration) DURATION = snap.duration;
-  if (snap.fps === 25 || snap.fps === 50) FPS = snap.fps;
+  // Legacy migration: 25 FPS no longer supported — auto-upgrade to 50 FPS
+  if (snap.fps === 25) snap.fps = 50;
+  if (snap.fps === 30 || snap.fps === 50) FPS = snap.fps;
   setDuration(DURATION); setFps(FPS);
 
   // Sync UI
@@ -1842,12 +2238,7 @@ function applySnapshot(snap) {
   $('inSource').value   = state.source;
   $('inDuration').value = DURATION;
   rebuildCardsList();
-  document.querySelectorAll('#brandingToggle button').forEach(b => {
-    b.classList.toggle('active', b.dataset.value === state.branding);
-  });
-  document.querySelectorAll('#fpsToggle button').forEach(b => {
-    b.classList.toggle('active', parseInt(b.dataset.value,10) === FPS);
-  });
+  if (typeof updateFpsPillUI === 'function') updateFpsPillUI();
   state.frame = TOTAL_FRAMES - 1;
   els.scrubber.value = state.frame;
   applyBrandingMode();
@@ -1974,7 +2365,7 @@ $('projNew').addEventListener('click', () => {
       { name: 'Pavel Vavřička', role: 'grafik', image: null },
       { name: 'Pavel Vavřička', role: 'grafik', image: null },
     ],
-    branding: 'preview', show: 'tn', duration: 2.4, fps: 25,
+    branding: 'preview', show: 'tn', duration: 20, fps: 50,
   });
   currentProjectId = null;
   localStorage.removeItem(LS_CURRENT);
@@ -2004,35 +2395,74 @@ setInterval(updateProjectMeta, 1000);
    aren't transparent in the file.
    ============================================================================= */
 
-$('btnExportPNG').addEventListener('click', async () => {
-  const prevBranding = state.branding;
-  state.branding = 'export';
-  applyBrandingMode();
+
+
+
+
+function downloadBlob(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename; a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+$('btnExportPNG')?.addEventListener('click', async () => {
+  // DEFAULT: backdrop ON. Composite the live bg video under the stage canvas.
+  // Falls back to clean transparent (== current canvas only) when video isn't
+  // ready or branding is forced to 'export'.
   await waitFonts();
   renderFrame(state.frame);
   try {
-    const blob = await new Promise(r => canvas.toBlob(r, 'image/png'));
-    downloadBlob(blob, `citace_${Date.now()}.png`);
+    let blob;
+    const useVideo = (state.branding === 'preview') && videoReady && !videoFailed;
+    if (useVideo) {
+      const comp = document.createElement('canvas');
+      comp.width = W; comp.height = H;
+      const cctx = comp.getContext('2d');
+      const video = els.bgVideo;
+      // object-fit: cover composite
+      const vw = video.videoWidth || W;
+      const vh = video.videoHeight || H;
+      const scale = Math.max(W / vw, H / vh);
+      const dw = vw * scale, dh = vh * scale;
+      const dx = (W - dw) / 2, dy = (H - dh) / 2;
+      cctx.fillStyle = '#000';
+      cctx.fillRect(0, 0, W, H);
+      cctx.drawImage(video, dx, dy, dw, dh);
+      cctx.drawImage(canvas, 0, 0);
+      blob = await new Promise(r => comp.toBlob(r, 'image/png'));
+    } else {
+      // No video — paint black underneath (export branding rendered as 'export')
+      const comp = document.createElement('canvas');
+      comp.width = W; comp.height = H;
+      const cctx = comp.getContext('2d');
+      cctx.fillStyle = '#000';
+      cctx.fillRect(0, 0, W, H);
+      cctx.drawImage(canvas, 0, 0);
+      blob = await new Promise(r => comp.toBlob(r, 'image/png'));
+    }
+    downloadBlob(blob, `frame_${Date.now()}.png`);
     showToast('PNG uložen', 'success');
   } catch (err) {
     console.error(err);
     showToast('Export selhal: ' + err.message, 'error');
-  } finally {
-    state.branding = prevBranding;
-    render();
   }
 });
 
-$('btnExportVideo').addEventListener('click', async () => {
-  const prevBranding = state.branding;
-  state.branding = 'export';
-  applyBrandingMode();
+$('btnExportVideo')?.addEventListener('click', async () => {
+  // DEFAULT: backdrop ON. Records a composited canvas (video + stage) frame-
+  // by-frame via captureStream + MediaRecorder.
   stopPlayback();
   await waitFonts();
   showToast('Export WebM — připravuji…', 'success');
   try {
-    // Stream the live canvas directly. 0 = manual frame pump via requestFrame().
-    const stream = canvas.captureStream(0);
+    const useVideo = (state.branding === 'preview') && videoReady && !videoFailed;
+    const video    = els.bgVideo;
+    const comp = document.createElement('canvas');
+    comp.width = W; comp.height = H;
+    const cctx = comp.getContext('2d');
+
+    const stream = comp.captureStream(0);
     const track = stream.getVideoTracks()[0];
     const mimes = ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm'];
     const mime = mimes.find(m => MediaRecorder.isTypeSupported(m));
@@ -2042,33 +2472,41 @@ $('btnExportVideo').addEventListener('click', async () => {
     recorder.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
     const stopped = new Promise(r => recorder.onstop = r);
     recorder.start();
+
+    if (useVideo) {
+      try { video.currentTime = 0; await video.play(); } catch (_) {}
+    }
+
     for (let i = 0; i < TOTAL_FRAMES; i++) {
+      // 1) backdrop layer
+      cctx.fillStyle = '#000';
+      cctx.fillRect(0, 0, W, H);
+      if (useVideo && video.readyState >= 2) {
+        const vw = video.videoWidth || W;
+        const vh = video.videoHeight || H;
+        const scale = Math.max(W / vw, H / vh);
+        const dw = vw * scale, dh = vh * scale;
+        const dx = (W - dw) / 2, dy = (H - dh) / 2;
+        cctx.drawImage(video, dx, dy, dw, dh);
+      }
+      // 2) animation frame
       renderFrame(i);
+      cctx.drawImage(canvas, 0, 0);
       if (track.requestFrame) track.requestFrame();
       await new Promise(r => setTimeout(r, 1000 / FPS));
     }
-    // Hold last frame briefly so the recorder captures it
     await new Promise(r => setTimeout(r, 200));
     recorder.stop();
     await stopped;
+    if (useVideo) { try { video.pause(); } catch (_) {} }
     const blob = new Blob(chunks, { type: mime });
-    downloadBlob(blob, `citace_${Date.now()}.webm`);
+    downloadBlob(blob, `video_${Date.now()}.webm`);
     showToast('Video exportováno', 'success');
   } catch (err) {
     console.error(err);
     showToast('Export selhal: ' + err.message, 'error');
-  } finally {
-    state.branding = prevBranding;
-    render();
   }
 });
-
-function downloadBlob(blob, filename) {
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url; a.download = filename; a.click();
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
-}
 
 /* =============================================================================
    PNG SEQUENCE (with backdrop) — writes PNGs straight into a user-picked folder
@@ -2076,7 +2514,7 @@ function downloadBlob(blob, filename) {
    an offscreen canvas: bg (video / flat gradient) first, then the main stage
    canvas on top. AE-friendly naming: citace_0000.png … citace_NNNN.png.
    ============================================================================= */
-$('btnExportSeq').addEventListener('click', async () => {
+$('btnExportSeq')?.addEventListener('click', async () => {
   if (typeof window.showDirectoryPicker !== 'function') {
     showToast('PNG sekvenci podporuje jen Chrome/Edge (File System Access API)', 'error');
     return;
@@ -2186,6 +2624,138 @@ $('btnExportSeq').addEventListener('click', async () => {
   }
 });
 
+// =============================================================================
+// EXPORT WIRING — main button + dropdown items
+// New UI has 1 primary button (btnExportMP4) and a dropdown menu (exportMenu)
+// with PNG / sequence / WebM. We dispatch them to the legacy handlers which
+// still exist below. MP4 H.264 is a TODO — for now alias to Video (WebM).
+// =============================================================================
+(function () {
+  // Click dispatch on dropdown menu items
+  document.querySelectorAll('#exportMenu button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const fmt = btn.dataset.format;
+      const exportMenu = document.getElementById('exportMenu');
+      if (exportMenu) exportMenu.classList.remove('open');
+      // Trigger the legacy handler by simulating click
+      if (fmt === 'png')  { document.getElementById('btnExportPNG')?.click()
+                        || (window.__exportPng && window.__exportPng()); }
+      if (fmt === 'webm') { document.getElementById('btnExportVideo')?.click()
+                        || (window.__exportWebm && window.__exportWebm()); }
+      if (fmt === 'seq')  { document.getElementById('btnExportSeq')?.click()
+                        || (window.__exportSeq && window.__exportSeq()); }
+    });
+  });
+  // Main MP4 button — for now reuses the WebM/Video pipeline
+  // (TODO: implement true H.264 encoding via ffmpeg.wasm with TV/web bitrates)
+  document.getElementById('btnExportMP4')?.addEventListener('click', async () => {
+    stopPlayback();
+    await waitFonts();
+    showToast?.('Připravuji ffmpeg.wasm (poprvé ~30 MB stažení)…', 'info');
+
+    let ff;
+    try {
+      ff = await loadFFmpeg();
+    } catch (err) {
+      console.error('[Export MP4] Load failed:', err);
+      showToast?.('ffmpeg.wasm load failed — zkontroluj internet', 'error');
+      return;
+    }
+
+    showToast?.(`Renderuji ${TOTAL_FRAMES} snímků pro MP4…`, 'info');
+
+    // Composite each frame: bg video underneath, then canvas on top.
+    const useVideo = (state.branding === 'preview') && videoReady && !videoFailed;
+    const video = els.bgVideo;
+    const comp = document.createElement('canvas');
+    comp.width = W; comp.height = H;
+    const cctx = comp.getContext('2d');
+
+    if (useVideo) {
+      try { video.currentTime = 0; await video.play(); } catch (_) {}
+    }
+
+    try {
+      const pad4 = n => String(n).padStart(4, '0');
+
+      for (let i = 0; i < TOTAL_FRAMES; i++) {
+        // 1) backdrop layer (black if no video, otherwise cover-fit current video frame)
+        cctx.fillStyle = '#000';
+        cctx.fillRect(0, 0, W, H);
+        if (useVideo && video.readyState >= 2) {
+          const vw = video.videoWidth || W;
+          const vh = video.videoHeight || H;
+          const scale = Math.max(W / vw, H / vh);
+          const dw = vw * scale, dh = vh * scale;
+          const dx = (W - dw) / 2, dy = (H - dh) / 2;
+          cctx.drawImage(video, dx, dy, dw, dh);
+        }
+
+        // 2) animation frame on top
+        renderFrame(i);
+        cctx.drawImage(canvas, 0, 0);
+
+        // 3) write PNG into ffmpeg MEMFS
+        const blob = await new Promise(r => comp.toBlob(r, 'image/png'));
+        const buf = new Uint8Array(await blob.arrayBuffer());
+        await ff.writeFile(`f${pad4(i)}.png`, buf);
+
+        // Pace video advance to FPS so backdrop animates frame-accurate
+        if (useVideo) {
+          await new Promise(r => setTimeout(r, 1000 / FPS));
+        } else if (i % 50 === 0) {
+          // Yield occasionally so the UI stays responsive
+          await new Promise(r => setTimeout(r, 0));
+        }
+
+        // Toast progress every ~10% or final frame
+        if (i % Math.max(1, Math.floor(TOTAL_FRAMES / 10)) === 0) {
+          showToast?.(`Snímek ${i + 1} / ${TOTAL_FRAMES}`, 'info');
+        }
+      }
+
+      if (useVideo) { try { video.pause(); } catch (_) {} }
+
+      // 4) Encode H.264. Bitrate scales by FPS — 50 = TV broadcast, 30 = web.
+      const isTV = (FPS === 50);
+      const bitrate = isTV ? '16M' : '4M';
+      const maxrate = isTV ? '18M' : '5M';
+      const bufsize = isTV ? '24M' : '8M';
+      showToast?.(`Enkóduji H.264 (${isTV ? 'TV' : 'web'}, ${bitrate})…`, 'info');
+
+      await ff.exec([
+        '-framerate', String(FPS),
+        '-i', 'f%04d.png',
+        '-c:v', 'libx264',
+        '-preset', 'medium',
+        '-b:v', bitrate,
+        '-maxrate', maxrate,
+        '-bufsize', bufsize,
+        '-pix_fmt', 'yuv420p',
+        '-movflags', '+faststart',
+        'out.mp4'
+      ]);
+
+      // 5) Read output, trigger download
+      const data = await ff.readFile('out.mp4');
+      const mp4Blob = new Blob([data.buffer], { type: 'video/mp4' });
+      downloadBlob(mp4Blob, `kartoteka_${Date.now()}.mp4`);
+
+      // 6) Cleanup MEMFS so next export starts fresh
+      for (let i = 0; i < TOTAL_FRAMES; i++) {
+        try { await ff.deleteFile(`f${pad4(i)}.png`); } catch (_) {}
+      }
+      try { await ff.deleteFile('out.mp4'); } catch (_) {}
+
+      showToast?.('MP4 H.264 exportováno', 'success');
+    } catch (err) {
+      console.error('[Export MP4]', err);
+      showToast?.('MP4 export selhal: ' + err.message, 'error');
+    }
+  });
+})();
+
+
 /* =============================================================================
    TOAST
    ============================================================================= */
@@ -2256,16 +2826,22 @@ const _urlProjectId = _params.get('project');
   fitStage();
 
   if (_params.get('preview') === '1') {
-    document.querySelector('.control').style.display = 'none';
-    document.querySelector('.stage-header').style.display = 'none';
-    document.querySelector('.timeline').style.display = 'none';
-    document.querySelector('.stage-wrap').style.padding = '0';
-    document.querySelector('.app').style.gridTemplateColumns = '1fr';
-    state.branding = 'export';
+    // Hide chrome (sidebar + header + timeline) so the iframe shows just the canvas
+    document.querySelector('.control')?.style.setProperty('display', 'none');
+    document.querySelector('.stage-header')?.style.setProperty('display', 'none');
+    document.querySelector('.timeline')?.style.setProperty('display', 'none');
+    const stageWrap = document.querySelector('.stage-wrap');
+    if (stageWrap) stageWrap.style.padding = '0';
+    const appEl = document.querySelector('.app');
+    if (appEl) appEl.style.gridTemplateColumns = '1fr';
+    // Backdrop ON in preview thumbs (theme video shows behind the graphic)
+    state.branding = 'preview';
+    if (typeof applyBrandingMode === 'function') applyBrandingMode();
     const requestedFrame = parseInt(_params.get('frame') || '60', 10);
+    // Duration may be short → clamp to TOTAL_FRAMES-1 to land on settled state
     state.frame = Math.min(requestedFrame, TOTAL_FRAMES - 1);
     render();
-    fitStage();
+    if (typeof fitStage === 'function') fitStage();
     return;
   }
 
@@ -2304,6 +2880,102 @@ const _urlProjectId = _params.get('project');
   requestAnimationFrame(() => { fitStage(); render(); });
   setTimeout(() => { fitStage(); render(); }, 150);
 })();
+
+// ZPĚT button (top-right of control-header) — proxies to btnHome which already
+// has the unsaved-changes confirm dialog wired up.
+document.getElementById('btnBack')?.addEventListener('click', () => {
+  document.getElementById('btnHome')?.click();
+});
+
+
+/* =============================================================================
+   MP4 EXPORT — H.264 via ffmpeg.wasm (lazy-loaded on first use, ~30 MB).
+   Frames are composited (backdrop video + canvas) into an offscreen canvas,
+   PNG-encoded, then encoded to MP4 with TV/web bitrate scaling.
+   ============================================================================= */
+let _ffmpegInstance = null;
+async function loadFFmpeg() {
+  if (_ffmpegInstance) return _ffmpegInstance;
+
+  // Pre-flight diagnostics — log environment so failures are easy to read
+  console.log('[ffmpeg] preflight: SAB=', typeof SharedArrayBuffer !== 'undefined',
+              'crossOriginIsolated=', !!self.crossOriginIsolated,
+              'origin=', location.origin);
+
+  const VER = '0.12.10';
+  const CORE_VER = '0.12.6';
+  // CDN fallbacks: try unpkg first, then jsdelivr if it 404s or errors
+  const CDNS = [
+    {
+      base: `https://unpkg.com/@ffmpeg/ffmpeg@${VER}/dist/umd`,
+      coreBase: `https://unpkg.com/@ffmpeg/core@${CORE_VER}/dist/umd`,
+    },
+    {
+      base: `https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@${VER}/dist/umd`,
+      coreBase: `https://cdn.jsdelivr.net/npm/@ffmpeg/core@${CORE_VER}/dist/umd`,
+    },
+  ];
+
+  // Step 1: load the ffmpeg.js shim from one of the CDNs
+  let cdn = null;
+  let lastErr = null;
+  for (const c of CDNS) {
+    try {
+      console.log('[ffmpeg] loading shim from', c.base);
+      await new Promise((resolve, reject) => {
+        if (window.FFmpegWASM) return resolve();
+        const s = document.createElement('script');
+        s.src = `${c.base}/ffmpeg.js`;
+        s.onload = resolve;
+        s.onerror = () => reject(new Error('script onerror: ' + s.src));
+        document.head.appendChild(s);
+      });
+      cdn = c;
+      console.log('[ffmpeg] shim loaded ✓');
+      break;
+    } catch (err) {
+      console.warn('[ffmpeg] shim load failed:', err.message);
+      lastErr = err;
+    }
+  }
+  if (!cdn) {
+    throw new Error('Failed to load ffmpeg.js from any CDN: ' + (lastErr?.message || '?'));
+  }
+
+  // Step 2: instantiate FFmpeg + load core (single-thread, no SAB needed)
+  if (!window.FFmpegWASM || !window.FFmpegWASM.FFmpeg) {
+    throw new Error('FFmpegWASM global missing after script load — bad shim?');
+  }
+  const { FFmpeg } = window.FFmpegWASM;
+  const ff = new FFmpeg();
+  ff.on('log', ({ message }) => console.log('[ffmpeg]', message));
+  ff.on('progress', ({ progress }) => {
+    if (isFinite(progress)) {
+      const pct = Math.max(0, Math.min(100, Math.round(progress * 100)));
+      console.log(`[ffmpeg] encode ${pct}%`);
+    }
+  });
+
+  console.log('[ffmpeg] loading core from', cdn.coreBase);
+  try {
+    await ff.load({
+      coreURL: `${cdn.coreBase}/ffmpeg-core.js`,
+      wasmURL: `${cdn.coreBase}/ffmpeg-core.wasm`,
+    });
+  } catch (err) {
+    console.error('[ffmpeg] core load failed:', err);
+    // Useful diagnostic — most common reason: SharedArrayBuffer missing
+    if (typeof SharedArrayBuffer === 'undefined') {
+      throw new Error('ffmpeg core requires SharedArrayBuffer (cross-origin-isolated headers). '
+        + 'On localhost serve with COOP/COEP headers, or deploy on a host that sets them. '
+        + 'GitHub Pages does NOT set these. Original error: ' + err.message);
+    }
+    throw err;
+  }
+  console.log('[ffmpeg] core ready ✓');
+  _ffmpegInstance = ff;
+  return ff;
+}
 </script>
 </body>
 </html>
