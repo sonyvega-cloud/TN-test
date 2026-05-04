@@ -2683,14 +2683,20 @@ let _ffmpegInstance = null;
 async function loadFFmpeg() {
   if (_ffmpegInstance) return _ffmpegInstance;
 
-  // Pre-flight diagnostics — log environment so failures are easy to read
+  // Pre-flight diagnostics
   console.log('[ffmpeg] preflight: SAB=', typeof SharedArrayBuffer !== 'undefined',
               'crossOriginIsolated=', !!self.crossOriginIsolated,
               'origin=', location.origin);
 
+  if (typeof SharedArrayBuffer === 'undefined') {
+    throw new Error('SharedArrayBuffer is not available — page is not cross-origin isolated. ' +
+      'Make sure coi-serviceworker.js is loaded and the page reloaded after SW install.');
+  }
+
   const VER = '0.12.10';
   const CORE_VER = '0.12.6';
-  // CDN fallbacks: try unpkg first, then jsdelivr if it 404s or errors
+
+  // CDN fallbacks: try unpkg first, then jsdelivr
   const CDNS = [
     {
       base: `https://unpkg.com/@ffmpeg/ffmpeg@${VER}/dist/umd`,
@@ -2702,7 +2708,17 @@ async function loadFFmpeg() {
     },
   ];
 
-  // Step 1: load the ffmpeg.js shim from one of the CDNs
+  // Helper: fetch a URL and turn the response into a blob: URL.
+  // This sidesteps CORS/CORP issues — the Worker script becomes same-origin (blob:).
+  async function toBlobURL(url, mime) {
+    console.log('[ffmpeg] fetching', url);
+    const resp = await fetch(url);
+    if (!resp.ok) throw new Error(`HTTP ${resp.status} for ${url}`);
+    const buf = await resp.arrayBuffer();
+    return URL.createObjectURL(new Blob([buf], { type: mime }));
+  }
+
+  // Step 1: Try each CDN until one works for the shim
   let cdn = null;
   let lastErr = null;
   for (const c of CDNS) {
@@ -2728,9 +2744,8 @@ async function loadFFmpeg() {
     throw new Error('Failed to load ffmpeg.js from any CDN: ' + (lastErr?.message || '?'));
   }
 
-  // Step 2: instantiate FFmpeg + load core (single-thread, no SAB needed)
   if (!window.FFmpegWASM || !window.FFmpegWASM.FFmpeg) {
-    throw new Error('FFmpegWASM global missing after script load — bad shim?');
+    throw new Error('FFmpegWASM global missing after script load');
   }
   const { FFmpeg } = window.FFmpegWASM;
   const ff = new FFmpeg();
@@ -2742,20 +2757,26 @@ async function loadFFmpeg() {
     }
   });
 
-  console.log('[ffmpeg] loading core from', cdn.coreBase);
+  // Step 2: Fetch core + wasm as blobs (same-origin Worker construction)
+  console.log('[ffmpeg] fetching core as blob URLs from', cdn.coreBase);
+  let coreURL, wasmURL;
   try {
-    await ff.load({
-      coreURL: `${cdn.coreBase}/ffmpeg-core.js`,
-      wasmURL: `${cdn.coreBase}/ffmpeg-core.wasm`,
-    });
+    coreURL = await toBlobURL(`${cdn.coreBase}/ffmpeg-core.js`, 'text/javascript');
+    wasmURL = await toBlobURL(`${cdn.coreBase}/ffmpeg-core.wasm`, 'application/wasm');
+  } catch (err) {
+    // Fallback to second CDN if the first fails on core fetch
+    console.warn('[ffmpeg] primary CDN failed for core, trying fallback:', err.message);
+    const alt = CDNS.find(c => c.coreBase !== cdn.coreBase);
+    if (!alt) throw err;
+    coreURL = await toBlobURL(`${alt.coreBase}/ffmpeg-core.js`, 'text/javascript');
+    wasmURL = await toBlobURL(`${alt.coreBase}/ffmpeg-core.wasm`, 'application/wasm');
+  }
+
+  console.log('[ffmpeg] loading core (single-threaded)…');
+  try {
+    await ff.load({ coreURL, wasmURL });
   } catch (err) {
     console.error('[ffmpeg] core load failed:', err);
-    // Useful diagnostic — most common reason: SharedArrayBuffer missing
-    if (typeof SharedArrayBuffer === 'undefined') {
-      throw new Error('ffmpeg core requires SharedArrayBuffer (cross-origin-isolated headers). '
-        + 'On localhost serve with COOP/COEP headers, or deploy on a host that sets them. '
-        + 'GitHub Pages does NOT set these. Original error: ' + err.message);
-    }
     throw err;
   }
   console.log('[ffmpeg] core ready ✓');
