@@ -3100,6 +3100,50 @@ function exportModalClose() {
   const m = document.getElementById('exportModal');
   if (m) m.classList.remove('open');
 }
+// Esc key handler — installed when modal opens, removed when it closes.
+// Behaves like clicking the Cancel button (which now shows the confirm panel).
+function _exportEscHandler(e) {
+  if (e.key === 'Escape') {
+    e.preventDefault();
+    const cancelBtn = document.getElementById('exportModalCancel');
+    if (cancelBtn && cancelBtn.style.display !== 'none' && !cancelBtn.disabled) {
+      cancelBtn.click();
+    } else {
+      const closeBtn = document.getElementById('exportModalClose');
+      if (closeBtn && closeBtn.style.display !== 'none') closeBtn.click();
+    }
+  }
+}
+// Auto-close timer state. After a successful export the modal counts down
+// and closes itself, unless the user clicks "zastavit".
+let _exportAutoCloseTimer = null;
+let _exportAutoCloseRemaining = 0;
+function _exportClearAutoClose() {
+  if (_exportAutoCloseTimer) {
+    clearInterval(_exportAutoCloseTimer);
+    _exportAutoCloseTimer = null;
+  }
+  const cd = document.getElementById('exportModalCountdown');
+  if (cd) cd.style.display = 'none';
+}
+function _exportStartAutoClose(seconds) {
+  _exportClearAutoClose();
+  _exportAutoCloseRemaining = seconds;
+  const cd = document.getElementById('exportModalCountdown');
+  const num = document.getElementById('exportModalCountdownNum');
+  if (cd) cd.style.display = '';
+  if (num) num.textContent = String(seconds);
+  _exportAutoCloseTimer = setInterval(() => {
+    _exportAutoCloseRemaining--;
+    if (num) num.textContent = String(Math.max(0, _exportAutoCloseRemaining));
+    if (_exportAutoCloseRemaining <= 0) {
+      _exportClearAutoClose();
+      exportModalClose();
+    }
+  }, 1000);
+}
+
+
 function exportModalSetStatus(text) {
   const el = document.getElementById('exportModalStatus');
   if (el) el.textContent = text;
