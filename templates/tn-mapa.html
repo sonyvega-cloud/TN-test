@@ -1013,8 +1013,8 @@
         <span class="brand">Graphics Engine</span>
       </div>
       <div class="template-badge">
-        <span class="tpl-num">03 / TEMPLATE</span>
-        <span class="tpl-name">TN tabulka</span>
+        <span class="tpl-num">09 / TEMPLATE</span>
+        <span class="tpl-name">TN mapa</span>
       </div>
     
       <button class="back-btn" id="btnBack" title="Zpět na rozcestník">‹ ZPĚT</button>
@@ -1110,7 +1110,7 @@
           <span class="info-tip" data-tip="Celková délka animace v sekundách. Default 20 s.">i</span>
         </label>
         <div class="field-row">
-          <input type="text" id="inDuration" value="20" />
+          <input type="text" id="inDuration" value="3" />
           <div class="fps-pill" id="fpsPill">
             <button class="fps-pill-active" id="fpsActiveBtn" data-fps="50">50 FPS<span class="fps-pill-hint">TV</span></button>
             <div class="fps-pill-menu">
@@ -1146,7 +1146,7 @@
   <main class="stage-col">
     <div class="stage-header">
       <span>1920 × 1080 • 16:9</span>
-      <span class="meta">Template 06 · TN citace</span>
+      <span class="meta">Template 09 · TN mapa</span>
       <span class="spacer"></span>
       <span class="pill" id="stFps">50 fps</span>
       <span class="pill" id="stDur">20.00 s</span>
@@ -1254,7 +1254,7 @@ function getFontColor() {
 
 
 let FPS = 50;
-let DURATION = 20;                     // seconds (animation finishes ~1.6s, +0.8s hold)
+let DURATION = 3.0;                    // seconds — mapa animations are short
 let TOTAL_FRAMES = Math.round(DURATION * FPS);
 const CANVAS_W = 1920, CANVAS_H = 1080;
 
@@ -1427,37 +1427,27 @@ const ctx = canvas.getContext('2d');
 // source), but the bottom area is a 2-column split: image on left (770×770),
 // gray rows panel on right.
 const LAYOUT = {
-  topBlackH:     135,    // y=0..134      режия header zone
-  titleBandTop:  135,    // y=135..222    white title band (95% in preview)
-  titleBandH:     87,
-  titleBandBot:  222,
-  chartTop:      222,    // y=222..992    main content area
-  chartBottom:   992,
-  // Title text positioning (matches bar-chart exactly)
-  titleX:        115,    // 'P' of title left edge (AE guide layer)
-  titleY:        198,    // baseline Y (NOT middle) — 'P' bottom in reference
-  sourceX:       1805,   // GLOBAL TN right-edge alignment. Used by every template
-                         // for source caption AND any right-aligned value column,
-                         // so the режия TN badge / chrome lines up across all
-                         // templates. Do not deviate.
-  // Image / rows split
-  imageX:          0,
-  imageW:        770,    // measured from reference
-  rowsX:         770,    // gray panel starts here
-  rowsW:        1150,    // 1920 - 770
-  // TN red logo box reservation — режия places its TN+red box bottom-right.
-  // Standard size: 250×135, with ~20px margin from frame edges.
+  // === MAPA LAYOUT ===
+  // Title band sits at the BOTTOM (y=970..1080) — see all 4 reference screenshots.
+  // Map area fills the canvas above it.
+  mapTop:           0,
+  mapBottom:      970,
+  titleBandTop:   970,
+  titleBandH:     110,
+  titleBandBot:  1080,
+  titleX:          90,    // left padding inside the white strip
+  titleY:        1040,    // baseline of title text inside the strip
+  sourceX:       1805,    // GLOBAL TN right-edge alignment for source caption
+  sourceY:       1040,
+  // TN red logo box reservation
   logoBoxW:      270,
   logoBoxH:      155,
-  // Rows safe-area inside the gray panel (used by drawRows for vertical centering)
-  rowsPadTop:    280,    // top of safe rows area (60px below title band)
-  rowsPadBot:    870,    // bottom of safe rows area (clear of TN logo box)
-  rowsPadLeft:    50,    // left padding inside gray panel (770 + 50 = 820)
-  rowsPadRight:   60,    // right padding (1920 - 60 = 1860 = right edge of value)
-  rowHeight:     100,    // base spacing between rows (compresses if many rows)
-  rowMinHeight:   72,    // minimum row spacing for 10-row case
+  // Compatibility aliases used by some shared helpers (export, etc.)
+  topBlackH:        0,
+  chartTop:         0,
+  chartBottom:    970,
 };
-const BLOCK_ANCHOR_Y = 135;
+const BLOCK_ANCHOR_Y = 970;   // animation anchor (title band scale-Y intro)
 const W = 1920, H = 1080;
 
 /* =============================================================================
@@ -2418,9 +2408,13 @@ console.log('[Boot] starting, FPS=', FPS, 'DURATION=', DURATION, 'TOTAL_FRAMES='
   } catch (_) {}
     populateShowSelect();
   applyShowTheme();
-  rebuildRowsList();   // populate rows editor with default rows
-  // Image-Y slider removed — guard so boot doesn't crash when element is gone
-  const _outImgY = $('outImageY'); if (_outImgY) _outImgY.textContent = `${state.imageY} %`;
+  // Initial sidebar paint — list stubs (real impls in fáze 3 + 4)
+  if (typeof rebuildHighlightsList === 'function') rebuildHighlightsList();
+  if (typeof rebuildPinsList === 'function') rebuildPinsList();
+  // Sync mode toggle UI to current state
+  document.querySelectorAll('#modeToggle button').forEach(b => {
+    b.classList.toggle('active', b.dataset.value === state.mode);
+  });
   // Ensure the blue fallback panel is hidden — it's legacy and only ever
   // visually leaked when video was slow. Real preview uses video or black.
   if (els.bgFlat) els.bgFlat.style.display = 'none';
@@ -2461,19 +2455,7 @@ console.log('[Boot] starting, FPS=', FPS, 'DURATION=', DURATION, 'TOTAL_FRAMES='
     }
   }
 
-  // Safety net: if for any reason state ended up with no rows (corrupted save,
-  // schema mismatch from older versions, etc.) restore the default rows so the
-  // user never sees an empty table.
-  if (!Array.isArray(state.rows) || state.rows.length === 0) {
-    console.warn('[Tabulka] state.rows was empty after load — restoring defaults');
-    state.rows = [
-      { label: 'Řádek v tabulce 1', mid: '', value: '100 000' },
-      { label: 'Řádek v tabulce 2', mid: '', value: '80 000' },
-      { label: 'Řádek v tabulce 3', mid: '', value: '20 000' },
-      { label: 'Řádek v tabulce 4', mid: '', value: '5 000' },
-    ];
-    rebuildRowsList();
-  }
+  // (Tabulka had a rows-restoration safety net here — not applicable to mapa.)
 
   lastSavedSnapshot = JSON.stringify(snapshotState());
   updateProjectMeta();
