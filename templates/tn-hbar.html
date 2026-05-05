@@ -756,6 +756,110 @@
   }
   .back-btn:hover { transform: translateX(-3px); }
   .back-btn:active { transform: scale(0.95); }
+
+  /* ============================================================
+     EXPORT MODAL — full-screen overlay during MP4 export.
+     Blocks all input; only Cancel button is interactive.
+     ============================================================ */
+  .export-modal {
+    position: fixed; inset: 0; z-index: 9999;
+    background: rgba(0, 0, 0, 0.88);
+    display: none;
+    align-items: center; justify-content: center;
+    backdrop-filter: blur(4px);
+  }
+  .export-modal.open { display: flex; }
+  .export-modal-panel {
+    background: #141414;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 32px 40px;
+    min-width: 480px; max-width: 600px;
+    color: #fff;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+  }
+  .export-modal-title {
+    font-family: 'Organica', sans-serif;
+    font-weight: 600;
+    font-size: 16px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #DC0F2E;
+    margin-bottom: 8px;
+  }
+  .export-modal-status {
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.85);
+    margin-bottom: 24px;
+    min-height: 20px;
+    line-height: 1.4;
+  }
+  .export-modal-progress-track {
+    width: 100%;
+    height: 8px;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 8px;
+  }
+  .export-modal-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #DC0F2E 0%, #ff4960 100%);
+    border-radius: 4px;
+    width: 0%;
+    transition: width 200ms ease-out;
+  }
+  .export-modal-progress-fill.indeterminate {
+    width: 30% !important;
+    animation: exportIndeterminate 1.4s ease-in-out infinite;
+  }
+  @keyframes exportIndeterminate {
+    0%   { transform: translateX(-100%); }
+    100% { transform: translateX(400%); }
+  }
+  .export-modal-progress-fill.error {
+    background: #DC0F2E;
+  }
+  .export-modal-progress-fill.success {
+    background: linear-gradient(90deg, #2D9B40 0%, #4CC95E 100%);
+  }
+  .export-modal-meta {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.5);
+    font-feature-settings: 'tnum';
+    margin-bottom: 28px;
+    display: flex;
+    justify-content: space-between;
+  }
+  .export-modal-actions {
+    display: flex; justify-content: flex-end;
+    gap: 12px;
+  }
+  .export-modal-btn {
+    background: transparent;
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    padding: 10px 24px;
+    border-radius: 6px;
+    font-family: 'Organica', sans-serif;
+    font-weight: 500;
+    font-size: 13px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 150ms ease;
+  }
+  .export-modal-btn:hover { background: rgba(255, 255, 255, 0.08); border-color: rgba(255, 255, 255, 0.4); }
+  .export-modal-btn.primary {
+    background: #DC0F2E;
+    border-color: #DC0F2E;
+  }
+  .export-modal-btn.primary:hover { background: #b80825; border-color: #b80825; }
+  .export-modal-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+    background: transparent;
+  }
 </style>
 </head>
 <body>
@@ -2444,26 +2548,31 @@ document.getElementById('btnExportMP4')?.addEventListener('click', async () => {
 
   stopPlayback();
   await waitFonts();
-  showToast?.('Načítám mp4-muxer…', 'info');
+  exportModalOpen();
+  exportModalSetStatus('Načítám mp4-muxer…');
+
   try {
     await loadMp4Muxer();
   } catch (err) {
     console.error('[Export MP4] muxer load:', err);
-    showToast?.('mp4-muxer load failed: ' + err.message, 'error');
+    exportModalSetDone(false, 'mp4-muxer load failed: ' + err.message);
     return;
   }
+  if (_exportCancelled) { exportModalClose(); return; }
 
   const isTV = (FPS === 50);
   const bitrate = isTV ? 16000000 : 4000000;
 
+  exportModalSetStatus('Vybírám H.264 codec…');
   let codec;
   try {
     codec = await pickH264Codec(W, H, FPS, bitrate);
   } catch (err) {
     console.error('[Export MP4] codec pick:', err);
-    showToast?.('H.264 codec nedostupný: ' + err.message, 'error');
+    exportModalSetDone(false, 'H.264 codec nedostupný: ' + err.message);
     return;
   }
+  if (_exportCancelled) { exportModalClose(); return; }
 
   const muxer = new Mp4Muxer.Muxer({
     target: new Mp4Muxer.ArrayBufferTarget(),
@@ -2494,10 +2603,20 @@ document.getElementById('btnExportMP4')?.addEventListener('click', async () => {
     try { video.currentTime = 0; await video.play(); } catch (_) {}
   }
 
-  showToast?.('Enkóduji ' + TOTAL_FRAMES + ' snímků (H.264 ' + (isTV ? 'TV' : 'web') + ')…', 'info');
+  exportModalSetStatus('Enkóduji snímky (H.264 ' + (isTV ? 'TV 16M' : 'web 4M') + ')…');
+  exportModalSetMeta('0 / ' + TOTAL_FRAMES, '0 %');
+
+  const startTime = performance.now();
 
   try {
     for (let i = 0; i < TOTAL_FRAMES; i++) {
+      if (_exportCancelled) {
+        try { encoder.close(); } catch (_) {}
+        if (useVideo) { try { video.pause(); } catch (_) {} }
+        exportModalSetDone(false, 'Export zrušen');
+        return;
+      }
+
       cctx.fillStyle = '#000';
       cctx.fillRect(0, 0, W, H);
       if (useVideo && video.readyState >= 2) {
@@ -2523,14 +2642,27 @@ document.getElementById('btnExportMP4')?.addEventListener('click', async () => {
         await new Promise(r => setTimeout(r, 0));
       }
 
-      if (i % Math.max(1, Math.floor(TOTAL_FRAMES / 10)) === 0) {
-        showToast?.('Snímek ' + (i + 1) + ' / ' + TOTAL_FRAMES, 'info');
+      // Progress UI — update every frame for smooth bar; meta with ETA every 5
+      const pct = ((i + 1) / TOTAL_FRAMES) * 100;
+      exportModalSetProgress(pct, false);
+      if (i % 5 === 0 || i === TOTAL_FRAMES - 1) {
+        const elapsed = (performance.now() - startTime) / 1000;
+        const fps = (i + 1) / elapsed;
+        const remaining = (TOTAL_FRAMES - i - 1) / Math.max(0.1, fps);
+        const etaText = remaining > 60
+          ? Math.ceil(remaining / 60) + ' min'
+          : Math.ceil(remaining) + ' s';
+        exportModalSetMeta(
+          (i + 1) + ' / ' + TOTAL_FRAMES + ' · ' + fps.toFixed(1) + ' fps',
+          pct.toFixed(0) + ' % · ETA ' + etaText
+        );
       }
     }
 
     if (useVideo) { try { video.pause(); } catch (_) {} }
 
-    showToast?.('Finalizuji MP4…', 'info');
+    exportModalSetStatus('Finalizuji MP4…');
+    exportModalSetProgress(100, false);
     await encoder.flush();
     muxer.finalize();
     encoder.close();
@@ -2541,13 +2673,111 @@ document.getElementById('btnExportMP4')?.addEventListener('click', async () => {
 
     const blob = new Blob([muxer.target.buffer], { type: 'video/mp4' });
     downloadBlob(blob, 'vodorovny-graf_' + Date.now() + '.mp4');
-    showToast?.('MP4 H.264 exportováno', 'success');
+    const sizeMB = (blob.size / 1024 / 1024).toFixed(1);
+    const elapsed = ((performance.now() - startTime) / 1000).toFixed(1);
+    exportModalSetMeta(sizeMB + ' MB', elapsed + ' s');
+    exportModalSetDone(true, 'Hotovo · ' + sizeMB + ' MB · ' + elapsed + ' s');
   } catch (err) {
     console.error('[Export MP4]', err);
-    showToast?.('MP4 export selhal: ' + err.message, 'error');
+    exportModalSetDone(false, 'Export selhal: ' + err.message);
     try { encoder.close(); } catch (_) {}
+    if (useVideo) { try { video.pause(); } catch (_) {} }
   }
 });
+
+/* ============================================================
+   EXPORT MODAL — programmatic API used by the MP4 export handler.
+   Blocks all UI; only Cancel button is interactive while modal is open.
+   ============================================================ */
+let _exportCancelled = false;
+function exportModalOpen() {
+  _exportCancelled = false;
+  const m = document.getElementById('exportModal');
+  if (!m) return;
+  m.classList.add('open');
+  exportModalSetStatus('Příprava…');
+  exportModalSetProgress(0, true);   // indeterminate
+  exportModalSetMeta('—', '—');
+  const cancelBtn = document.getElementById('exportModalCancel');
+  const closeBtn  = document.getElementById('exportModalClose');
+  if (cancelBtn) { cancelBtn.style.display = ''; cancelBtn.disabled = false; cancelBtn.textContent = 'Cancel'; }
+  if (closeBtn)  closeBtn.style.display = 'none';
+  const fill = document.getElementById('exportModalFill');
+  if (fill) { fill.classList.remove('error', 'success'); }
+}
+function exportModalClose() {
+  const m = document.getElementById('exportModal');
+  if (m) m.classList.remove('open');
+}
+function exportModalSetStatus(text) {
+  const el = document.getElementById('exportModalStatus');
+  if (el) el.textContent = text;
+}
+function exportModalSetProgress(pct, indeterminate) {
+  const fill = document.getElementById('exportModalFill');
+  if (!fill) return;
+  if (indeterminate) {
+    fill.classList.add('indeterminate');
+    fill.style.width = '';
+  } else {
+    fill.classList.remove('indeterminate');
+    fill.style.width = Math.max(0, Math.min(100, pct)) + '%';
+  }
+}
+function exportModalSetMeta(left, right) {
+  const l = document.getElementById('exportModalLeft');
+  const r = document.getElementById('exportModalRight');
+  if (l) l.textContent = left;
+  if (r) r.textContent = right;
+}
+function exportModalSetDone(success, message) {
+  const fill = document.getElementById('exportModalFill');
+  const cancelBtn = document.getElementById('exportModalCancel');
+  const closeBtn  = document.getElementById('exportModalClose');
+  if (fill) {
+    fill.classList.remove('indeterminate');
+    fill.classList.add(success ? 'success' : 'error');
+    if (success) fill.style.width = '100%';
+  }
+  if (cancelBtn) cancelBtn.style.display = 'none';
+  if (closeBtn)  closeBtn.style.display = '';
+  if (message) exportModalSetStatus(message);
+}
+// Wire cancel + close buttons (idempotent — safe to call multiple times)
+(function wireExportModal() {
+  const cancelBtn = document.getElementById('exportModalCancel');
+  const closeBtn  = document.getElementById('exportModalClose');
+  if (cancelBtn && !cancelBtn._wired) {
+    cancelBtn._wired = true;
+    cancelBtn.addEventListener('click', () => {
+      _exportCancelled = true;
+      cancelBtn.disabled = true;
+      cancelBtn.textContent = 'Ruším…';
+      exportModalSetStatus('Ruším export…');
+    });
+  }
+  if (closeBtn && !closeBtn._wired) {
+    closeBtn._wired = true;
+    closeBtn.addEventListener('click', exportModalClose);
+  }
+})();
 </script>
+
+<!-- Full-screen export progress modal — blocks all interaction during MP4 encode. -->
+<div class="export-modal" id="exportModal" role="dialog" aria-modal="true" aria-labelledby="exportModalTitle">
+  <div class="export-modal-panel">
+    <div class="export-modal-title" id="exportModalTitle">Export MP4</div>
+    <div class="export-modal-status" id="exportModalStatus">Příprava…</div>
+    <div class="export-modal-progress-track"><div class="export-modal-progress-fill" id="exportModalFill"></div></div>
+    <div class="export-modal-meta">
+      <span id="exportModalLeft">—</span>
+      <span id="exportModalRight">—</span>
+    </div>
+    <div class="export-modal-actions">
+      <button class="export-modal-btn" id="exportModalCancel">Cancel</button>
+      <button class="export-modal-btn primary" id="exportModalClose" style="display:none">Zavřít</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>
