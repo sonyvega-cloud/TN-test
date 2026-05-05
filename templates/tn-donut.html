@@ -2346,54 +2346,54 @@ function downloadBlob(blob, filename) {
 }
 
 $('btnExportPNG')?.addEventListener('click', async () => {
-  // DEFAULT: backdrop ON. Composite the live bg video under the stage canvas.
-  // Falls back to clean transparent (== current canvas only) when video isn't
-  // ready or branding is forced to 'export'.
   await waitFonts();
-  renderFrame(state.frame);
+  exportModalOpen();
+  const titleEl = document.getElementById('exportModalTitle');
+  if (titleEl) titleEl.textContent = 'Export PNG (snímek)';
+  exportModalSetStatus('Renderuji snímek…');
+  exportModalSetProgress(50, false);
   try {
-    let blob;
+    renderFrame(state.frame);
     const useVideo = (state.branding === 'preview') && videoReady && !videoFailed;
-    if (useVideo) {
-      const comp = document.createElement('canvas');
-      comp.width = W; comp.height = H;
-      const cctx = comp.getContext('2d');
-      const video = els.bgVideo;
-      // object-fit: cover composite
+    const video    = els.bgVideo;
+    const comp = document.createElement('canvas');
+    comp.width = W; comp.height = H;
+    const cctx = comp.getContext('2d');
+    cctx.fillStyle = '#000';
+    cctx.fillRect(0, 0, W, H);
+    if (useVideo && video && video.readyState >= 2) {
       const vw = video.videoWidth || W;
       const vh = video.videoHeight || H;
       const scale = Math.max(W / vw, H / vh);
       const dw = vw * scale, dh = vh * scale;
       const dx = (W - dw) / 2, dy = (H - dh) / 2;
-      cctx.fillStyle = '#000';
-      cctx.fillRect(0, 0, W, H);
       cctx.drawImage(video, dx, dy, dw, dh);
-      cctx.drawImage(canvas, 0, 0);
-      blob = await new Promise(r => comp.toBlob(r, 'image/png'));
-    } else {
-      // No video — paint black underneath (export branding rendered as 'export')
-      const comp = document.createElement('canvas');
-      comp.width = W; comp.height = H;
-      const cctx = comp.getContext('2d');
-      cctx.fillStyle = '#000';
-      cctx.fillRect(0, 0, W, H);
-      cctx.drawImage(canvas, 0, 0);
-      blob = await new Promise(r => comp.toBlob(r, 'image/png'));
     }
-    downloadBlob(blob, `frame_${Date.now()}.png`);
-    showToast('PNG uložen', 'success');
+    cctx.drawImage(canvas, 0, 0);
+    const blob = await new Promise(r => comp.toBlob(r, 'image/png'));
+
+    const n = _bumpExportCounter('Donut-frame');
+    const showId = (typeof state !== 'undefined' && state && state.show) ? state.show : 'tn';
+    const showLabel = _showLabel(showId);
+    const filename = 'Donut' + n + '-' + showLabel + '-GFX-FRAME-' + _userNick() + '-' + _ymdShort() + '.png';
+    const dest = await saveExportBlob(blob, filename);
+    const sizeKB = (blob.size / 1024).toFixed(0);
+    exportModalSetMeta(sizeKB + ' KB', 'PNG');
+    exportModalSetDone(true, 'Hotovo · ' + dest);
   } catch (err) {
     console.error(err);
-    showToast('Export selhal: ' + err.message, 'error');
+    exportModalSetDone(false, 'Export selhal: ' + err.message);
   }
 });
 
 $('btnExportVideo')?.addEventListener('click', async () => {
-  // DEFAULT: backdrop ON. Records a composited canvas (video + stage) frame-
-  // by-frame via captureStream + MediaRecorder.
   stopPlayback();
   await waitFonts();
-  showToast('Export WebM — připravuji…', 'success');
+  exportModalOpen();
+  const titleEl = document.getElementById('exportModalTitle');
+  if (titleEl) titleEl.textContent = 'Export WebM';
+  exportModalSetStatus('Připravuji WebM kodér…');
+
   try {
     const useVideo = (state.branding === 'preview') && videoReady && !videoFailed;
     const video    = els.bgVideo;
@@ -2416,8 +2416,17 @@ $('btnExportVideo')?.addEventListener('click', async () => {
       try { video.currentTime = 0; await video.play(); } catch (_) {}
     }
 
+    exportModalSetStatus('Renderuji ' + TOTAL_FRAMES + ' snímků (WebM)…');
+    exportModalSetMeta('0 / ' + TOTAL_FRAMES, '0 %');
+    const startTime = performance.now();
+
     for (let i = 0; i < TOTAL_FRAMES; i++) {
-      // 1) backdrop layer
+      if (_exportCancelled) {
+        try { recorder.stop(); } catch (_) {}
+        if (useVideo) { try { video.pause(); } catch (_) {} }
+        exportModalSetDone(false, 'Export zrušen');
+        return;
+      }
       cctx.fillStyle = '#000';
       cctx.fillRect(0, 0, W, H);
       if (useVideo && video.readyState >= 2) {
@@ -2428,22 +2437,45 @@ $('btnExportVideo')?.addEventListener('click', async () => {
         const dx = (W - dw) / 2, dy = (H - dh) / 2;
         cctx.drawImage(video, dx, dy, dw, dh);
       }
-      // 2) animation frame
       renderFrame(i);
       cctx.drawImage(canvas, 0, 0);
       if (track.requestFrame) track.requestFrame();
       await new Promise(r => setTimeout(r, 1000 / FPS));
+
+      const pct = ((i + 1) / TOTAL_FRAMES) * 100;
+      exportModalSetProgress(pct, false);
+      if (i % 5 === 0 || i === TOTAL_FRAMES - 1) {
+        const elapsed = (performance.now() - startTime) / 1000;
+        const fps = (i + 1) / elapsed;
+        const remaining = (TOTAL_FRAMES - i - 1) / Math.max(0.1, fps);
+        const etaText = remaining > 60 ? Math.ceil(remaining / 60) + ' min' : Math.ceil(remaining) + ' s';
+        exportModalSetMeta(
+          (i + 1) + ' / ' + TOTAL_FRAMES + ' · ' + fps.toFixed(1) + ' fps',
+          pct.toFixed(0) + ' % · ETA ' + etaText
+        );
+      }
     }
     await new Promise(r => setTimeout(r, 200));
     recorder.stop();
     await stopped;
     if (useVideo) { try { video.pause(); } catch (_) {} }
+
+    exportModalSetStatus('Finalizuji WebM…');
     const blob = new Blob(chunks, { type: mime });
-    downloadBlob(blob, `video_${Date.now()}.webm`);
-    showToast('Video exportováno', 'success');
+
+    // Filename: {Template}{N}-{Show}-GFX-WEBM-{Nick}-{YYMMDD}.webm
+    const n = _bumpExportCounter('Donut-webm');
+    const showId = (typeof state !== 'undefined' && state && state.show) ? state.show : 'tn';
+    const showLabel = _showLabel(showId);
+    const filename = 'Donut' + n + '-' + showLabel + '-GFX-WEBM-' + _userNick() + '-' + _ymdShort() + '.webm';
+    const dest = await saveExportBlob(blob, filename);
+    const sizeMB = (blob.size / 1024 / 1024).toFixed(1);
+    const elapsed = ((performance.now() - startTime) / 1000).toFixed(1);
+    exportModalSetMeta(sizeMB + ' MB', elapsed + ' s');
+    exportModalSetDone(true, 'Hotovo · ' + dest);
   } catch (err) {
     console.error(err);
-    showToast('Export selhal: ' + err.message, 'error');
+    exportModalSetDone(false, 'Export selhal: ' + err.message);
   }
 });
 
@@ -2455,111 +2487,103 @@ $('btnExportVideo')?.addEventListener('click', async () => {
    ============================================================================= */
 $('btnExportSeq')?.addEventListener('click', async () => {
   if (typeof window.showDirectoryPicker !== 'function') {
-    showToast('PNG sekvenci podporuje jen Chrome/Edge (File System Access API)', 'error');
+    exportModalOpen();
+    const titleEl = document.getElementById('exportModalTitle');
+    if (titleEl) titleEl.textContent = 'Export PNG sekvence';
+    exportModalSetDone(false, 'PNG sekvenci podporuje jen Chrome/Edge (File System Access API)');
     return;
   }
 
-  let dirHandle;
+  let seqDirHandle;
   try {
-    dirHandle = await window.showDirectoryPicker({ mode: 'readwrite' });
+    // For sequences we ALWAYS prompt fresh — sequences land in their own
+    // sub-folder per export, never in the saved default export folder.
+    seqDirHandle = await window.showDirectoryPicker({ mode: 'readwrite', id: 'tn-png-seq' });
   } catch (err) {
-    // User cancelled picker — silent
     if (err && err.name === 'AbortError') return;
     console.error(err);
-    showToast('Nelze otevřít složku: ' + err.message, 'error');
     return;
   }
 
   stopPlayback();
   await waitFonts();
-  const prevBranding = state.branding;
-  // Keep whatever backdrop the user has chosen — we composite it ourselves,
-  // so no need to flip to 'export'. Just make sure the DOM state is sane.
-  applyBrandingMode();
+  exportModalOpen();
+  const titleEl = document.getElementById('exportModalTitle');
+  if (titleEl) titleEl.textContent = 'Export PNG sekvence';
+  exportModalSetStatus('Renderuji ' + TOTAL_FRAMES + ' PNG snímků…');
+  exportModalSetMeta('0 / ' + TOTAL_FRAMES, '0 %');
+  const startTime = performance.now();
 
-  // Offscreen compositor — same intrinsic size as the stage canvas.
+  applyBrandingMode();
+  const useVideo = (state.branding === 'preview');
+  const video    = els.bgVideo;
+  if (useVideo) {
+    try { video.currentTime = 0; video.play(); } catch (_) {}
+  }
+
   const comp = document.createElement('canvas');
   comp.width = W; comp.height = H;
   const cctx = comp.getContext('2d');
 
-  // Pre-rasterize the flat gradient once (matches .bg-flat CSS so 'flat' and
-  // 'export' export identically to what designer sees).
-  const flatBg = document.createElement('canvas');
-  flatBg.width = W; flatBg.height = H;
-  const fctx = flatBg.getContext('2d');
-  // Base linear gradient
-  const lg = fctx.createLinearGradient(0, 0, 0, H);
-  lg.addColorStop(0,    '#0a2346');
-  lg.addColorStop(0.5,  '#0a2a4e');
-  lg.addColorStop(1,    '#1a5e6d');
-  fctx.fillStyle = lg; fctx.fillRect(0, 0, W, H);
-  // Top-right deep-blue glow
-  const r2 = fctx.createRadialGradient(W * 0.80, H * 0.10, 0, W * 0.80, H * 0.10, W * 0.50);
-  r2.addColorStop(0, 'rgba(14,62,128,0.6)');
-  r2.addColorStop(1, 'rgba(14,62,128,0)');
-  fctx.fillStyle = r2; fctx.fillRect(0, 0, W, H);
-  // Upper-left cyan glow
-  const r1 = fctx.createRadialGradient(W * 0.30, H * 0.20, 0, W * 0.30, H * 0.20, W * 0.55);
-  r1.addColorStop(0, 'rgba(56,143,230,0.35)');
-  r1.addColorStop(1, 'rgba(56,143,230,0)');
-  fctx.fillStyle = r1; fctx.fillRect(0, 0, W, H);
-
-  // In the new branding scheme, 'preview' = backdrop is video.
-  // 'export' = clean composite (no video baked).
-  const useVideo = (state.branding === 'preview');
-  const video    = els.bgVideo;
-  if (useVideo) {
-    // Rewind & play so frame 0 of the sequence lines up with video frame 0.
-    try { video.currentTime = 0; video.play(); } catch (_) {}
-  }
-
-  showToast(`Export PNG sekvence — ${TOTAL_FRAMES} snímků…`, 'success');
-
   const pad = String(TOTAL_FRAMES - 1).length;
-  const frameInterval = 1000 / FPS;
+  const ymd = _ymdShort();
+  const showId = (typeof state !== 'undefined' && state && state.show) ? state.show : 'tn';
+  const showLabel = _showLabel(showId);
+  const baseName = 'Donut-' + showLabel + '-GFX-' + _userNick() + '-' + ymd;
 
   try {
     for (let i = 0; i < TOTAL_FRAMES; i++) {
-      // 1) backdrop
-      cctx.clearRect(0, 0, W, H);
+      if (_exportCancelled) {
+        if (useVideo) { try { video.pause(); } catch (_) {} }
+        exportModalSetDone(false, 'Export zrušen po ' + i + ' snímcích');
+        return;
+      }
+      cctx.fillStyle = '#000';
+      cctx.fillRect(0, 0, W, H);
       if (useVideo && video.readyState >= 2) {
-        // object-fit: cover math — scale video to fill W×H, crop overflow.
         const vw = video.videoWidth || W;
         const vh = video.videoHeight || H;
         const scale = Math.max(W / vw, H / vh);
         const dw = vw * scale, dh = vh * scale;
         const dx = (W - dw) / 2, dy = (H - dh) / 2;
         cctx.drawImage(video, dx, dy, dw, dh);
-      } else {
-        // flat gradient or export (both render same gradient today)
-        cctx.drawImage(flatBg, 0, 0);
       }
-
-      // 2) animation frame on top
       renderFrame(i);
       cctx.drawImage(canvas, 0, 0);
 
-      // 3) write PNG to folder
       const blob = await new Promise(r => comp.toBlob(r, 'image/png'));
-      const name = `citace_${String(i).padStart(pad, '0')}.png`;
-      const fh = await dirHandle.getFileHandle(name, { create: true });
-      const w = await fh.createWritable();
-      await w.write(blob);
-      await w.close();
+      const fname = baseName + '_' + String(i).padStart(pad, '0') + '.png';
+      const fileHandle = await seqDirHandle.getFileHandle(fname, { create: true });
+      const stream = await fileHandle.createWritable();
+      await stream.write(blob);
+      await stream.close();
 
-      // Keep video in sync with the frame cadence when recording live bg.
       if (useVideo) {
-        await new Promise(r => setTimeout(r, frameInterval));
+        await new Promise(r => setTimeout(r, 1000 / FPS));
+      } else if (i % 30 === 0) {
+        await new Promise(r => setTimeout(r, 0));
+      }
+
+      const pct = ((i + 1) / TOTAL_FRAMES) * 100;
+      exportModalSetProgress(pct, false);
+      if (i % 5 === 0 || i === TOTAL_FRAMES - 1) {
+        const elapsed = (performance.now() - startTime) / 1000;
+        const fps = (i + 1) / elapsed;
+        const remaining = (TOTAL_FRAMES - i - 1) / Math.max(0.1, fps);
+        const etaText = remaining > 60 ? Math.ceil(remaining / 60) + ' min' : Math.ceil(remaining) + ' s';
+        exportModalSetMeta(
+          (i + 1) + ' / ' + TOTAL_FRAMES + ' · ' + fps.toFixed(1) + ' fps',
+          pct.toFixed(0) + ' % · ETA ' + etaText
+        );
       }
     }
-    showToast(`Hotovo — ${TOTAL_FRAMES} PNG snímků`, 'success');
+    if (useVideo) { try { video.pause(); } catch (_) {} }
+    const elapsed = ((performance.now() - startTime) / 1000).toFixed(1);
+    exportModalSetMeta(TOTAL_FRAMES + ' PNG', elapsed + ' s');
+    exportModalSetDone(true, 'Hotovo · ' + seqDirHandle.name + '/ (' + TOTAL_FRAMES + ' snímků)');
   } catch (err) {
     console.error(err);
-    showToast('Export selhal: ' + err.message, 'error');
-  } finally {
-    if (useVideo) { try { video.pause(); } catch (_) {} }
-    state.branding = prevBranding;
-    render();
+    exportModalSetDone(false, 'Export selhal: ' + err.message);
   }
 });
 

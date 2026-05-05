@@ -2419,68 +2419,144 @@ function downloadBlob(blob, filename) {
 }
 
 document.getElementById('btnExportFrame')?.addEventListener('click', async () => {
-  stopPlayback();
   await waitFonts();
-  await withGuidesOff(() => withBakedBackdrop(async (wantBake) => {
-    if (wantBake) await seekVideoTo(state.frame / FPS);
-    render();
-    return new Promise(resolve => {
-      canvas.toBlob(blob => {
-        downloadBlob(blob, `frame_${pad(state.frame)}.png`);
-        showToast('Still exported', 'success');
-        resolve();
-      }, 'image/png');
-    });
-  }));
+  exportModalOpen();
+  const titleEl = document.getElementById('exportModalTitle');
+  if (titleEl) titleEl.textContent = 'Export PNG (snímek)';
+  exportModalSetStatus('Renderuji snímek…');
+  exportModalSetProgress(50, false);
+  try {
+    renderFrame(state.frame);
+    const useVideo = (state.branding === 'preview') && videoReady && !videoFailed;
+    const video    = bgVideo;
+    const comp = document.createElement('canvas');
+    comp.width = W; comp.height = H;
+    const cctx = comp.getContext('2d');
+    cctx.fillStyle = '#000';
+    cctx.fillRect(0, 0, W, H);
+    if (useVideo && video && video.readyState >= 2) {
+      const vw = video.videoWidth || W;
+      const vh = video.videoHeight || H;
+      const scale = Math.max(W / vw, H / vh);
+      const dw = vw * scale, dh = vh * scale;
+      const dx = (W - dw) / 2, dy = (H - dh) / 2;
+      cctx.drawImage(video, dx, dy, dw, dh);
+    }
+    cctx.drawImage(canvas, 0, 0);
+    const blob = await new Promise(r => comp.toBlob(r, 'image/png'));
+
+    const n = _bumpExportCounter('Graf-frame');
+    const showId = (typeof state !== 'undefined' && state && state.show) ? state.show : 'tn';
+    const showLabel = _showLabel(showId);
+    const filename = 'Graf' + n + '-' + showLabel + '-GFX-FRAME-' + _userNick() + '-' + _ymdShort() + '.png';
+    const dest = await saveExportBlob(blob, filename);
+    const sizeKB = (blob.size / 1024).toFixed(0);
+    exportModalSetMeta(sizeKB + ' KB', 'PNG');
+    exportModalSetDone(true, 'Hotovo · ' + dest);
+  } catch (err) {
+    console.error(err);
+    exportModalSetDone(false, 'Export selhal: ' + err.message);
+  }
 });
 
 document.getElementById('btnExportSeq')?.addEventListener('click', async () => {
-  stopPlayback();
-  await waitFonts();
-
-  const hasFSAccess = typeof window.showDirectoryPicker === 'function';
-
-  // Prefer File System Access API — writes PNGs directly into a picked folder,
-  // no ZIP archiving. Fallback to ZIP for browsers without the API (Firefox).
-  if (hasFSAccess) {
-    let dirHandle;
-    try {
-      dirHandle = await window.showDirectoryPicker({ mode: 'readwrite' });
-    } catch (err) {
-      // User cancelled the picker — silently abort
-      if (err && err.name === 'AbortError') return;
-      console.warn('[Export] Directory picker failed, falling back to ZIP:', err);
-      return exportSequenceZIP();
-    }
-
-    showOverlay('Writing PNG sequence');
-    await withGuidesOff(() => withBakedBackdrop(async (wantBake) => {
-      try {
-        const pad4 = n => String(n).padStart(4, '0');
-        for (let i = 0; i < TOTAL_FRAMES; i++) {
-          state.frame = i;
-          if (wantBake) await seekVideoTo(i / FPS);
-          renderFrame(i);
-          const blob = await new Promise(r => canvas.toBlob(r, 'image/png'));
-          const fileHandle = await dirHandle.getFileHandle(`graf_${pad4(i)}.png`, { create: true });
-          const writable = await fileHandle.createWritable();
-          await writable.write(blob);
-          await writable.close();
-          setProgress((i + 1) / TOTAL_FRAMES, `frame ${i + 1} / ${TOTAL_FRAMES}`);
-          await new Promise(r => setTimeout(r, 0));
-        }
-        showToast(`${TOTAL_FRAMES} PNG files written${wantBake ? ' (with backdrop)' : ''}`, 'success');
-      } catch (err) {
-        console.error('[Export] FS write failed:', err);
-        showToast('Export failed: ' + err.message, 'error');
-      }
-    }));
-    hideOverlay();
+  if (typeof window.showDirectoryPicker !== 'function') {
+    exportModalOpen();
+    const titleEl = document.getElementById('exportModalTitle');
+    if (titleEl) titleEl.textContent = 'Export PNG sekvence';
+    exportModalSetDone(false, 'PNG sekvenci podporuje jen Chrome/Edge (File System Access API)');
     return;
   }
 
-  // === ZIP fallback (Firefox etc.) ===
-  return exportSequenceZIP();
+  let seqDirHandle;
+  try {
+    seqDirHandle = await window.showDirectoryPicker({ mode: 'readwrite', id: 'tn-png-seq' });
+  } catch (err) {
+    if (err && err.name === 'AbortError') return;
+    console.error(err);
+    return;
+  }
+
+  stopPlayback();
+  await waitFonts();
+  exportModalOpen();
+  const titleEl = document.getElementById('exportModalTitle');
+  if (titleEl) titleEl.textContent = 'Export PNG sekvence';
+  exportModalSetStatus('Renderuji ' + TOTAL_FRAMES + ' PNG snímků…');
+  exportModalSetMeta('0 / ' + TOTAL_FRAMES, '0 %');
+  const startTime = performance.now();
+
+  applyBrandingMode();
+  const useVideo = (state.branding === 'preview');
+  const video    = bgVideo;
+  if (useVideo) {
+    try { video.currentTime = 0; video.play(); } catch (_) {}
+  }
+
+  const comp = document.createElement('canvas');
+  comp.width = W; comp.height = H;
+  const cctx = comp.getContext('2d');
+
+  const pad = String(TOTAL_FRAMES - 1).length;
+  const ymd = _ymdShort();
+  const showId = (typeof state !== 'undefined' && state && state.show) ? state.show : 'tn';
+  const showLabel = _showLabel(showId);
+  const baseName = 'Graf-' + showLabel + '-GFX-' + _userNick() + '-' + ymd;
+
+  try {
+    for (let i = 0; i < TOTAL_FRAMES; i++) {
+      if (_exportCancelled) {
+        if (useVideo) { try { video.pause(); } catch (_) {} }
+        exportModalSetDone(false, 'Export zrušen po ' + i + ' snímcích');
+        return;
+      }
+      cctx.fillStyle = '#000';
+      cctx.fillRect(0, 0, W, H);
+      if (useVideo && video.readyState >= 2) {
+        const vw = video.videoWidth || W;
+        const vh = video.videoHeight || H;
+        const scale = Math.max(W / vw, H / vh);
+        const dw = vw * scale, dh = vh * scale;
+        const dx = (W - dw) / 2, dy = (H - dh) / 2;
+        cctx.drawImage(video, dx, dy, dw, dh);
+      }
+      renderFrame(i);
+      cctx.drawImage(canvas, 0, 0);
+
+      const blob = await new Promise(r => comp.toBlob(r, 'image/png'));
+      const fname = baseName + '_' + String(i).padStart(pad, '0') + '.png';
+      const fileHandle = await seqDirHandle.getFileHandle(fname, { create: true });
+      const stream = await fileHandle.createWritable();
+      await stream.write(blob);
+      await stream.close();
+
+      if (useVideo) {
+        await new Promise(r => setTimeout(r, 1000 / FPS));
+      } else if (i % 30 === 0) {
+        await new Promise(r => setTimeout(r, 0));
+      }
+
+      const pct = ((i + 1) / TOTAL_FRAMES) * 100;
+      exportModalSetProgress(pct, false);
+      if (i % 5 === 0 || i === TOTAL_FRAMES - 1) {
+        const elapsed = (performance.now() - startTime) / 1000;
+        const fps = (i + 1) / elapsed;
+        const remaining = (TOTAL_FRAMES - i - 1) / Math.max(0.1, fps);
+        const etaText = remaining > 60 ? Math.ceil(remaining / 60) + ' min' : Math.ceil(remaining) + ' s';
+        exportModalSetMeta(
+          (i + 1) + ' / ' + TOTAL_FRAMES + ' · ' + fps.toFixed(1) + ' fps',
+          pct.toFixed(0) + ' % · ETA ' + etaText
+        );
+      }
+    }
+    if (useVideo) { try { video.pause(); } catch (_) {} }
+    const elapsed = ((performance.now() - startTime) / 1000).toFixed(1);
+    exportModalSetMeta(TOTAL_FRAMES + ' PNG', elapsed + ' s');
+    exportModalSetDone(true, 'Hotovo · ' + seqDirHandle.name + '/ (' + TOTAL_FRAMES + ' snímků)');
+  } catch (err) {
+    console.error(err);
+    exportModalSetDone(false, 'Export selhal: ' + err.message);
+  }
 });
 
 async function exportSequenceZIP() {
@@ -2515,40 +2591,93 @@ async function exportSequenceZIP() {
 document.getElementById('btnExportVideo')?.addEventListener('click', async () => {
   stopPlayback();
   await waitFonts();
-  showOverlay('Recording WebM video');
-  await withGuidesOff(() => withBakedBackdrop(async (wantBake) => {
-    try {
-      const stream = canvas.captureStream(0);
-      const track = stream.getVideoTracks()[0];
-      const mimes = ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm'];
-      const mime = mimes.find(m => MediaRecorder.isTypeSupported(m));
-      if (!mime) throw new Error('No WebM codec available');
-      const recorder = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 10_000_000 });
-      const chunks = [];
-      recorder.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
-      const stopped = new Promise(r => recorder.onstop = r);
-      recorder.start();
-      const frameDelay = 1000 / FPS;
-      for (let i = 0; i < TOTAL_FRAMES; i++) {
-        state.frame = i;
-        if (wantBake) await seekVideoTo(i / FPS);
-        renderFrame(i);
-        if (track.requestFrame) track.requestFrame();
-        setProgress((i + 1) / TOTAL_FRAMES, `frame ${i + 1} / ${TOTAL_FRAMES}`);
-        if (!wantBake) await new Promise(r => setTimeout(r, frameDelay));
-      }
-      await new Promise(r => setTimeout(r, 250));
-      recorder.stop();
-      await stopped;
-      const blob = new Blob(chunks, { type: mime });
-      downloadBlob(blob, `graf_${Date.now()}.webm`);
-      showToast('Video exported' + (wantBake ? ' (with backdrop)' : ''), 'success');
-    } catch (err) {
-      console.error(err);
-      showToast('Export failed: ' + err.message, 'error');
+  exportModalOpen();
+  const titleEl = document.getElementById('exportModalTitle');
+  if (titleEl) titleEl.textContent = 'Export WebM';
+  exportModalSetStatus('Připravuji WebM kodér…');
+
+  try {
+    const useVideo = (state.branding === 'preview') && videoReady && !videoFailed;
+    const video    = bgVideo;
+    const comp = document.createElement('canvas');
+    comp.width = W; comp.height = H;
+    const cctx = comp.getContext('2d');
+
+    const stream = comp.captureStream(0);
+    const track = stream.getVideoTracks()[0];
+    const mimes = ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm'];
+    const mime = mimes.find(m => MediaRecorder.isTypeSupported(m));
+    if (!mime) throw new Error('Prohlížeč nepodporuje WebM nahrávání');
+    const recorder = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 8_000_000 });
+    const chunks = [];
+    recorder.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
+    const stopped = new Promise(r => recorder.onstop = r);
+    recorder.start();
+
+    if (useVideo) {
+      try { video.currentTime = 0; await video.play(); } catch (_) {}
     }
-  }));
-  hideOverlay();
+
+    exportModalSetStatus('Renderuji ' + TOTAL_FRAMES + ' snímků (WebM)…');
+    exportModalSetMeta('0 / ' + TOTAL_FRAMES, '0 %');
+    const startTime = performance.now();
+
+    for (let i = 0; i < TOTAL_FRAMES; i++) {
+      if (_exportCancelled) {
+        try { recorder.stop(); } catch (_) {}
+        if (useVideo) { try { video.pause(); } catch (_) {} }
+        exportModalSetDone(false, 'Export zrušen');
+        return;
+      }
+      cctx.fillStyle = '#000';
+      cctx.fillRect(0, 0, W, H);
+      if (useVideo && video.readyState >= 2) {
+        const vw = video.videoWidth || W;
+        const vh = video.videoHeight || H;
+        const scale = Math.max(W / vw, H / vh);
+        const dw = vw * scale, dh = vh * scale;
+        const dx = (W - dw) / 2, dy = (H - dh) / 2;
+        cctx.drawImage(video, dx, dy, dw, dh);
+      }
+      renderFrame(i);
+      cctx.drawImage(canvas, 0, 0);
+      if (track.requestFrame) track.requestFrame();
+      await new Promise(r => setTimeout(r, 1000 / FPS));
+
+      const pct = ((i + 1) / TOTAL_FRAMES) * 100;
+      exportModalSetProgress(pct, false);
+      if (i % 5 === 0 || i === TOTAL_FRAMES - 1) {
+        const elapsed = (performance.now() - startTime) / 1000;
+        const fps = (i + 1) / elapsed;
+        const remaining = (TOTAL_FRAMES - i - 1) / Math.max(0.1, fps);
+        const etaText = remaining > 60 ? Math.ceil(remaining / 60) + ' min' : Math.ceil(remaining) + ' s';
+        exportModalSetMeta(
+          (i + 1) + ' / ' + TOTAL_FRAMES + ' · ' + fps.toFixed(1) + ' fps',
+          pct.toFixed(0) + ' % · ETA ' + etaText
+        );
+      }
+    }
+    await new Promise(r => setTimeout(r, 200));
+    recorder.stop();
+    await stopped;
+    if (useVideo) { try { video.pause(); } catch (_) {} }
+
+    exportModalSetStatus('Finalizuji WebM…');
+    const blob = new Blob(chunks, { type: mime });
+
+    const n = _bumpExportCounter('Graf-webm');
+    const showId = (typeof state !== 'undefined' && state && state.show) ? state.show : 'tn';
+    const showLabel = _showLabel(showId);
+    const filename = 'Graf' + n + '-' + showLabel + '-GFX-WEBM-' + _userNick() + '-' + _ymdShort() + '.webm';
+    const dest = await saveExportBlob(blob, filename);
+    const sizeMB = (blob.size / 1024 / 1024).toFixed(1);
+    const elapsed = ((performance.now() - startTime) / 1000).toFixed(1);
+    exportModalSetMeta(sizeMB + ' MB', elapsed + ' s');
+    exportModalSetDone(true, 'Hotovo · ' + dest);
+  } catch (err) {
+    console.error(err);
+    exportModalSetDone(false, 'Export selhal: ' + err.message);
+  }
 });
 
 // ==================== FONTS ====================
