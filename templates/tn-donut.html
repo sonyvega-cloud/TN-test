@@ -918,13 +918,16 @@
      Blocks all input; only Cancel button is interactive.
      ============================================================ */
   .export-modal {
-    position: fixed; inset: 0; z-index: 9999;
-    background: rgba(0, 0, 0, 0.88);
-    display: none;
-    align-items: center; justify-content: center;
-    backdrop-filter: blur(4px);
+    position: fixed !important;
+    top: 0 !important; left: 0 !important; right: 0 !important; bottom: 0 !important;
+    z-index: 99999 !important;
+    background: rgba(0, 0, 0, 0.88) !important;
+    display: none !important;
+    align-items: center !important;
+    justify-content: center !important;
+    backdrop-filter: blur(4px) !important;
   }
-  .export-modal.open { display: flex; }
+  .export-modal.open { display: flex !important; }
   .export-modal-panel {
     background: #141414;
     border: 1px solid rgba(255, 255, 255, 0.1);
@@ -2884,10 +2887,12 @@ document.getElementById('btnExportMP4')?.addEventListener('click', async () => {
    ============================================================ */
 let _exportCancelled = false;
 function exportModalOpen() {
+  console.log('[modal] open() called');
   _exportCancelled = false;
   const m = document.getElementById('exportModal');
-  if (!m) return;
+  if (!m) { console.warn('[modal] #exportModal NOT FOUND in DOM'); return; }
   m.classList.add('open');
+  console.log('[modal] .open class added; classList=', m.className, 'display=', getComputedStyle(m).display);
   exportModalSetStatus('Příprava…');
   exportModalSetProgress(0, true);   // indeterminate
   exportModalSetMeta('—', '—');
@@ -2936,24 +2941,38 @@ function exportModalSetDone(success, message) {
   if (closeBtn)  closeBtn.style.display = '';
   if (message) exportModalSetStatus(message);
 }
-// Wire cancel + close buttons (idempotent — safe to call multiple times)
-(function wireExportModal() {
+// Wire cancel + close buttons. The modal HTML lives AFTER this script tag,
+// so on initial parse the elements don't exist yet — retry on DOMContentLoaded.
+function _wireExportModalButtons() {
   const cancelBtn = document.getElementById('exportModalCancel');
   const closeBtn  = document.getElementById('exportModalClose');
   if (cancelBtn && !cancelBtn._wired) {
     cancelBtn._wired = true;
     cancelBtn.addEventListener('click', () => {
+      console.log('[modal] cancel clicked');
       _exportCancelled = true;
       cancelBtn.disabled = true;
       cancelBtn.textContent = 'Ruším…';
       exportModalSetStatus('Ruším export…');
     });
+    console.log('[modal] cancel button wired');
   }
   if (closeBtn && !closeBtn._wired) {
     closeBtn._wired = true;
-    closeBtn.addEventListener('click', exportModalClose);
+    closeBtn.addEventListener('click', () => {
+      console.log('[modal] close clicked');
+      exportModalClose();
+    });
+    console.log('[modal] close button wired');
   }
-})();
+}
+_wireExportModalButtons();   // tries now (DOM may not be ready)
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', _wireExportModalButtons);
+} else {
+  // DOM already parsed — retry on next tick to catch elements added after this script
+  setTimeout(_wireExportModalButtons, 0);
+}
 </script>
 
 <!-- Full-screen export progress modal — blocks all interaction during MP4 encode. -->
