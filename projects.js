@@ -1,15 +1,10 @@
-/*! TN Projects — localStorage-only edition.
+/*! TN Projects — localStorage-only edition (single source of truth).
  *
- *  Cloud sync (via Cloudflare Worker → GitHub Gist) is intentionally disabled
- *  for the demo deployment. All projects live in the user's browser only.
- *  Each user sees their own projects; no team sharing.
+ *  All projects live under ONE localStorage key. Migrates legacy keys from
+ *  earlier versions on first read (v1, v2 — single-template stores) into
+ *  the unified store.
  *
- *  When you want to re-enable cloud later: set CLOUD_ENABLED to true and
- *  configure WORKER_URL — the original cloud impl is preserved as a comment
- *  block at the bottom of this file.
- *
- *  Public API (unchanged from cloud version, so the rest of the codebase
- *  doesn't need to change):
+ *  Same public API as the cloud version, so callers don't need to change:
  *    TNProjects.list()                     → Promise<[indexEntry, ...]>
  *    TNProjects.load(id)                   → Promise<projectFull>
  *    TNProjects.save(project)              → Promise<projectFull>
@@ -19,8 +14,16 @@
 (function (window) {
   'use strict';
 
-  const STORAGE_KEY = 'tn_projects_local_v1';
+  const STORAGE_KEY = 'tn_projects_local_v2';
   const AUTOSAVE_DEBOUNCE_MS = 2000;
+
+  // Legacy stores that we one-time merge into the unified store. Each one
+  // contained an array of projects for a single template. We tag them with a
+  // template id during migration so the unified store works for everyone.
+  const LEGACY_KEYS = [
+    'tn_graphics_engine_projects_v2',  // multi-template registry from index.html
+    'tn_graphics_engine_projects_v1',  // even older, all bar-chart
+  ];
 
   // =====================================================================
   function uuid() {
@@ -33,22 +36,66 @@
   }
 
   function readStore() {
+    const merged = {};
+
+    // 1) Read the unified store (preferred / canonical)
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
-      return raw ? JSON.parse(raw) : {};
-    } catch (_) { return {}; }
+      if (raw) {
+        const obj = JSON.parse(raw);
+        if (obj && typeof obj === 'object') Object.assign(merged, obj);
+      }
+    } catch (_) {}
+
+    // 2) Live-merge legacy stores. Templates in this codebase still write
+    // to legacy keys (Array of {id, name, state, createdAt, updatedAt}), so
+    // we must read them every time, not just at first migration. Last write
+    // wins — newer updatedAt overrides.
+    for (const key of LEGACY_KEYS) {
+      try {
+        const raw = localStorage.getItem(key);
+        if (!raw) continue;
+        const arr = JSON.parse(raw);
+        if (!Array.isArray(arr)) continue;
+        for (const p of arr) {
+          if (!p || !p.id) continue;
+          const template = (p.state && p.state.template) || 'bar-chart';
+          const entry = {
+            id: p.id,
+            name: p.name || 'Untitled',
+            owner: p.owner || (window.TNLogin && TNLogin.getNick && TNLogin.getNick()) || 'XXX',
+            template,
+            show: p.state && p.state.show,
+            fps: p.state && p.state.fps,
+            duration: p.state && p.state.duration,
+            createdAt: typeof p.createdAt === 'number'
+              ? new Date(p.createdAt).toISOString()
+              : (p.createdAt || new Date().toISOString()),
+            updatedAt: typeof p.updatedAt === 'number'
+              ? new Date(p.updatedAt).toISOString()
+              : (p.updatedAt || new Date().toISOString()),
+            state: p.state || {},
+          };
+          // Last-write-wins by updatedAt
+          const existing = merged[entry.id];
+          if (!existing || (entry.updatedAt > existing.updatedAt)) {
+            merged[entry.id] = entry;
+          }
+        }
+      } catch (_) {}
+    }
+    return merged;
   }
   function writeStore(obj) {
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(obj)); } catch (_) {}
   }
 
-  // === Public methods ===================================================
-  // All methods return Promises so the calling code can stay identical to
-  // the cloud version. We just resolve immediately.
+  // (Legacy migration is now done live in readStore() via merge — no
+  // one-shot migration needed; templates can keep writing to legacy keys.)
 
+
+  // === Public methods ===================================================
   async function list() {
-    // Index entry shape: { id, name, owner, template, show, fps, duration,
-    // createdAt, updatedAt }. Same fields as cloud, just stored locally.
     const store = readStore();
     return Object.values(store).map(p => ({
       id: p.id,
@@ -84,12 +131,26 @@
 
   async function del(id) {
     if (!id) throw new Error('delete: id required');
+    // Remove from unified store
     const store = readStore();
     delete store[id];
     writeStore(store);
+    // Also remove from any legacy arrays so it doesn't reappear via merge
+    for (const key of LEGACY_KEYS) {
+      try {
+        const raw = localStorage.getItem(key);
+        if (!raw) continue;
+        const arr = JSON.parse(raw);
+        if (!Array.isArray(arr)) continue;
+        const filtered = arr.filter(p => p && p.id !== id);
+        if (filtered.length !== arr.length) {
+          localStorage.setItem(key, JSON.stringify(filtered));
+        }
+      } catch (_) {}
+    }
   }
 
-  // === Debounced auto-save (same pattern as cloud version) ==============
+  // === Debounced auto-save ==============================================
   function autoSave(getStateFn, opts) {
     opts = opts || {};
     const debounce = opts.debounceMs || AUTOSAVE_DEBOUNCE_MS;
@@ -157,15 +218,6 @@
     delete: del,
     autoSave,
     uuid,
-    _config: { STORAGE_KEY, AUTOSAVE_DEBOUNCE_MS, mode: 'localStorage' },
+    _config: { STORAGE_KEY, AUTOSAVE_DEBOUNCE_MS, mode: 'localStorage', LEGACY_KEYS },
   };
 })(window);
-
-/* ============================================================
-   FUTURE: when you want cloud sync back, swap this file for the
-   cloud version (preserved in git history) and configure:
-     1. Cloudflare Worker (see cloudflare/README.md)
-     2. GitHub Gist with _index.json
-     3. WORKER_URL constant
-   The public API is identical, so no caller changes needed.
-   ============================================================ */
