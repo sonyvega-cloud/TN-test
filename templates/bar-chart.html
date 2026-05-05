@@ -977,6 +977,48 @@
     cursor: not-allowed;
     background: transparent;
   }
+  .export-modal-confirm {
+    background: rgba(220, 15, 46, 0.1);
+    border: 1px solid rgba(220, 15, 46, 0.3);
+    border-radius: 6px;
+    padding: 16px 20px;
+    margin-bottom: 16px;
+  }
+  .export-modal-confirm-text {
+    font-size: 14px; color: #fff; margin-bottom: 12px;
+  }
+  .export-modal-confirm-actions {
+    display: flex; gap: 8px; justify-content: flex-end;
+  }
+  .export-modal-countdown {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.5);
+    margin-bottom: 12px;
+    text-align: right;
+  }
+  .export-modal-countdown a {
+    color: rgba(255, 255, 255, 0.85);
+    text-decoration: underline;
+    margin-left: 6px;
+  }
+  .export-modal-countdown a:hover { color: #fff; }
+  .export-modal-folder {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.5);
+    margin-bottom: 16px;
+    font-family: 'Organica', 'Courier New', monospace;
+  }
+  .export-modal-folder span {
+    color: rgba(255, 255, 255, 0.8);
+  }
+  .export-modal-folder a {
+    color: rgba(220, 15, 46, 0.9);
+    text-decoration: underline;
+    margin-left: 8px;
+    cursor: pointer;
+  }
+  .export-modal-folder a:hover { color: #DC0F2E; }
+
 </style>
 </head>
 <body>
@@ -2918,6 +2960,206 @@ document.getElementById('btnBack')?.addEventListener('click', () => {
    ffmpeg.wasm. Hardware-accelerated on Chrome/Edge/Safari 16.4+.
    ============================================================================= */
 let _mp4MuxerLoaded = false;
+
+
+/* ============================================================
+   FILE SYSTEM ACCESS — pick a default export folder once, then
+   write all subsequent exports there without prompting.
+
+   Uses the File System Access API (Chrome/Edge/Opera; partially
+   on newer Safari/Firefox). Handle is stored in IndexedDB because
+   FileSystemDirectoryHandle is not serializable to localStorage.
+
+   Falls back to the regular downloadBlob() (Downloads folder)
+   if the API is unsupported or the user denies access.
+   ============================================================ */
+const _EXPORT_DIR_DB = 'tn-export-dir';
+const _EXPORT_DIR_KEY = 'handle';
+
+function _idbOpen() {
+  return new Promise((resolve, reject) => {
+    if (!('indexedDB' in window)) return reject(new Error('no IDB'));
+    const req = indexedDB.open(_EXPORT_DIR_DB, 1);
+    req.onupgradeneeded = () => req.result.createObjectStore('h');
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+async function _idbGet(key) {
+  const db = await _idbOpen();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction('h', 'readonly');
+    const req = tx.objectStore('h').get(key);
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+async function _idbSet(key, value) {
+  const db = await _idbOpen();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction('h', 'readwrite');
+    tx.objectStore('h').put(value, key);
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
+}
+async function _idbDel(key) {
+  const db = await _idbOpen();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction('h', 'readwrite');
+    tx.objectStore('h').delete(key);
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
+// Verify the saved handle is still usable + we have permission to write.
+// Handles can become "stale" if the user moves/deletes the folder between
+// sessions, or if the browser revoked permission.
+async function _verifyDirHandle(handle) {
+  if (!handle) return false;
+  try {
+    let perm = await handle.queryPermission({ mode: 'readwrite' });
+    if (perm === 'granted') return true;
+    if (perm === 'prompt') {
+      perm = await handle.requestPermission({ mode: 'readwrite' });
+      return perm === 'granted';
+    }
+    return false;
+  } catch (_) { return false; }
+}
+
+async function pickExportFolder() {
+  // Pops the system folder picker. Resolves to handle, or null if user
+  // cancelled / API unsupported.
+  if (!('showDirectoryPicker' in window)) return null;
+  try {
+    const handle = await window.showDirectoryPicker({
+      id: 'tn-export-folder',
+      mode: 'readwrite',
+      startIn: 'downloads',
+    });
+    await _idbSet(_EXPORT_DIR_KEY, handle);
+    console.log('[export] folder picked:', handle.name);
+    return handle;
+  } catch (err) {
+    // AbortError = user cancelled. Anything else is real failure.
+    if (err.name !== 'AbortError') console.warn('[export] pickFolder:', err);
+    return null;
+  }
+}
+
+async function getExportFolder({ promptIfMissing = true } = {}) {
+  // Returns a usable handle, or null. Re-prompts if the saved handle is
+  // stale and `promptIfMissing` is true.
+  if (!('showDirectoryPicker' in window)) return null;
+  let handle = null;
+  try { handle = await _idbGet(_EXPORT_DIR_KEY); } catch (_) {}
+  if (await _verifyDirHandle(handle)) return handle;
+  if (promptIfMissing) return await pickExportFolder();
+  return null;
+}
+
+// Writes a blob to either the chosen folder, or falls back to Downloads.
+// Returns the relative path string we end up using (for status messages).
+async function saveExportBlob(blob, filename) {
+  const handle = await getExportFolder({ promptIfMissing: false });
+  if (handle) {
+    try {
+      const fileHandle = await handle.getFileHandle(filename, { create: true });
+      const stream = await fileHandle.createWritable();
+      await stream.write(blob);
+      await stream.close();
+      console.log('[export] saved to chosen folder:', handle.name + '/' + filename);
+      return handle.name + '/' + filename;
+    } catch (err) {
+      console.warn('[export] folder write failed, falling back to Downloads:', err);
+    }
+  }
+  // Fallback path — browser's Downloads via <a download>
+  if (typeof downloadBlob === 'function') {
+    downloadBlob(blob, filename);
+  } else {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
+  }
+  return 'Downloads/' + filename;
+}
+
+/* ============================================================
+   FILENAME BUILDER for MP4 export.
+   Format: {Template}{N}-{Show}-GFX-{TV|WEB}-{Nick}-{YYMMDD}.mp4
+   Example: Graf1-TN-GFX-TV-XXX-260505.mp4
+
+   N is auto-incrementing per template per day, stored in localStorage
+   under 'tn_export_counters' as { "Graf-260505": 3, "Citace-260505": 1 }.
+   Counters reset at midnight (different YYMMDD key).
+
+   Show ID is mapped to uppercase brand label (TN, Strepiny, NVS, ...).
+   FPS=50 → TV (16M bitrate); FPS=30 → WEB (4M bitrate).
+
+   User nick comes from localStorage 'tn_user_nick' (TBD login system).
+   Falls back to 'XXX' if not set. Later: replace fallback with login modal.
+   ============================================================ */
+function _ymdShort(d) {
+  // YYMMDD format — 260505 means 2026-05-05.
+  d = d || new Date();
+  const yy = String(d.getFullYear()).slice(-2);
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return yy + mm + dd;
+}
+function _showLabel(showId) {
+  // Match the global TN_THEMES registry — IDs map to filename-safe labels.
+  // No spaces, no diacritics, ASCII only so it works on every filesystem.
+  const map = {
+    'tn':       'TN',
+    'tn-mapy':  'TN-mapy',
+    'strepiny': 'Strepiny',
+    'nvs':      'NVS',
+    'za512':    'Za512',
+    'sh':       'SH',
+  };
+  return map[showId] || (showId ? showId.toUpperCase() : 'TN');
+}
+function _userNick() {
+  try {
+    const n = localStorage.getItem('tn_user_nick');
+    if (n && /^[A-Z]{3}$/.test(n)) return n;
+  } catch (_) {}
+  return 'XXX';   // placeholder until login system ships
+}
+function _bumpExportCounter(templateName) {
+  // Per-day, per-template counter. Returns the NEW count after increment.
+  const ymd = _ymdShort();
+  const key = templateName + '-' + ymd;
+  let counters = {};
+  try {
+    counters = JSON.parse(localStorage.getItem('tn_export_counters') || '{}');
+  } catch (_) {}
+  // Optional: prune entries older than 7 days so storage doesn't grow forever
+  const cutoff = _ymdShort(new Date(Date.now() - 7 * 24 * 60 * 60 * 1000));
+  for (const k of Object.keys(counters)) {
+    const datePart = k.slice(k.lastIndexOf('-') + 1);
+    if (datePart < cutoff) delete counters[k];
+  }
+  counters[key] = (counters[key] || 0) + 1;
+  try {
+    localStorage.setItem('tn_export_counters', JSON.stringify(counters));
+  } catch (_) {}
+  return counters[key];
+}
+function buildExportFilename(templateName, fps) {
+  const n = _bumpExportCounter(templateName);
+  const showId = (typeof state !== 'undefined' && state && state.show) ? state.show : 'tn';
+  const showLabel = _showLabel(showId);
+  const mode = (fps === 50) ? 'TV' : 'WEB';
+  return templateName + n + '-' + showLabel + '-GFX-' + mode + '-' + _userNick() + '-' + _ymdShort() + '.mp4';
+}
+
 async function loadMp4Muxer() {
   if (_mp4MuxerLoaded || window.Mp4Muxer) { _mp4MuxerLoaded = true; return; }
   const CDNS = [
@@ -3067,6 +3309,12 @@ document.getElementById('btnExportMP4')?.addEventListener('click', async () => {
       });
       encoder.encode(frame, { keyFrame: i % FPS === 0 });
       frame.close();
+      // Backpressure — if encoder is overwhelmed, pause until queue drains.
+      // Without this, frames pile up in memory and weaker hardware (laptop CPUs,
+      // low-RAM devices) can run out of heap on long exports.
+      if (encoder.encodeQueueSize > 10) {
+        await encoder.flush();
+      }
 
       if (useVideo) {
         await new Promise(r => setTimeout(r, 1000 / FPS));
@@ -3104,11 +3352,12 @@ document.getElementById('btnExportMP4')?.addEventListener('click', async () => {
     }
 
     const blob = new Blob([muxer.target.buffer], { type: 'video/mp4' });
-    downloadBlob(blob, 'graf_' + Date.now() + '.mp4');
+    const filename = buildExportFilename('Graf', FPS);
+    const dest = await saveExportBlob(blob, filename);
     const sizeMB = (blob.size / 1024 / 1024).toFixed(1);
     const elapsed = ((performance.now() - startTime) / 1000).toFixed(1);
     exportModalSetMeta(sizeMB + ' MB', elapsed + ' s');
-    exportModalSetDone(true, 'Hotovo · ' + sizeMB + ' MB · ' + elapsed + ' s');
+    exportModalSetDone(true, 'Hotovo · ' + dest);
   } catch (err) {
     console.error('[Export MP4]', err);
     exportModalSetDone(false, 'Export selhal: ' + err.message);
@@ -3125,10 +3374,20 @@ let _exportCancelled = false;
 function exportModalOpen() {
   console.log('[modal] open() called');
   _exportCancelled = false;
+  _exportClearAutoClose();
   const m = document.getElementById('exportModal');
   if (!m) { console.warn('[modal] #exportModal NOT FOUND in DOM'); return; }
   m.classList.add('open');
   console.log('[modal] .open class added; classList=', m.className, 'display=', getComputedStyle(m).display);
+  // Hide confirm + countdown panels (in case modal is reopened after a previous run)
+  const confirmPanel = document.getElementById('exportModalConfirm');
+  const countdownEl  = document.getElementById('exportModalCountdown');
+  if (confirmPanel) confirmPanel.style.display = 'none';
+  if (countdownEl)  countdownEl.style.display = 'none';
+  // Wire Esc → behaves like Cancel button (shows confirm panel)
+  document.addEventListener('keydown', _exportEscHandler);
+  // Refresh the folder display in the modal
+  _refreshExportModalFolder();
   exportModalSetStatus('Příprava…');
   exportModalSetProgress(0, true);   // indeterminate
   exportModalSetMeta('—', '—');
@@ -3168,6 +3427,9 @@ function exportModalSetDone(success, message) {
   const fill = document.getElementById('exportModalFill');
   const cancelBtn = document.getElementById('exportModalCancel');
   const closeBtn  = document.getElementById('exportModalClose');
+  // Hide confirm panel if it was open (race with cancel-during-finalize)
+  const confirmPanel = document.getElementById('exportModalConfirm');
+  if (confirmPanel) confirmPanel.style.display = 'none';
   if (fill) {
     fill.classList.remove('indeterminate');
     fill.classList.add(success ? 'success' : 'error');
@@ -3176,22 +3438,49 @@ function exportModalSetDone(success, message) {
   if (cancelBtn) cancelBtn.style.display = 'none';
   if (closeBtn)  closeBtn.style.display = '';
   if (message) exportModalSetStatus(message);
+  // On success, start 3s auto-close. User can stop the countdown.
+  if (success) _exportStartAutoClose(3);
 }
 // Wire cancel + close buttons. The modal HTML lives AFTER this script tag,
 // so on initial parse the elements don't exist yet — retry on DOMContentLoaded.
 function _wireExportModalButtons() {
-  const cancelBtn = document.getElementById('exportModalCancel');
-  const closeBtn  = document.getElementById('exportModalClose');
+  const cancelBtn  = document.getElementById('exportModalCancel');
+  const closeBtn   = document.getElementById('exportModalClose');
+  const confirmYes = document.getElementById('exportModalConfirmYes');
+  const confirmNo  = document.getElementById('exportModalConfirmNo');
+  const cdStop     = document.getElementById('exportModalCountdownStop');
+  // Cancel button shows the inline confirm panel — it does NOT cancel directly.
+  // This protects against accidental clicks mid-export.
   if (cancelBtn && !cancelBtn._wired) {
     cancelBtn._wired = true;
     cancelBtn.addEventListener('click', () => {
-      console.log('[modal] cancel clicked');
-      _exportCancelled = true;
-      cancelBtn.disabled = true;
-      cancelBtn.textContent = 'Ruším…';
-      exportModalSetStatus('Ruším export…');
+      console.log('[modal] cancel clicked → showing confirm');
+      const panel = document.getElementById('exportModalConfirm');
+      if (panel) panel.style.display = '';
     });
     console.log('[modal] cancel button wired');
+  }
+  // "Pokračovat" — hide the confirm panel, encode keeps running
+  if (confirmNo && !confirmNo._wired) {
+    confirmNo._wired = true;
+    confirmNo.addEventListener('click', () => {
+      console.log('[modal] cancel-confirm: NO');
+      const panel = document.getElementById('exportModalConfirm');
+      if (panel) panel.style.display = 'none';
+    });
+  }
+  // "Ano, zrušit" — actually cancel the export
+  if (confirmYes && !confirmYes._wired) {
+    confirmYes._wired = true;
+    confirmYes.addEventListener('click', () => {
+      console.log('[modal] cancel-confirm: YES → cancelling');
+      _exportCancelled = true;
+      const panel = document.getElementById('exportModalConfirm');
+      if (panel) panel.style.display = 'none';
+      const cBtn = document.getElementById('exportModalCancel');
+      if (cBtn) { cBtn.disabled = true; cBtn.textContent = 'Ruším…'; }
+      exportModalSetStatus('Ruším export…');
+    });
   }
   if (closeBtn && !closeBtn._wired) {
     closeBtn._wired = true;
@@ -3201,25 +3490,87 @@ function _wireExportModalButtons() {
     });
     console.log('[modal] close button wired');
   }
+  // "zastavit" — stop auto-close countdown (user wants to keep modal open)
+  if (cdStop && !cdStop._wired) {
+    cdStop._wired = true;
+    cdStop.addEventListener('click', (e) => {
+      e.preventDefault();
+      console.log('[modal] auto-close stopped by user');
+      _exportClearAutoClose();
+    });
+  }
+}
+// Hook the "change folder" link separately — added when File System API support
+// landed. Lives outside _wireExportModalButtons so we can iterate on it freely.
+function _wireExportFolderLink() {
+  const folderLink = document.getElementById('exportModalChangeFolder');
+  if (folderLink && !folderLink._wired) {
+    folderLink._wired = true;
+    folderLink.addEventListener('click', async (e) => {
+      e.preventDefault();
+      await pickExportFolder();
+      _refreshExportModalFolder();
+    });
+    console.log('[modal] change-folder link wired');
+  }
+}
+async function _refreshExportModalFolder() {
+  const nameEl = document.getElementById('exportModalFolderName');
+  if (!nameEl) return;
+  if (!('showDirectoryPicker' in window)) {
+    nameEl.textContent = 'Downloads (browser default)';
+    const link = document.getElementById('exportModalChangeFolder');
+    if (link) link.style.display = 'none';
+    return;
+  }
+  try {
+    const handle = await getExportFolder({ promptIfMissing: false });
+    nameEl.textContent = handle ? handle.name : 'Downloads (vyber složku)';
+  } catch (_) {
+    nameEl.textContent = 'Downloads (default)';
+  }
 }
 _wireExportModalButtons();   // tries now (DOM may not be ready)
+_wireExportFolderLink();
 if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', _wireExportModalButtons);
+  document.addEventListener('DOMContentLoaded', () => {
+    _wireExportModalButtons();
+    _wireExportFolderLink();
+  });
 } else {
   // DOM already parsed — retry on next tick to catch elements added after this script
-  setTimeout(_wireExportModalButtons, 0);
+  setTimeout(() => {
+    _wireExportModalButtons();
+    _wireExportFolderLink();
+  }, 0);
 }
 </script>
 
-<!-- Full-screen export progress modal — blocks all interaction during MP4 encode. -->
+<!-- Full-screen export progress modal — blocks all interaction during export. -->
 <div class="export-modal" id="exportModal" role="dialog" aria-modal="true" aria-labelledby="exportModalTitle">
   <div class="export-modal-panel">
     <div class="export-modal-title" id="exportModalTitle">Export MP4</div>
+    <div class="export-modal-folder">
+      Cíl: <span id="exportModalFolderName">Downloads (default)</span>
+      <a href="#" id="exportModalChangeFolder">změnit složku</a>
+    </div>
     <div class="export-modal-status" id="exportModalStatus">Příprava…</div>
     <div class="export-modal-progress-track"><div class="export-modal-progress-fill" id="exportModalFill"></div></div>
     <div class="export-modal-meta">
       <span id="exportModalLeft">—</span>
       <span id="exportModalRight">—</span>
+    </div>
+    <!-- Confirm-cancel panel: hidden by default, shown when Cancel is clicked. -->
+    <div class="export-modal-confirm" id="exportModalConfirm" style="display:none">
+      <div class="export-modal-confirm-text">Opravdu zrušit export?</div>
+      <div class="export-modal-confirm-actions">
+        <button class="export-modal-btn" id="exportModalConfirmNo">Pokračovat</button>
+        <button class="export-modal-btn primary" id="exportModalConfirmYes">Ano, zrušit</button>
+      </div>
+    </div>
+    <!-- Auto-close countdown: shown after success. -->
+    <div class="export-modal-countdown" id="exportModalCountdown" style="display:none">
+      Zavře se za <span id="exportModalCountdownNum">3</span>s · <a href="#" id="exportModalCountdownStop">zastavit</a>
     </div>
     <div class="export-modal-actions">
       <button class="export-modal-btn" id="exportModalCancel">Cancel</button>
