@@ -2974,8 +2974,8 @@ let _mp4MuxerLoaded = false;
 async function loadMp4Muxer() {
   if (_mp4MuxerLoaded || window.Mp4Muxer) { _mp4MuxerLoaded = true; return; }
   const CDNS = [
-    'https://cdn.jsdelivr.net/npm/mp4-muxer@5.1.5/build/mp4-muxer.min.js',
-    'https://unpkg.com/mp4-muxer@5.1.5/build/mp4-muxer.min.js',
+    'https://cdn.jsdelivr.net/npm/mp4-muxer@5.2.2/build/mp4-muxer.js',
+    'https://unpkg.com/mp4-muxer@5.2.2/build/mp4-muxer.js',
   ];
   let lastErr;
   for (const url of CDNS) {
