@@ -589,10 +589,11 @@ function escapeHtml(s) {
 }
 
 
-// === Cloud projects bridge (Cloudflare Worker → GitHub Gist) ===
-// Keeps localStorage as a fast-path cache so the recent list shows immediately,
-// then refreshes from the cloud and re-renders.
-async function refreshFromCloud() {
+// === Storage projects bridge (currently localStorage-only via TNProjects) ===
+// Reads via TNProjects.list() which currently uses localStorage. When you
+// re-enable cloud sync (see projects.js), this same function will pull from
+// the Cloudflare Worker without code changes here.
+async function refreshFromStorage() {
   if (!window.TNProjects) return;
   try {
     const cloud = await TNProjects.list();
@@ -638,13 +639,13 @@ window.deleteProject = async function (id) {
 
 /* ==================== BOOT ==================== */
 renderTemplates();
-renderRecents();      // immediate from localStorage cache
-refreshFromCloud();   // async refresh from Cloudflare Worker → Gist
+renderRecents();      // immediate (legacy localStorage)
+refreshFromStorage(); // refresh via TNProjects (currently localStorage)
 
 // Re-render recents when returning from template (bfcache case)
 window.addEventListener('pageshow', () => {
   renderRecents();
-  refreshFromCloud();
+  refreshFromStorage();
 });
 </script>
 </body>
