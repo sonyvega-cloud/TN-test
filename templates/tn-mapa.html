@@ -1492,7 +1492,202 @@ function easeInCubic(x)   { return x * x * x; }
 function easeOutCubic(x)  { return 1 - Math.pow(1 - x, 3); }
 function easeOutQuart(x)  { return 1 - Math.pow(1 - x, 4); }
 
-// ---------- Async image manager (for user-uploaded illustration) ----------
+// =============================================================================
+// GEO RENDER PIPELINE — load GeoJSON, project lon/lat to canvas, draw paths.
+// Vanilla JS, zero dependencies. Mode-aware: each mode has its own dataset
+// path, projection bounds, and feature filter.
+// =============================================================================
+
+// Cache GeoJSON datasets so we don't re-fetch on every mode switch.
+const _geoCache = {};                  // mode/file → parsed GeoJSON
+let _geoLoadingMode = null;            // tracks in-flight request
+
+// Asset path resolution — works both at /templates/ and at /preview/?show=
+// (fáze 1 default — both relative to template HTML location).
+const GEO_BASE = '../assets/maps';
+
+// MAP_MODES: each mode declares its dataset file (one or shared) + which
+// features to keep + projection bounds (geographic bounding box).
+// Bounds are [minLon, minLat, maxLon, maxLat]; the projection fits this
+// box into the canvas (above the title strip).
+const MAP_MODES = {
+  'cz-kraje': {
+    file: 'cz-kraje.geojson',
+    bounds: [11.9, 48.4, 19.1, 51.3],   // ČR bounding box (slightly padded)
+    idKey: 'ISO3166-2',                 // for highlights lookup
+    nameKey: 'name:cs',
+    featureFilter: null,                // use all features
+  },
+  'cz-rivers': {
+    file: 'cz-kraje.geojson',           // fallback to kraje until rivers exist
+    bounds: [11.9, 48.4, 19.1, 51.3],
+    idKey: 'ISO3166-2',
+    nameKey: 'name:cs',
+    featureFilter: null,
+    placeholder: true,                  // mark as not-yet-implemented
+  },
+  'europe': {
+    file: 'world.geojson',
+    bounds: [-25, 34, 50, 72],          // Europe bounding box
+    idKey: 'ISO_A3',
+    nameKey: 'NAME',
+    // Filter to European countries plus a few neighbours that show up at edges
+    featureFilter: (props) => {
+      const c = props.CONTINENT;
+      const sr = props.SUBREGION || '';
+      // Europe + Western Asia + Northern Africa edge
+      return c === 'Europe' || sr.includes('Western Asia') || ['Morocco', 'Algeria', 'Tunisia', 'Libya'].includes(props.NAME);
+    },
+  },
+  'world': {
+    file: 'world.geojson',
+    bounds: [-180, -60, 180, 85],       // omit Antarctica below -60
+    idKey: 'ISO_A3',
+    nameKey: 'NAME',
+    featureFilter: (props) => props.NAME !== 'Antarctica',
+  },
+};
+
+async function loadGeoJSON(file) {
+  if (_geoCache[file]) return _geoCache[file];
+  try {
+    const url = `${GEO_BASE}/${file}`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`HTTP ${res.status} for ${url}`);
+    const data = await res.json();
+    _geoCache[file] = data;
+    return data;
+  } catch (err) {
+    console.warn('[geo] loadGeoJSON failed:', err.message);
+    _geoCache[file] = { type: 'FeatureCollection', features: [], _error: err.message };
+    return _geoCache[file];
+  }
+}
+
+// Project a [lon, lat] coordinate to canvas [x, y] using the given mode's
+// bounding box scaled into the map area (LAYOUT.mapTop..mapBottom).
+// Uses simple equirectangular projection (good enough for visual purposes,
+// not for cartographic accuracy). Aspect-correct: keeps the map's aspect ratio
+// and centers it within the available canvas area.
+function makeProjection(modeId) {
+  const mode = MAP_MODES[modeId] || MAP_MODES['cz-kraje'];
+  const [minLon, minLat, maxLon, maxLat] = mode.bounds;
+  const dataAR = (maxLon - minLon) / (maxLat - minLat);
+  // Compensate for latitude foreshortening at the bbox center (Mercator-lite).
+  const midLat = (minLat + maxLat) / 2;
+  const latScale = Math.cos(midLat * Math.PI / 180);
+  const projDataAR = dataAR * latScale;
+  const mapW = W;
+  const mapH = LAYOUT.mapBottom - LAYOUT.mapTop;
+  const canvasAR = mapW / mapH;
+  let scale, offX, offY;
+  if (projDataAR > canvasAR) {
+    // bbox wider than canvas → fit to width
+    scale = mapW / (maxLon - minLon);
+    const drawnH = (maxLat - minLat) * scale * latScale;
+    offX = 0;
+    offY = LAYOUT.mapTop + (mapH - drawnH) / 2;
+  } else {
+    // bbox taller than canvas → fit to height
+    scale = mapH / ((maxLat - minLat) * latScale);
+    const drawnW = (maxLon - minLon) * scale;
+    offX = (mapW - drawnW) / 2;
+    offY = LAYOUT.mapTop;
+  }
+  return function project(lon, lat) {
+    const x = offX + (lon - minLon) * scale;
+    const y = offY + (maxLat - lat) * scale * latScale;   // Y is flipped (lat increases up)
+    return [x, y];
+  };
+}
+
+// Build a Path2D from a GeoJSON feature using the given projection.
+// Handles Polygon and MultiPolygon. Skips other geometry types silently.
+function buildFeaturePath(feature, project) {
+  const path = new Path2D();
+  const geom = feature.geometry;
+  if (!geom) return path;
+  const t = geom.type;
+  const drawRing = (ring) => {
+    if (!ring || ring.length === 0) return;
+    const [lon0, lat0] = ring[0];
+    const [x0, y0] = project(lon0, lat0);
+    path.moveTo(x0, y0);
+    for (let i = 1; i < ring.length; i++) {
+      const [lon, lat] = ring[i];
+      const [x, y] = project(lon, lat);
+      path.lineTo(x, y);
+    }
+    path.closePath();
+  };
+  if (t === 'Polygon') {
+    geom.coordinates.forEach(drawRing);
+  } else if (t === 'MultiPolygon') {
+    geom.coordinates.forEach(poly => poly.forEach(drawRing));
+  }
+  // LineString/MultiLineString not used here (rivers TBD)
+  return path;
+}
+
+// Render a map for the given mode. Called from renderFrame() once GeoJSON
+// data has been fetched. Pure draw — no fetching here, that's lazy via
+// loadGeoJSON. If the dataset isn't loaded yet, this is a no-op (the next
+// frame after load completes will paint correctly).
+function renderMap(ctx, mode, animProgress) {
+  const cfg = MAP_MODES[mode] || MAP_MODES['cz-kraje'];
+  const data = _geoCache[cfg.file];
+  if (!data || !data.features || data.features.length === 0) return false;
+
+  const project = makeProjection(mode);
+  const features = cfg.featureFilter
+    ? data.features.filter(f => cfg.featureFilter(f.properties || {}))
+    : data.features;
+
+  const accent = (typeof getAccent === 'function') ? getAccent() : '#762929';
+
+  // Reference visual style:
+  //   - background outside features = black (canvas bg)
+  //   - regions = light blue fill (#a8c8e8 in references) with subtle gradient
+  //   - highlighted regions = theme accent
+  //   - borders = black 2px
+  ctx.save();
+  ctx.globalAlpha = animProgress;
+
+  // Pass 1: fill all features
+  for (const ft of features) {
+    const id = (ft.properties || {})[cfg.idKey];
+    const isHighlighted = id && state.highlights.includes(id);
+    const path = buildFeaturePath(ft, project);
+    ctx.fillStyle = isHighlighted ? accent : '#a8c8e8';
+    ctx.fill(path);
+  }
+
+  // Pass 2: stroke borders on top so they're sharp regardless of fill order
+  ctx.strokeStyle = '#000';
+  ctx.lineWidth = 2;
+  ctx.lineJoin = 'round';
+  for (const ft of features) {
+    const path = buildFeaturePath(ft, project);
+    ctx.stroke(path);
+  }
+
+  ctx.restore();
+  return true;
+}
+
+// Kick off lazy load for the current mode. Re-renders once data arrives.
+function ensureMapLoaded(mode) {
+  const cfg = MAP_MODES[mode] || MAP_MODES['cz-kraje'];
+  if (_geoCache[cfg.file]) return;
+  if (_geoLoadingMode === cfg.file) return;
+  _geoLoadingMode = cfg.file;
+  loadGeoJSON(cfg.file).then(() => {
+    _geoLoadingMode = null;
+    if (typeof render === 'function') render();
+  });
+}
+
+// ---------- Async image manager (legacy, kept for stub compatibility) ----------
 let imageEl = null;
 let imageElSrc = null;
 
@@ -1565,35 +1760,41 @@ function renderFrame(f) {
   }
 
   // === MAP AREA (fade-in 0.20..0.80s) ===
-  // Placeholder for fáze 1 — we draw a rectangle showing where the map will go.
-  // Fáze 2 replaces this with real GeoJSON paths via D3-geo + Canvas.
+  // Loads the GeoJSON dataset for the current mode lazily; first frame after
+  // load completes will draw the real map. Until then we render a soft
+  // placeholder so the canvas isn't empty.
+  ensureMapLoaded(state.mode);
   const mapP = easeOutCubic(clamp01((t - 0.20) / 0.60));
   if (mapP > 0) {
-    ctx.save();
-    ctx.globalAlpha = mapP;
-    // Subtle blue-gradient placeholder so the canvas isn't just black
-    const gx = ctx.createLinearGradient(0, 0, W, H);
-    gx.addColorStop(0, 'rgba(180, 210, 240, 0.18)');
-    gx.addColorStop(1, 'rgba(120, 160, 200, 0.10)');
-    ctx.fillStyle = gx;
-    ctx.fillRect(0, 0, W, LAYOUT.titleBandTop);
+    const cfg = MAP_MODES[state.mode] || MAP_MODES['cz-kraje'];
+    const drewReal = renderMap(ctx, state.mode, mapP);
 
-    // Mode label center — temporary, replaced by real map in fáze 2
-    ctx.fillStyle = 'rgba(255,255,255,0.30)';
-    ctx.font = '700 56px "Organica", sans-serif';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    const modeNames = {
-      'cz-kraje':  'ČESKO — KRAJE',
-      'cz-rivers': 'ČESKO — ŘEKY',
-      'europe':    'EVROPA',
-      'world':     'SVĚT',
-    };
-    ctx.fillText(modeNames[state.mode] || 'MAPA', W / 2, (LAYOUT.titleBandTop) / 2);
-    ctx.font = '400 24px "Organica", sans-serif';
-    ctx.fillStyle = 'rgba(255,255,255,0.20)';
-    ctx.fillText('placeholder · geojson loader v dalším kroku', W / 2, (LAYOUT.titleBandTop) / 2 + 60);
-    ctx.restore();
+    // Fallback placeholder when data isn't loaded yet (or empty)
+    if (!drewReal) {
+      ctx.save();
+      ctx.globalAlpha = mapP;
+      ctx.fillStyle = 'rgba(168, 200, 232, 0.15)';   // matches map fill, faint
+      ctx.fillRect(0, LAYOUT.mapTop, W, LAYOUT.mapBottom - LAYOUT.mapTop);
+      ctx.fillStyle = 'rgba(255,255,255,0.30)';
+      ctx.font = '700 56px "Organica", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      const modeNames = {
+        'cz-kraje':  'ČESKO — KRAJE',
+        'cz-rivers': 'ČESKO — ŘEKY',
+        'europe':    'EVROPA',
+        'world':     'SVĚT',
+      };
+      const cy = LAYOUT.mapTop + (LAYOUT.mapBottom - LAYOUT.mapTop) / 2;
+      ctx.fillText(modeNames[state.mode] || 'MAPA', W / 2, cy);
+      ctx.font = '400 24px "Organica", sans-serif';
+      ctx.fillStyle = 'rgba(255,255,255,0.20)';
+      const subtitle = cfg.placeholder
+        ? 'řeky budou doplněny později'
+        : 'načítám geo data…';
+      ctx.fillText(subtitle, W / 2, cy + 60);
+      ctx.restore();
+    }
   }
 
   // === Bottom title band (white, 95% opacity) ===
@@ -1817,6 +2018,8 @@ document.querySelectorAll('#modeToggle button').forEach(btn => {
     document.querySelectorAll('#modeToggle button').forEach(b => {
       b.classList.toggle('active', b.dataset.value === v);
     });
+    // Preload the new dataset (no-op if already cached)
+    if (typeof ensureMapLoaded === 'function') ensureMapLoaded(v);
     render();
   });
 });
@@ -2408,6 +2611,10 @@ console.log('[Boot] starting, FPS=', FPS, 'DURATION=', DURATION, 'TOTAL_FRAMES='
   } catch (_) {}
     populateShowSelect();
   applyShowTheme();
+  // Preload the GeoJSON for the current mode so the first painted frame
+  // can show the real map (otherwise we'd see the placeholder for ~100ms
+  // until the fetch resolves).
+  if (typeof ensureMapLoaded === 'function') ensureMapLoaded(state.mode);
   // Initial sidebar paint — list stubs (real impls in fáze 3 + 4)
   if (typeof rebuildHighlightsList === 'function') rebuildHighlightsList();
   if (typeof rebuildPinsList === 'function') rebuildPinsList();
