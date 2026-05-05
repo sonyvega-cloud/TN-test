@@ -469,7 +469,7 @@ const TEMPLATES = [
     ready: true,
   },
   {
-    id: 'line-chart-01',
+    id: 'tn-line-chart-01',
     num: '02',
     name: 'Line Chart',
     desc: 'Trend / časová řada jako křivka. Ideální pro srovnání víc období bez kategorizace.',
@@ -478,7 +478,7 @@ const TEMPLATES = [
     ready: true,
   },
   {
-    id: 'pie-chart-01',
+    id: 'tn-donut-01',
     num: '03',
     name: 'Pie / Donut',
     desc: 'Podíly segmentů na celku. 3–6 kategorií, ostatní v "other" řezu.',
@@ -487,7 +487,7 @@ const TEMPLATES = [
     ready: true,
   },
   {
-    id: 'stacked-bar-01',
+    id: 'tn-hbar-01',
     num: '04',
     name: 'Vodorovný graf',
     desc: 'Horizontální bar chart pro srovnání hodnot mezi kategoriemi.',
@@ -496,7 +496,7 @@ const TEMPLATES = [
     ready: true,
   },
   {
-    id: 'table-01',
+    id: 'tn-tabulka-01',
     num: '05',
     name: 'Tabulka',
     desc: 'Výsledkový žebříček, tabulka s fade-in řádky a zvýrazněním top N.',
@@ -514,7 +514,7 @@ const TEMPLATES = [
     ready: true,
   },
   {
-    id: 'identikit-01',
+    id: 'tn-identikit-01',
     num: '07',
     name: 'Identikit',
     desc: 'Identifikační karta osoby s fotografií, jménem, popisem a kontextem.',
@@ -523,7 +523,7 @@ const TEMPLATES = [
     ready: true,
   },
   {
-    id: 'kartoteka-01',
+    id: 'tn-kartoteka-01',
     num: '08',
     name: 'Kartotéka',
     desc: 'Vícebloková kartotéka s portrétem a popisem — biografie, profily, medailonky.',
@@ -566,7 +566,18 @@ async function deleteProject(id) {
 }
 
 function openProject(p) {
-  const tpl = TEMPLATES.find(t => t.id === (p.state?.template || p.template || 'bar-chart-01'));
+  // Try to resolve the template using all the variations Bridge / legacy
+  // snapshotState may have written.
+  const candidates = [
+    p.state?.template, p.template,
+    p.state?.template ? p.state.template + '-01' : null,
+    p.template ? p.template + '-01' : null,
+  ].filter(Boolean);
+  let tpl = null;
+  for (const c of candidates) {
+    tpl = TEMPLATES.find(t => t.id === c);
+    if (tpl) break;
+  }
   if (!tpl || !tpl.ready) {
     alert(`Template "${p.state?.template || p.template}" is not available yet.`);
     return;
@@ -690,9 +701,25 @@ function renderRecents() {
     return;
   }
 
+  // Resolve the TEMPLATES entry for any project — tries multiple keys + suffixes
+  // because templates write template id as either 'tn-tabulka' (bridge) or
+  // 'tn-tabulka-01' (legacy snapshotState), and historical bar-chart variants.
+  function resolveTpl(p) {
+    const candidates = [
+      p.state?.template, p.template,
+      p.state?.template ? p.state.template + '-01' : null,
+      p.template ? p.template + '-01' : null,
+    ].filter(Boolean);
+    for (const c of candidates) {
+      const t = TEMPLATES.find(t => t.id === c);
+      if (t) return t;
+    }
+    return null;
+  }
+
   host.innerHTML = `<div class="proj-list">${all.map(p => {
-    const tplId = p.state?.template || 'bar-chart-01';
-    const tpl = TEMPLATES.find(t => t.id === tplId);
+    const tpl = resolveTpl(p);
+    const tplId = tpl?.id || (p.state?.template || p.template || 'unknown');
     const badge = tpl ? `${tpl.num} ${tpl.name.split(' ')[0].toUpperCase()}` : tplId.toUpperCase();
     const badgeCls = tpl?.ready ? '' : 'soon';
     const d = new Date(p.updatedAt || 0);
