@@ -363,6 +363,23 @@
     overflow: hidden;
     text-overflow: ellipsis;
   }
+  .proj-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 2px;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--text-2);
+  }
+  .proj-author {
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    color: var(--tn-red);
+  }
+  .proj-meta-sep {
+    color: var(--line-2);
+  }
   .proj-date {
     font-family: var(--font-mono);
     font-size: 10px;
@@ -384,6 +401,48 @@
     border-color: var(--tn-red);
     background: var(--tn-red);
     color: #fff;
+  }
+
+  /* ===== Recent projects search ===== */
+  .recents-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+    gap: 12px;
+  }
+  .recents-head .section-label {
+    margin-bottom: 0;
+  }
+  .proj-search {
+    width: 100%;
+    margin-bottom: 14px;
+    padding: 9px 12px;
+    background: var(--bg-1);
+    border: 1px solid var(--line-2);
+    border-radius: 3px;
+    color: var(--text-0);
+    font-family: var(--font-ui);
+    font-size: 13px;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .proj-search::placeholder {
+    color: var(--text-2);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.05em;
+  }
+  .proj-search:focus {
+    border-color: var(--tn-red);
+  }
+  .proj-search-empty {
+    padding: 16px 8px;
+    text-align: center;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-2);
+    letter-spacing: 0.1em;
   }
 
   /* ===== Footer note ===== */
@@ -434,6 +493,8 @@
       Recent projects
       <span class="count" id="projCount">0</span>
     </div>
+    <input type="text" class="proj-search" id="projSearch"
+           placeholder="Hledat projekty (název, autor, šablona)…">
     <div class="recents" id="recents">
       <div class="recents-empty">
         <div class="big">No saved projects</div>
@@ -688,6 +749,9 @@ function fitIframe(iframe) {
 }
 
 /* ==================== RENDER: RECENT PROJECTS ==================== */
+// Search query — filters Recent projects by name, author, or template name
+let _projSearchQ = '';
+
 function renderRecents() {
   const host = document.getElementById('recents');
   const all = loadAllProjects().sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
@@ -717,11 +781,39 @@ function renderRecents() {
     return null;
   }
 
-  host.innerHTML = `<div class="proj-list">${all.map(p => {
+  // Get owner / author nick — falls back to '???' for legacy projects
+  function getOwner(p) {
+    return p.owner || p.state?.owner || '???';
+  }
+
+  // Apply search filter
+  const q = _projSearchQ.trim().toLowerCase();
+  const filtered = q
+    ? all.filter(p => {
+        const tpl = resolveTpl(p);
+        const haystack = [
+          p.name || '',
+          getOwner(p),
+          tpl?.name || '',
+          tpl?.id || p.state?.template || p.template || '',
+        ].join(' ').toLowerCase();
+        return haystack.includes(q);
+      })
+    : all;
+
+  if (filtered.length === 0) {
+    host.innerHTML = `<div class="proj-search-empty">
+      Žádný projekt neodpovídá &ldquo;${escapeHtml(q)}&rdquo;
+    </div>`;
+    return;
+  }
+
+  host.innerHTML = `<div class="proj-list">${filtered.map(p => {
     const tpl = resolveTpl(p);
     const tplId = tpl?.id || (p.state?.template || p.template || 'unknown');
     const badge = tpl ? `${tpl.num} ${tpl.name.split(' ')[0].toUpperCase()}` : tplId.toUpperCase();
     const badgeCls = tpl?.ready ? '' : 'soon';
+    const owner = getOwner(p);
     const d = new Date(p.updatedAt || 0);
     const dateStr = d.toLocaleString('cs-CZ', {
       day: '2-digit', month: '2-digit', year: 'numeric',
@@ -732,7 +824,11 @@ function renderRecents() {
       <span class="proj-badge ${badgeCls}">${escapeHtml(badge)}</span>
       <div class="proj-info">
         <div class="proj-title">${escapeHtml(p.name || 'Untitled')}</div>
-        <div class="proj-date">${dateStr}</div>
+        <div class="proj-meta">
+          <span class="proj-author" title="Autor">${escapeHtml(owner)}</span>
+          <span class="proj-meta-sep">·</span>
+          <span class="proj-date">${dateStr}</span>
+        </div>
       </div>
       <button class="proj-del" data-id="${p.id}" title="Delete">×</button>
     </div>`;
@@ -756,6 +852,18 @@ function renderRecents() {
     });
   });
 }
+
+// Wire the search input — debounced re-render so typing stays snappy.
+(function wireProjSearch() {
+  const input = document.getElementById('projSearch');
+  if (!input) return;
+  let t = null;
+  input.addEventListener('input', e => {
+    _projSearchQ = e.target.value;
+    if (t) clearTimeout(t);
+    t = setTimeout(() => renderRecents(), 80);
+  });
+})();
 
 function escapeHtml(s) {
   return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
