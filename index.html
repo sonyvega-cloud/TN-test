@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>TN Graphics Engine</title>
+<script src="theme.js"></script>
 <!-- TN LAUNCHER — template picker + saved projects -->
 
 <style>
@@ -99,6 +100,70 @@
     padding: 2px 8px;
     border-radius: 2px;
     letter-spacing: 0.1em;
+  }
+
+  /* ===== Show selector — full-width banner above the templates grid =====
+     Visually loud: the chosen show's accent color washes the entire bar so
+     you can never miss which show you're producing for. */
+  .show-bar {
+    margin-bottom: 36px;
+    padding: 28px 36px;
+    border-radius: 4px;
+    background: var(--show-accent, #762929);
+    color: #fff;
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 28px;
+    transition: background 250ms ease;
+  }
+  .show-bar .show-bar-label {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    opacity: 0.85;
+  }
+  .show-bar .show-bar-name {
+    font-size: 32px;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+    line-height: 1;
+    margin-top: 8px;
+  }
+  .show-bar .show-bar-meta {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    opacity: 0.75;
+    margin-top: 6px;
+  }
+  .show-bar select {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background: rgba(0,0,0,0.25);
+    border: 1px solid rgba(255,255,255,0.4);
+    color: #fff;
+    font-family: var(--font-ui);
+    font-size: 16px;
+    font-weight: 600;
+    padding: 14px 48px 14px 18px;
+    border-radius: 3px;
+    cursor: pointer;
+    outline: none;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'><path d='M1 1l5 5 5-5' stroke='%23ffffff' stroke-width='1.5' fill='none'/></svg>");
+    background-repeat: no-repeat;
+    background-position: right 16px center;
+    min-width: 240px;
+  }
+  .show-bar select:hover { background-color: rgba(0,0,0,0.4); }
+  .show-bar select option {
+    background: #1a1a1a;
+    color: #fff;
   }
 
   /* ===== Template grid ===== */
@@ -346,6 +411,16 @@
 <main class="page">
   <!-- LEFT: templates -->
   <section>
+    <div class="show-bar" id="showBar">
+      <div>
+        <div class="show-bar-label">Aktivní pořad</div>
+        <div class="show-bar-name" id="showBarName">TN</div>
+        <div class="show-bar-meta" id="showBarMeta">Televizní Noviny · doprovodná barva #762929</div>
+      </div>
+      <div></div>
+      <select id="showSelect"></select>
+    </div>
+
     <div class="section-label">
       New project · pick a template
       <span class="count" id="tplCount">6 templates</span>
@@ -463,50 +538,89 @@ const TEMPLATES = [
 // can coexist in one localStorage key.
 const LS_KEY = 'tn_graphics_engine_projects_v2';
 const LS_CURRENT = 'tn_graphics_engine_current_v2';
-const LS_LEGACY_KEYS = ['tn_graphics_engine_projects_v1']; // migrated on first read
+
+// In-memory cache for synchronous renderRecents() reads. TNProjects.list()
+// is async; we keep a sync mirror updated by refreshFromStorage().
+let _cachedProjects = [];
 
 function loadAllProjects() {
-  try {
-    const raw = localStorage.getItem(LS_KEY);
-    if (raw) return JSON.parse(raw) || [];
-  } catch (_) {}
-  // Migrate from v1 if present
-  for (const legacy of LS_LEGACY_KEYS) {
-    try {
-      const raw = localStorage.getItem(legacy);
-      if (raw) {
-        const arr = JSON.parse(raw) || [];
-        // v1 projects are all bar-chart; ensure template id is set in state
-        arr.forEach(p => {
-          if (p.state && !p.state.template) p.state.template = 'bar-chart-01';
-        });
-        localStorage.setItem(LS_KEY, JSON.stringify(arr));
-        return arr;
-      }
-    } catch (_) {}
-  }
-  return [];
+  // Sync access for the existing renderRecents() path. Real source of truth
+  // is TNProjects (localStorage); _cachedProjects is the mirror that
+  // refreshFromStorage() keeps fresh.
+  return _cachedProjects;
 }
 
 function saveAllProjects(arr) {
-  try { localStorage.setItem(LS_KEY, JSON.stringify(arr)); } catch (_) {}
+  // Compatibility shim — keep _cachedProjects in sync. The actual writes
+  // happen inside templates via TNProjects.save().
+  _cachedProjects = Array.isArray(arr) ? arr : [];
 }
 
-function deleteProject(id) {
-  const arr = loadAllProjects().filter(p => p.id !== id);
-  saveAllProjects(arr);
+async function deleteProject(id) {
+  if (window.TNProjects) {
+    try { await TNProjects.delete(id); } catch (_) {}
+  }
+  _cachedProjects = _cachedProjects.filter(p => p.id !== id);
   if (localStorage.getItem(LS_CURRENT) === id) localStorage.removeItem(LS_CURRENT);
   renderRecents();
 }
 
 function openProject(p) {
-  const tpl = TEMPLATES.find(t => t.id === (p.state?.template || 'bar-chart-01'));
+  const tpl = TEMPLATES.find(t => t.id === (p.state?.template || p.template || 'bar-chart-01'));
   if (!tpl || !tpl.ready) {
-    alert(`Template "${p.state?.template}" is not available yet.`);
+    alert(`Template "${p.state?.template || p.template}" is not available yet.`);
     return;
   }
   localStorage.setItem(LS_CURRENT, p.id);
-  window.location.href = `${tpl.url}?project=${encodeURIComponent(p.id)}`;
+  // Templates' bridge looks for ?projectId= and calls TNProjects.load()
+  window.location.href = `${tpl.url}?projectId=${encodeURIComponent(p.id)}`;
+}
+
+/* ==================== SHOW THEME (global launcher selector) ==================== */
+const LS_SHOW_KEY = 'tn_graphics_engine_active_show_v1';
+let _currentShow = (() => {
+  try {
+    const stored = localStorage.getItem(LS_SHOW_KEY);
+    if (stored && window.TN_THEMES && TN_THEMES.SHOWS_BY_ID[stored]) return stored;
+  } catch (_) {}
+  return window.TN_THEMES ? TN_THEMES.DEFAULT_SHOW_ID : 'tn';
+})();
+
+function getShow() { return _currentShow; }
+function setShow(id) {
+  if (!window.TN_THEMES) return;
+  if (!TN_THEMES.SHOWS_BY_ID[id]) return;
+  _currentShow = id;
+  try { localStorage.setItem(LS_SHOW_KEY, id); } catch (_) {}
+  applyShowBarVisuals();
+  renderTemplates();        // re-render so card hrefs + iframe srcs include ?show=
+}
+
+function applyShowBarVisuals() {
+  if (!window.TN_THEMES) return;
+  const show = TN_THEMES.get(_currentShow);
+  const bar = document.getElementById('showBar');
+  if (!bar) return;
+  bar.style.setProperty('--show-accent', show.accent);
+  document.getElementById('showBarName').textContent = show.name;
+  document.getElementById('showBarMeta').textContent =
+    `doprovodná barva ${show.accent}  ·  backdrop ${show.video.replace('../', '')}`;
+}
+
+function populateShowBar() {
+  if (!window.TN_THEMES) return;
+  const sel = document.getElementById('showSelect');
+  if (!sel) return;
+  sel.innerHTML = TN_THEMES.optionsHtml(_currentShow);
+  sel.addEventListener('change', e => setShow(e.target.value));
+  applyShowBarVisuals();
+}
+
+// Append `?show=...` (or `&show=...`) to a template URL/preview URL
+function withShow(url) {
+  if (!url) return url;
+  const sep = url.includes('?') ? '&' : '?';
+  return `${url}${sep}show=${encodeURIComponent(_currentShow)}`;
 }
 
 /* ==================== RENDER: TEMPLATES ==================== */
@@ -514,18 +628,24 @@ function renderTemplates() {
   const grid = document.getElementById('tplGrid');
   document.getElementById('tplCount').textContent = `${TEMPLATES.length} templates`;
   grid.innerHTML = TEMPLATES.map(t => {
-    const preview = t.ready
-      ? `<iframe src="${t.url}?preview=1&frame=${t.previewFrame ?? 49}" loading="lazy" title="${t.name} preview"></iframe>`
-      : `<div class="placeholder">
+    let preview;
+    if (t.ready) {
+      const baseSrc = `${t.url}?preview=1&frame=${t.previewFrame ?? 49}`;
+      const src = withShow(baseSrc);
+      preview = `<iframe src="${src}" loading="lazy" title="${t.name} preview"></iframe>`;
+    } else {
+      preview = `<div class="placeholder">
            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
              <rect x="3" y="3" width="18" height="18" rx="2"/>
              <path d="M8 14l3-3 2 2 3-4"/>
            </svg>
            Coming soon
          </div>`;
+    }
+    const href = t.ready ? `href="${withShow(t.url)}"` : '';
     return `
       <a class="tpl-card ${t.ready ? '' : 'coming'}"
-         ${t.ready ? `href="${t.url}"` : ''}
+         ${href}
          data-id="${t.id}">
         <div class="tpl-preview" data-id="${t.id}">${preview}</div>
         <div class="tpl-body">
@@ -640,30 +760,11 @@ async function refreshFromStorage() {
   }
 }
 
-// Override openProject to load from cloud + use ?projectId= URL param
-const _origOpenProject = openProject;
-window.openProject = function (p) {
-  const tplId = p.state?.template || 'bar-chart-01';
-  const tpl = TEMPLATES.find(t => t.id === tplId);
-  if (!tpl || !tpl.ready) {
-    alert(`Template "${tplId}" is not available yet.`);
-    return;
-  }
-  // Templates' bridge looks for ?projectId= and calls TNProjects.load()
-  window.location.href = `${tpl.url}?projectId=${encodeURIComponent(p.id)}`;
-};
-
-// Override deleteProject to also remove from cloud
-const _origDeleteProject = deleteProject;
-window.deleteProject = async function (id) {
-  if (window.TNProjects) {
-    try { await TNProjects.delete(id); }
-    catch (err) { console.warn('[cloud] delete failed:', err); }
-  }
-  _origDeleteProject(id);
-};
+// Override openProject + deleteProject already done above in main definitions
+// (deleteProject is async + calls TNProjects.delete; openProject uses ?projectId=).
 
 /* ==================== BOOT ==================== */
+populateShowBar();    // wire show selector first so renderTemplates uses ?show=
 renderTemplates();
 renderRecents();      // immediate (legacy localStorage)
 refreshFromStorage(); // refresh via TNProjects (currently localStorage)
