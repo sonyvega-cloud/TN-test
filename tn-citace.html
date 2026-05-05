@@ -1,0 +1,2899 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TN Citace — Template 06</title>
+<script src="../theme.js"></script>
+<!-- TN CITACE (quote card) — Graph Generator template 06 -->
+<!-- Layout derived from PSD reference (uploads/citace-reference.png): -->
+<!--   1920×1080 stage, light card inset ~60/70/60/110 px, registration corner ticks, -->
+<!--   portrait left ~40% / text right ~55%, Nova logo top-left, TN badge bottom-right. -->
+<!-- Same shared storage contract as bar-chart (LS_KEY=tn_graphics_engine_projects_v2). -->
+
+<link rel="stylesheet" href="../assets/organica-fonts.css">
+<style>
+  :root {
+    /* TN brand palette */
+    --tn-red:     #e60013;
+    --tn-red-dk:  #b80010;
+    --tn-red-sft: #ffeeef;
+
+    --bg-0:   #ffffff;
+    --bg-1:   #f7f7f7;
+    --bg-2:   #eeeeee;
+    --bg-3:   #1a1a1a;
+    --line:   #e2e2e2;
+    --line-2: #d4d4d4;
+
+    --text-0: #0f0f0f;
+    --text-1: #4a4a4a;
+    --text-2: #8a8a8a;
+    --text-inv: #ffffff;
+
+    --accent: var(--tn-red);
+    --accent-hover: var(--tn-red-dk);
+    --ok: #00a651;
+    --warn: var(--tn-red);
+
+    --font-ui:   'Inter', system-ui, -apple-system, sans-serif;
+    --font-mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+
+    /* Stage palette — pixel-sampled from the PSD composite reference */
+    --card-fill:   #dee2e6;       /* light gray card body */
+    --mint:        #5ee6c3;       /* registration tick color */
+    --nova-teal:   #2dd3c4;       /* Nova wordmark tint */
+    --name-navy:   #0b1e3f;       /* name, quote body */
+    --role-blue:   #2e7fd8;       /* role/subtitle accent */
+    --src-gray:    #7d8791;       /* "zdroj: ..." caption */
+    --portrait-1:  #7d91a8;       /* silhouette mid */
+    --portrait-2:  #556478;       /* silhouette shadow */
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; overflow: hidden; }
+  body {
+    font-family: var(--font-ui);
+    background: var(--bg-1);
+    color: var(--text-0);
+    font-size: 15px;
+    line-height: 1.5;
+  }
+
+  .app {
+    display: grid;
+    grid-template-columns: 600px 1fr;
+    height: 100vh;
+    background: var(--line);
+    gap: 1px;
+  }
+
+  /* =========================================================================
+     CONTROL PANEL — left column. Mirrors bar-chart visual language so the two
+     templates feel like one product. Red masthead, dark project bar, body.
+     ========================================================================= */
+  .control { background: var(--bg-0); overflow-y: auto; display: flex; flex-direction: column; }
+  .control::-webkit-scrollbar { width: 8px; }
+  .control::-webkit-scrollbar-track { background: var(--bg-1); }
+  .control::-webkit-scrollbar-thumb { background: var(--line-2); border: 2px solid var(--bg-1); border-radius: 4px; }
+
+  .control-header {
+    padding: 22px 24px 20px;
+    background: var(--tn-red);
+    color: var(--text-inv);
+    position: relative;
+    border-bottom: 4px solid var(--tn-red-dk);
+  }
+  .brand-row { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+  .tn-mark {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 28px; height: 28px;
+    background: var(--text-inv);
+    color: var(--tn-red);
+    font-weight: 800; font-size: 14px; letter-spacing: -0.02em;
+    font-family: var(--font-ui);
+    border: 0; cursor: pointer; padding: 0;
+    transition: transform .1s ease;
+  }
+  .tn-mark:hover { transform: scale(1.08); }
+  .tn-mark:active { transform: scale(0.95); }
+  .brand {
+    font-family: var(--font-mono);
+    font-weight: 600;
+    font-size: 13px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.82);
+  }
+  .template-badge {
+    display: flex; align-items: baseline; gap: 12px;
+    margin-top: 10px; padding-top: 10px;
+    border-top: 1px solid rgba(255,255,255,0.25);
+  }
+  .tpl-num {
+    font-family: var(--font-mono);
+    font-size: 13px; letter-spacing: 0.2em;
+    color: rgba(255,255,255,0.7);
+    text-transform: uppercase;
+  }
+  .tpl-name {
+    font-family: var(--font-ui);
+    font-weight: 800; font-size: 22px;
+    letter-spacing: -0.01em;
+    color: var(--text-inv); line-height: 1;
+  }
+
+  /* Project bar (identical pattern to bar-chart) */
+  .project-bar {
+    padding: 14px 24px 16px;
+    background: #2a2a2a;
+    border-bottom: 1px solid #1a1a1a;
+    color: #e0e0e0;
+  }
+  .pb-row { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+  .pb-row:last-child { margin-bottom: 0; }
+  .pb-label {
+    font-family: var(--font-mono);
+    font-size: 11px; letter-spacing: 0.2em;
+    text-transform: uppercase; color: #a0a0a0;
+    flex-shrink: 0;
+  }
+  .pb-name {
+    flex: 1;
+    padding: 8px 12px;
+    background: #1a1a1a;
+    border: 1px solid #3a3a3a;
+    color: #f0f0f0;
+    font-family: var(--font-ui);
+    font-size: 14px;
+    border-radius: 2px;
+  }
+  .pb-name:focus { outline: none; border-color: var(--tn-red); }
+  .pb-btn {
+    padding: 7px 12px;
+    background: #3a3a3a;
+    border: 1px solid #4a4a4a;
+    color: #f0f0f0;
+    font-family: var(--font-ui);
+    font-size: 13px; font-weight: 600;
+    letter-spacing: 0.02em;
+    cursor: pointer;
+    border-radius: 2px;
+    transition: background .15s ease;
+  }
+  .pb-btn:hover { background: #4a4a4a; }
+  .pb-btn.primary { background: var(--tn-red); border-color: var(--tn-red-dk); }
+  .pb-btn.primary:hover { background: var(--tn-red-dk); }
+  .pb-meta {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: #777;
+    letter-spacing: 0.04em;
+  }
+  .pb-meta .dirty { color: #ffb75b; }
+  .pb-meta .saved { color: #62d672; }
+
+  /* Panel sections */
+  .section {
+    padding: 18px 24px;
+    border-bottom: 1px solid var(--line);
+  }
+  .section:last-child { border-bottom: 0; }
+  .section h3 {
+    font-size: 11px;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+    color: var(--text-2);
+    font-family: var(--font-mono);
+    font-weight: 600;
+    margin-bottom: 12px;
+  }
+  .field { margin-bottom: 12px; }
+  .field:last-child { margin-bottom: 0; }
+  .field label {
+    display: block;
+    font-size: 13px;
+    color: var(--text-1);
+    margin-bottom: 5px;
+    font-weight: 500;
+  }
+  .field input[type="text"],
+  .field textarea,
+  .field select {
+    width: 100%;
+    padding: 8px 10px;
+    background: var(--bg-0);
+    border: 1px solid var(--line-2);
+    color: var(--text-0);
+    font-family: var(--font-ui);
+    font-size: 14px;
+    border-radius: 2px;
+  }
+  .field input[type="text"]:focus,
+  .field textarea:focus,
+  .field select:focus {
+    outline: none;
+    border-color: var(--tn-red);
+  }
+  .field textarea {
+    resize: vertical;
+    min-height: 110px;
+    font-family: var(--font-ui);
+    line-height: 1.45;
+  }
+  .field .help {
+    font-size: 13px;
+    color: var(--text-2);
+    margin-top: 4px;
+    font-style: italic;
+  }
+
+  .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+  /* File upload for portrait */
+  .upload-row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px; background: var(--bg-1);
+    border: 1px dashed var(--line-2);
+    border-radius: 2px;
+  }
+  .upload-row .thumb {
+    width: 52px; height: 52px; flex-shrink: 0;
+    background: var(--bg-2);
+    border: 1px solid var(--line);
+    background-size: cover; background-position: center;
+  }
+  .upload-row .upload-ctrl { flex: 1; display: flex; gap: 6px; flex-wrap: wrap; }
+  .upload-btn {
+    padding: 6px 10px; font-size: 13px; font-weight: 600;
+    background: var(--bg-0); border: 1px solid var(--line-2);
+    color: var(--text-0); cursor: pointer; border-radius: 2px;
+    font-family: var(--font-ui);
+  }
+  .upload-btn:hover { background: var(--bg-1); }
+  .upload-btn.clear { color: var(--tn-red); border-color: var(--tn-red); }
+
+  /* Toggle-group pattern shared with bar-chart */
+  .toggle-group {
+    display: inline-flex;
+    background: var(--bg-1);
+    border: 1px solid var(--line);
+    padding: 2px;
+    gap: 2px;
+    border-radius: 2px;
+  }
+  .toggle-group button {
+    padding: 6px 12px;
+    background: transparent;
+    border: 0;
+    color: var(--text-1);
+    font-size: 13px; font-weight: 600;
+    cursor: pointer;
+    font-family: var(--font-ui);
+    border-radius: 2px;
+  }
+  .toggle-group button.active {
+    background: var(--text-0); color: var(--text-inv);
+  }
+  /* Show theme dropdown — full-width native <select> styled to match the rest */
+  .select-show {
+    width: 100%;
+    padding: 10px 12px;
+    background: var(--bg-0);
+    border: 1px solid var(--line-2);
+    color: var(--text-0);
+    font-family: var(--font-ui);
+    font-size: 14px;
+    font-weight: 500;
+    border-radius: 2px;
+    outline: none;
+    cursor: pointer;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'><path d='M1 1l5 5 5-5' stroke='%23999' stroke-width='1.5' fill='none'/></svg>");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+  }
+  .select-show:focus { border-color: var(--tn-red); }
+
+
+  /* Export buttons */
+  .export-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .btn-export {
+    padding: 10px 12px;
+    background: var(--text-0); color: var(--text-inv);
+    border: 0; border-radius: 2px;
+    font-family: var(--font-ui);
+    font-weight: 600; font-size: 13px;
+    letter-spacing: 0.02em;
+    cursor: pointer;
+  }
+  .btn-export:hover { background: #333; }
+  .btn-export.primary { background: var(--tn-red); }
+  .btn-export.primary:hover { background: var(--tn-red-dk); }
+
+  /* =========================================================================
+     STAGE — right column. 1920×1080 canvas scaled to fit.
+     ========================================================================= */
+  .stage-col {
+    background: var(--bg-3);
+    display: flex; flex-direction: column;
+    overflow: hidden;
+  }
+  .stage-header {
+    padding: 10px 16px;
+    background: #222;
+    border-bottom: 1px solid #111;
+    color: #aaa;
+    font-family: var(--font-mono);
+    font-size: 13px; letter-spacing: 0.12em;
+    display: flex; align-items: center; gap: 14px;
+    flex-shrink: 0;
+  }
+  .stage-header .meta { color: #666; }
+  .stage-header .spacer { flex: 1; }
+  .stage-header .pill {
+    padding: 3px 8px;
+    background: #333;
+    border-radius: 10px;
+    color: #ddd;
+    letter-spacing: 0.05em;
+  }
+
+  .stage-wrap {
+    flex: 1; min-height: 0;
+    padding: 16px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  /* The outer wrapper does the scaling — keep the inner stage at a fixed
+     1920×1080 for pixel-perfect rendering. */
+  .stage-scale {
+    width: 1920px; height: 1080px;
+    transform-origin: center center;
+    position: relative;
+    flex-shrink: 0;
+  }
+  .stage {
+    position: absolute; inset: 0;
+    overflow: hidden;
+    background: #000;
+  }
+  /* The canvas sits ABOVE the bg-video, transparent where режia will later
+     composite top/bottom chrome. 1920×1080 intrinsic, stretched to stage. */
+  .stage canvas#stage-canvas {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%;
+    z-index: 2;
+    pointer-events: auto;
+    cursor: default;
+    touch-action: none;
+  }
+  .stage canvas#stage-canvas.over-photo { cursor: grab; }
+  .stage canvas#stage-canvas.dragging   { cursor: grabbing; }
+  .stage .bg-video,
+  .stage .bg-flat {
+    z-index: 1;
+  }
+
+  /* Timeline */
+  .timeline {
+    padding: 10px 16px 12px;
+    background: #1f1f1f;
+    border-top: 1px solid #0f0f0f;
+    color: #aaa;
+    display: flex; align-items: center; gap: 12px;
+    flex-shrink: 0;
+  }
+  .tl-btn {
+    width: 34px; height: 34px;
+    background: #333; border: 1px solid #444;
+    color: #fff; cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 14px;
+    border-radius: 2px;
+  }
+  .tl-btn:hover { background: #444; }
+  .tl-scrubber {
+    flex: 1;
+    -webkit-appearance: none; appearance: none;
+    height: 6px;
+    background: #333;
+    border-radius: 3px;
+    outline: none;
+  }
+  .tl-scrubber::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 14px; height: 14px;
+    background: var(--tn-red);
+    border-radius: 50%;
+    cursor: pointer;
+  }
+  .tl-scrubber::-moz-range-thumb {
+    width: 14px; height: 14px;
+    background: var(--tn-red);
+    border-radius: 50%;
+    cursor: pointer; border: 0;
+  }
+  .tl-readout {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: #aaa;
+    min-width: 100px;
+    text-align: right;
+  }
+
+  /* =========================================================================
+     STAGE CONTENT — drawn inside a 1920×1080 <canvas>. The block layout is
+     identical to the Bar Chart template (topBlack/titleBand/chart/bottomBlack)
+     so the two templates composite identically over the TN režia backdrop.
+     The canvas is transparent in preview mode (top/bottom strips not drawn);
+     режia paints the blue header + teal/TN bar behind via the looped video.
+     ========================================================================= */
+
+  /* Backdrop video — GRAF-style. Hidden by default; JS toggles `.visible`
+     once video is ready. Frame-synced via currentTime, not autoplay loop. */
+  .bg-video {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%;
+    object-fit: cover;
+    pointer-events: none;
+    display: none;
+  }
+  .bg-video.visible { display: block; }
+  /* Solid fallback / export-clean backdrop. Shown when state.branding==='export'. */
+  .bg-flat {
+    position: absolute; inset: 0;
+    background:
+      radial-gradient(ellipse at 30% 20%, rgba(56,143,230,0.35) 0%, rgba(0,0,0,0) 55%),
+      radial-gradient(ellipse at 80% 10%, rgba(14,62,128,0.6) 0%, rgba(0,0,0,0) 50%),
+      linear-gradient(180deg, #0a2346 0%, #0a2a4e 50%, #1a5e6d 100%);
+  }
+
+  /* =========================================================================
+     OVERLAY MODAL (Save/Load project) — same visual as bar-chart
+     ========================================================================= */
+  .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 100; }
+  .modal.show { display: flex; align-items: center; justify-content: center; }
+  .modal-card {
+    background: var(--bg-0);
+    border-radius: 4px;
+    width: 520px; max-width: 90vw; max-height: 80vh;
+    display: flex; flex-direction: column;
+    overflow: hidden;
+  }
+  .modal-head {
+    padding: 16px 20px;
+    background: var(--tn-red); color: var(--text-inv);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .modal-head h2 {
+    font-size: 14px; letter-spacing: 0.12em; text-transform: uppercase;
+    font-family: var(--font-mono); font-weight: 600;
+  }
+  .modal-close {
+    background: transparent; border: 0; color: var(--text-inv);
+    font-size: 18px; cursor: pointer; padding: 4px 8px;
+  }
+  .modal-body { padding: 8px; overflow-y: auto; flex: 1; }
+  .proj-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 12px;
+    border: 1px solid var(--line);
+    border-radius: 2px;
+    margin-bottom: 6px;
+    background: var(--bg-0);
+  }
+  .proj-info { flex: 1; min-width: 0; }
+  .proj-title {
+    font-weight: 600; font-size: 14px; color: var(--text-0);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .proj-date { font-family: var(--font-mono); font-size: 11px; color: var(--text-2); margin-top: 2px; }
+  .proj-btn {
+    padding: 6px 10px; font-size: 13px; font-weight: 600;
+    background: var(--bg-0); border: 1px solid var(--line-2);
+    color: var(--text-0); cursor: pointer; border-radius: 2px;
+    font-family: var(--font-ui);
+  }
+  .proj-btn.load:hover { background: var(--bg-1); }
+  .proj-btn.del { color: var(--tn-red); border-color: var(--tn-red); }
+  .proj-btn.del:hover { background: var(--tn-red-sft); }
+  .proj-empty {
+    text-align: center; padding: 40px 20px;
+    color: var(--text-2); font-size: 14px;
+  }
+
+  /* Toast */
+  .toast-stack {
+    position: fixed; bottom: 20px; right: 20px;
+    display: flex; flex-direction: column-reverse; gap: 8px;
+    z-index: 200; pointer-events: none;
+  }
+  .toast {
+    padding: 10px 14px;
+    background: var(--text-0); color: var(--text-inv);
+    border-radius: 2px;
+    font-size: 14px; font-weight: 500;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    animation: toast-in .25s ease;
+    pointer-events: auto;
+  }
+  .toast.success { background: var(--ok); }
+  .toast.error { background: var(--tn-red); }
+  @keyframes toast-in {
+    from { transform: translateY(10px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+
+  /* ===== Info tooltip bubble (i) ===== */
+  .info-tip {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px; height: 16px;
+    margin-left: 6px;
+    border-radius: 50%;
+    background: var(--bg-2);
+    color: var(--text-2);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 700;
+    font-style: italic;
+    cursor: help;
+    user-select: none;
+    position: relative;
+    vertical-align: middle;
+    line-height: 1;
+    transition: background 0.15s, color 0.15s;
+  }
+  .info-tip:hover { background: var(--text-0); color: var(--text-inv); }
+  .info-tip::after {
+    content: attr(data-tip);
+    position: absolute;
+    bottom: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: #1a1a1a;
+    color: #f0f0f0;
+    padding: 8px 12px;
+    border-radius: 4px;
+    font-family: var(--font-ui);
+    font-size: 12px;
+    font-weight: 400;
+    font-style: normal;
+    line-height: 1.4;
+    letter-spacing: normal;
+    text-transform: none;
+    white-space: normal;
+    width: 240px;
+    z-index: 1000;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.15s, visibility 0.15s;
+    pointer-events: none;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  }
+  .info-tip::before {
+    content: '';
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 6px solid transparent;
+    border-top-color: #1a1a1a;
+    margin-bottom: 2px;
+    z-index: 1001;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.15s, visibility 0.15s;
+  }
+  .info-tip:hover::after,
+  .info-tip:hover::before { opacity: 1; visibility: visible; }
+
+  /* ===== FPS pill ===== */
+  .fps-pill { position: relative; display: inline-block; }
+  .fps-pill-active {
+    background: var(--bg-2);
+    border: 1px solid var(--line);
+    color: var(--text-0);
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-weight: 700;
+    padding: 8px 14px;
+    border-radius: 3px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    letter-spacing: 0.05em;
+  }
+  .fps-pill-active:hover { background: var(--text-0); color: var(--text-inv); }
+  .fps-pill-hint {
+    font-size: 9px;
+    font-weight: 600;
+    opacity: 0.6;
+    letter-spacing: 0.1em;
+  }
+  .fps-pill-menu {
+    display: none;
+    position: absolute;
+    top: calc(100% + 4px);
+    right: 0;
+    background: #1a1a1a;
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    z-index: 100;
+    min-width: 180px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  }
+  .fps-pill:hover .fps-pill-menu { display: block; }
+  .fps-pill-menu button {
+    display: block;
+    width: 100%;
+    text-align: left;
+    background: transparent;
+    border: 0;
+    color: #f0f0f0;
+    padding: 10px 14px;
+    cursor: pointer;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.05em;
+  }
+  .fps-pill-menu button:hover { background: rgba(255,255,255,0.1); }
+  .fps-pill-menu button.active { background: var(--tn-red); color: white; }
+
+  /* ===== Export split-button ===== */
+  .export-split {
+    position: relative;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 1px;
+  }
+  .export-split .btn-export.primary {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 12px 16px;
+    background: var(--tn-red);
+    color: white;
+    border: 0;
+    border-radius: 3px 0 0 3px;
+    cursor: pointer;
+    font-family: var(--font-ui);
+    transition: background 0.15s;
+  }
+  .export-split .btn-export.primary:hover { background: #b80825; }
+  .export-split .btn-export.primary .btn-main {
+    font-size: 14px; font-weight: 700; letter-spacing: 0.02em;
+  }
+  .export-split .btn-export.primary .btn-sub {
+    font-size: 10px; opacity: 0.85; margin-top: 2px;
+    font-family: var(--font-mono); letter-spacing: 0.05em;
+  }
+  .btn-export-more {
+    background: var(--tn-red);
+    color: white;
+    border: 0;
+    border-radius: 0 3px 3px 0;
+    padding: 0 14px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 700;
+    border-left: 1px solid rgba(255,255,255,0.2);
+    transition: background 0.15s;
+  }
+  .btn-export-more:hover { background: #b80825; }
+  .export-menu {
+    display: none;
+    position: absolute;
+    top: calc(100% + 4px);
+    right: 0;
+    background: #1a1a1a;
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    z-index: 100;
+    min-width: 240px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  }
+  .export-menu.open { display: block; }
+  .export-menu button {
+    display: block;
+    width: 100%;
+    text-align: left;
+    background: transparent;
+    border: 0;
+    color: #f0f0f0;
+    padding: 10px 14px;
+    cursor: pointer;
+    font-family: var(--font-ui);
+    font-size: 13px;
+  }
+  .export-menu button:hover { background: rgba(255,255,255,0.1); }
+
+  /* ===== ZPĚT button (top-right of control-header, mirrors tn-mark on left) ===== */
+  .back-btn {
+    position: absolute;
+    top: 22px; right: 24px;
+    background: var(--text-inv); color: var(--tn-red);
+    font-family: var(--font-mono);
+    font-weight: 700; font-size: 11px;
+    letter-spacing: 0.12em;
+    padding: 7px 14px;
+    border: 0; cursor: pointer;
+    transition: transform .1s ease, background .15s ease;
+    display: inline-flex; align-items: center; gap: 4px;
+  }
+  .back-btn:hover { transform: translateX(-3px); }
+  .back-btn:active { transform: scale(0.95); }
+
+  /* ============================================================
+     EXPORT MODAL — full-screen overlay during MP4 export.
+     Blocks all input; only Cancel button is interactive.
+     ============================================================ */
+  .export-modal {
+    position: fixed; inset: 0; z-index: 9999;
+    background: rgba(0, 0, 0, 0.88);
+    display: none;
+    align-items: center; justify-content: center;
+    backdrop-filter: blur(4px);
+  }
+  .export-modal.open { display: flex; }
+  .export-modal-panel {
+    background: #141414;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 32px 40px;
+    min-width: 480px; max-width: 600px;
+    color: #fff;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+  }
+  .export-modal-title {
+    font-family: 'Organica', sans-serif;
+    font-weight: 600;
+    font-size: 16px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #DC0F2E;
+    margin-bottom: 8px;
+  }
+  .export-modal-status {
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.85);
+    margin-bottom: 24px;
+    min-height: 20px;
+    line-height: 1.4;
+  }
+  .export-modal-progress-track {
+    width: 100%;
+    height: 8px;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 8px;
+  }
+  .export-modal-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #DC0F2E 0%, #ff4960 100%);
+    border-radius: 4px;
+    width: 0%;
+    transition: width 200ms ease-out;
+  }
+  .export-modal-progress-fill.indeterminate {
+    width: 30% !important;
+    animation: exportIndeterminate 1.4s ease-in-out infinite;
+  }
+  @keyframes exportIndeterminate {
+    0%   { transform: translateX(-100%); }
+    100% { transform: translateX(400%); }
+  }
+  .export-modal-progress-fill.error {
+    background: #DC0F2E;
+  }
+  .export-modal-progress-fill.success {
+    background: linear-gradient(90deg, #2D9B40 0%, #4CC95E 100%);
+  }
+  .export-modal-meta {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.5);
+    font-feature-settings: 'tnum';
+    margin-bottom: 28px;
+    display: flex;
+    justify-content: space-between;
+  }
+  .export-modal-actions {
+    display: flex; justify-content: flex-end;
+    gap: 12px;
+  }
+  .export-modal-btn {
+    background: transparent;
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    padding: 10px 24px;
+    border-radius: 6px;
+    font-family: 'Organica', sans-serif;
+    font-weight: 500;
+    font-size: 13px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 150ms ease;
+  }
+  .export-modal-btn:hover { background: rgba(255, 255, 255, 0.08); border-color: rgba(255, 255, 255, 0.4); }
+  .export-modal-btn.primary {
+    background: #DC0F2E;
+    border-color: #DC0F2E;
+  }
+  .export-modal-btn.primary:hover { background: #b80825; border-color: #b80825; }
+  .export-modal-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+    background: transparent;
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ============================ CONTROL ============================ -->
+  <aside class="control">
+    <header class="control-header">
+      <div class="brand-row">
+        <button class="tn-mark" id="btnHome" title="Zpět na hlavní rozcestník">tn</button>
+        <span class="brand">Graphics Engine</span>
+      </div>
+      <div class="template-badge">
+        <span class="tpl-num">06 / TEMPLATE</span>
+        <span class="tpl-name">TN citace</span>
+      </div>
+    
+      <button class="back-btn" id="btnBack" title="Zpět na rozcestník">‹ ZPĚT</button>
+    </header>
+
+    <div class="project-bar">
+      <div class="pb-row">
+        <span class="pb-label">Projekt</span>
+        <input type="text" class="pb-name" id="projName" value="Untitled" />
+        <span class="pb-meta" id="projMeta">nový</span>
+      </div>
+      <div class="pb-row">
+        <button class="pb-btn primary" id="projSave">Uložit</button>
+        <button class="pb-btn" id="projSaveAs">Uložit jako…</button>
+        <button class="pb-btn" id="projOpen">Otevřít…</button>
+        <button class="pb-btn" id="projNew">Nový</button>
+      </div>
+    </div>
+
+    <!-- Content fields -->
+    <div class="section">
+      <h3>Obsah</h3>
+      <div class="field">
+        <label for="inName">Jméno</label>
+        <input type="text" id="inName" value="Pavel Vavřička" />
+      </div>
+      <div class="field">
+        <label for="inRole">Funkce / podtitul</label>
+        <input type="text" id="inRole" value="grafik" />
+      </div>
+      <div class="field">
+        <label for="inQuote">Citát</label>
+        <textarea id="inQuote" rows="5">Lorem ipsum dolor sit amet, consectetuer adipiscing elit, sed diam nonummy nibh euismod tincidunt ut laoreet dolore magna aliquam erat volutpat. Ut wisi enim ad minim veniam, quis nostrud exerci tation ullamcorper suscipit lobortis.</textarea>
+        <div class="help">Delší citáty se automaticky zmenší aby se vešly do karty.</div>
+      </div>
+      <div class="field">
+        <label for="inSource">Zdroj (top-right)</label>
+        <input type="text" id="inSource" value="zdroj: Facebook" />
+      </div>
+      <div class="field">
+        <label>
+          Svislý posun citátu
+          <span id="outQuoteY" style="float:right;color:var(--text-2);font-variant-numeric:tabular-nums">0 px</span>
+        </label>
+        <input type="range" id="inQuoteY" min="-200" max="200" step="1" value="0" style="width:100%" />
+        <div class="help">Blok citátu se auto-centruje mezi „grafik" a spodní hranu karty. Posuň nahoru/dolů dle potřeby.</div>
+      </div>
+      <div class="field">
+        <label>
+          Rozestup řádků
+          <span id="outQuoteLH" style="float:right;color:var(--text-2);font-variant-numeric:tabular-nums">+0 px</span>
+        </label>
+        <input type="range" id="inQuoteLH" min="-20" max="30" step="1" value="0" style="width:100%" />
+        <div class="help">Jemné doladění line-height (±px od výchozí hodnoty).</div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h3>Fotografie</h3>
+      <div class="field">
+        <div class="upload-row">
+          <div class="thumb" id="portraitThumb"></div>
+          <div class="upload-ctrl">
+            <label class="upload-btn" for="inPortrait">Nahrát foto…</label>
+            <input type="file" id="inPortrait" accept="image/*" style="display:none" />
+            <button class="upload-btn clear" id="btnClearPortrait">Odebrat</button>
+          </div>
+        </div>
+        <div class="help">Doporučené 660×800 px, portrét. Bez fotky se použije silueta.</div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h3>Pořad</h3>
+      <div class="field">
+        <label for="inShow">Téma (pozadí + doprovodná barva)</label>
+        <select id="inShow" class="select-show"></select>
+        <div class="help">Volba pořadu přepne backdrop video a doprovodnou barvu (subtitle, callouty, akcenty). Per-projekt — ukládá se s projektem.</div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h3>
+        Pozadí
+        <span class="info-tip" data-tip="Backdrop video se mění automaticky podle vybraného pořadu (sekce Pořad). Studio preview je vždy zapnutý — režii dodá clean export přímo z časové osy.">i</span>
+      </h3>
+      <div class="help" id="backdropStatus" style="cursor:pointer" title="Klikni pro reload videa">
+        <strong>Aktivní:</strong> <code id="backdropPath">../assets/bg-loop.mp4</code>
+      </div>
+    </div>
+
+    <div class="section">
+      <h3>
+        Animace &amp; Časování
+        <span class="info-tip" data-tip="Délka určuje celkovou dobu animace. FPS volí počet snímků za sekundu — 50 FPS pro TV výstup (broadcast), 30 FPS pro web (sociální sítě).">i</span>
+      </h3>
+      <div class="field">
+        <label>
+          Délka (sekundy)
+          <span class="info-tip" data-tip="Celková délka animace v sekundách. Default 20 s.">i</span>
+        </label>
+        <div class="field-row">
+          <input type="text" id="inDuration" value="20" />
+          <div class="fps-pill" id="fpsPill">
+            <button class="fps-pill-active" id="fpsActiveBtn" data-fps="50">50 FPS<span class="fps-pill-hint">TV</span></button>
+            <div class="fps-pill-menu">
+              <button data-fps="50">50 FPS · TV výstup</button>
+              <button data-fps="30">30 FPS · web výstup</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h3>
+        Export
+        <span class="info-tip" data-tip="Hlavní tlačítko: vyrenderuje MP4 H.264 s aktuálním pozadím. Bitrate se škáluje podle FPS — 50 FPS = vysoký bitrate (TV broadcast), 30 FPS = nižší bitrate (web). Šipka napravo nabídne další formáty.">i</span>
+      </h3>
+      <div class="export-split">
+        <button class="btn-export primary" id="btnExportMP4">
+          <span class="btn-main">Export MP4</span>
+          <span class="btn-sub" id="btnExportSubLabel">50 FPS · TV bitrate</span>
+        </button>
+        <button class="btn-export-more" id="btnExportMore" title="Další možnosti">▾</button>
+        <div class="export-menu" id="exportMenu">
+          <button data-format="png">Aktuální snímek (PNG)</button>
+          <button data-format="seq">PNG sekvence (do složky)</button>
+          <button data-format="webm">WebM (browser native)</button>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ============================ STAGE ============================ -->
+  <main class="stage-col">
+    <div class="stage-header">
+      <span>1920 × 1080 • 16:9</span>
+      <span class="meta">Template 06 · TN citace</span>
+      <span class="spacer"></span>
+      <span class="pill" id="stFps">50 fps</span>
+      <span class="pill" id="stDur">20.00 s</span>
+    </div>
+
+    <div class="stage-wrap" id="stageWrap">
+      <div class="stage-scale" id="stageScale">
+        <div class="stage" id="stage">
+          <!-- BACKDROP LAYERS — режия's live video sits behind the graphic.
+               Top 135px + bottom 88px of the canvas stay transparent so the
+               режия composite (blue header, teal+TN bottom) shows through. -->
+          <video class="bg-video" id="bgVideo" src="../assets/bg-loop.mp4" crossorigin="anonymous" autoplay loop muted playsinline preload="auto"></video>
+          <div class="bg-flat" id="bgFlat" style="display:none"></div>
+          <!-- The ENTIRE graphic is rendered here. Same layout frame as Bar Chart. -->
+          <canvas id="stage-canvas" width="1920" height="1080"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="timeline">
+      <button class="tl-btn" id="btnPlay" title="Přehrát / Zastavit">▶</button>
+      <button class="tl-btn" id="btnRewind" title="Na začátek">⏮</button>
+      <input type="range" class="tl-scrubber" id="scrubber" min="0" max="74" value="74" step="1" />
+      <div class="tl-readout" id="tlRead">75 / 75</div>
+    </div>
+  </main>
+</div>
+
+<!-- ============================ PROJECT MODAL ============================ -->
+<div class="modal" id="projModal">
+  <div class="modal-card">
+    <div class="modal-head">
+      <h2>Projekty</h2>
+      <button class="modal-close" id="projModalClose">×</button>
+    </div>
+    <div class="modal-body">
+      <div id="projList"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Toast stack -->
+<div class="toast-stack" id="toastStack"></div>
+
+<script>
+/* =============================================================================
+   TN CITACE — runtime.
+   State is a single `state` object; `render()` is idempotent per frame.
+   Playback loops a requestAnimationFrame at FPS; scrubber + export use the same
+   renderFrame(i) so everything stays in sync.
+   ============================================================================= */
+
+const TEMPLATE_ID = 'tn-citace-01';
+const LS_KEY = 'tn_graphics_engine_projects_v2';
+const LS_CURRENT = 'tn_graphics_engine_current_v2';
+
+/* ---- state ---- */
+const state = {
+  name: 'Pavel Vavřička',
+  role: 'grafik',
+  quote: 'Lorem ipsum dolor sit amet, consectetuer adipiscing elit, sed diam nonummy nibh euismod tincidunt ut laoreet dolore magna aliquam erat volutpat. Ut wisi enim ad minim veniam, quis nostrud exerci tation ullamcorper suscipit lobortis.',
+  source: 'zdroj: Facebook',
+  portrait: null,          // base64 data URL or null
+  portraitY: 20,           // 0..100 → vertical seed offset (slider) — kept for backward compat
+  portraitOffset: { x: 0, y: 0 },   // free-form pan in source-image px (drag)
+  quoteYOffset: 0,         // manual nudge to auto-centered quote block (px)
+  quoteLHOffset: 0,        // manual line-height offset (±px from default)
+  show: 'tn',
+  branding: 'preview',     // 'preview' | 'export' — GRAF-style
+  frame: 0,
+};
+
+// ---- Show theme helpers (uses theme.js) ----
+function getAccent() {
+  return (window.TN_THEMES ? TN_THEMES.accent(state.show) : '#2668AC');
+}
+function getThemeVideo() {
+  return (window.TN_THEMES ? TN_THEMES.video(state.show) : '../assets/bg-loop.mp4');
+}
+function populateShowSelect() {
+  if (!window.TN_THEMES) return;
+  const sel = document.getElementById('inShow');
+  if (sel) sel.innerHTML = TN_THEMES.optionsHtml(state.show);
+}
+function applyShowTheme() {
+  if (typeof els !== 'undefined' && els && els.bgVideo && window.TN_THEMES) {
+    const newSrc = TN_THEMES.video(state.show);
+    if (!els.bgVideo.currentSrc || !els.bgVideo.currentSrc.endsWith(newSrc.replace(/^\.\.\//, ''))) {
+      els.bgVideo.src = newSrc;
+      els.bgVideo.load();
+      try { els.bgVideo.play(); } catch (_) {}
+    }
+  }
+  if (typeof render === 'function') render();
+}
+
+function getFontColor() {
+  return (window.TN_THEMES ? TN_THEMES.fontColor(state.show) : '#0a0a0a');
+}
+
+
+
+let FPS = 50;
+let DURATION = 20;                       // seconds
+let TOTAL_FRAMES = DURATION * FPS;     // 75 @ 25fps
+const CANVAS_W = 1920, CANVAS_H = 1080;
+
+let currentProjectId = null;
+let lastSavedSnapshot = null;
+let playing = false;
+let playRAF = null;
+let playStart = 0;
+let playStartFrame = 0;
+
+/* ---- DOM refs ---- */
+const $ = id => document.getElementById(id);
+const els = {
+  portraitThumb: $('portraitThumb'),
+  bgVideo: $('bgVideo'),
+  bgFlat: $('bgFlat'),
+  scrubber: $('scrubber'),
+  tlRead: $('tlRead'),
+  btnPlay: $('btnPlay'),
+  stFps: $('stFps'),
+  stDur: $('stDur'),
+  backdropStatus: $('backdropStatus'),
+};
+
+/* =============================================================================
+   BACKDROP VIDEO — GRAF-style. The video is NOT on autoplay-loop; we advance
+   its currentTime in sync with state.frame every render. In 'export' mode
+   the video is hidden and режия composites its own clean chrome over black.
+   ============================================================================= */
+let videoReady  = false;
+let videoFailed = false;
+let autoplayBlocked = false;
+
+function setBackdropStatus(msg, kind) {
+  // Non-fatal if the status element isn't there (e.g. during partial boot)
+  if (!els.backdropStatus) return;
+  const videoPath = (window.TN_THEMES ? TN_THEMES.video(state.show) : '../assets/bg-loop.mp4');
+  const prefix = `<strong>Aktivní:</strong> <code id="backdropPath">${videoPath}</code>`;
+  if (!msg) { els.backdropStatus.innerHTML = prefix; return; }
+  const color = kind === 'error' ? 'var(--tn-red)'
+              : kind === 'warn'  ? '#c89522'
+              : kind === 'loading' ? '#888'
+              : 'var(--ok)';
+  els.backdropStatus.innerHTML = `<span style="color:${color};font-weight:600">${msg}</span><br>${prefix}`;
+}
+
+els.bgVideo.addEventListener('error', (e) => markVideoFailed('error event', e));
+els.bgVideo.addEventListener('stalled', () => console.warn('[Backdrop] stalled'));
+
+// --- ROBUST INIT (identical pattern to bar-chart.html) -----------------------
+// A single 'loadeddata' listener misses videos that loaded from cache BEFORE
+// this JS attached. We listen to MULTIPLE ready-events + a readyState fallback
+// + a 5s safety timeout so the backdrop always resolves to either OK or MISSING.
+function markVideoReady(source) {
+  if (videoReady || videoFailed) return;
+  videoReady = true;
+  const dur = isFinite(els.bgVideo.duration) ? els.bgVideo.duration.toFixed(1) + 's' : '?s';
+  setBackdropStatus(`${dur} OK`, 'ok');
+  console.log(`[Backdrop] Ready (via ${source}), readyState=${els.bgVideo.readyState}`);
+  populateShowSelect();
+  applyBrandingMode();
+  applyShowTheme();
+}
+function markVideoFailed(source, detail) {
+  if (videoFailed || videoReady) return;
+  videoFailed = true;
+  setBackdropStatus('MISSING — klikni pro pokus znovu', 'error');
+  console.error(`[Backdrop] Failed (${source}):`, detail || els.bgVideo.error);
+}
+
+// Any one of these events flips us to ready — whichever fires first wins.
+els.bgVideo.addEventListener('loadedmetadata', () => markVideoReady('loadedmetadata'));
+els.bgVideo.addEventListener('loadeddata',     () => markVideoReady('loadeddata'));
+els.bgVideo.addEventListener('canplay',        () => markVideoReady('canplay'));
+els.bgVideo.addEventListener('canplaythrough', () => markVideoReady('canplaythrough'));
+
+// Race-condition guard: if video was already cached/loaded before this script
+// ran, the events above fired before we could attach. Check readyState now.
+//   0=NOTHING  1=METADATA  2=CURRENT_DATA  3=FUTURE_DATA  4=ENOUGH_DATA
+if (els.bgVideo.readyState >= 1) {
+  console.log('[Backdrop] Already loaded at script start, readyState =', els.bgVideo.readyState);
+  markVideoReady('already-ready-at-init');
+}
+
+// Safety net: if nothing happened in 5s, bail out with a clear error.
+setTimeout(() => {
+  if (!videoReady && !videoFailed) {
+    console.warn('[Backdrop] 5s timeout. readyState =', els.bgVideo.readyState,
+                 'networkState =', els.bgVideo.networkState, 'error =', els.bgVideo.error);
+    markVideoFailed('5s timeout', `readyState=${els.bgVideo.readyState} networkState=${els.bgVideo.networkState}`);
+  }
+}, 5000);
+
+// Click the status help to force-reload video (same UX as GRAF)
+if (els.backdropStatus) {
+  els.backdropStatus.addEventListener('click', () => {
+    console.log('[Backdrop] Manual retry');
+    videoReady = false; videoFailed = false;
+    setBackdropStatus('RELOADING…', 'loading');
+    els.bgVideo.classList.remove('visible');
+    const srcBase = '../assets/bg-loop.mp4';
+    els.bgVideo.src = srcBase + '?t=' + Date.now();
+    els.bgVideo.load();
+  });
+}
+
+function tryPlayVideo(source) {
+  if (!videoReady || videoFailed) return;
+  const p = els.bgVideo.play();
+  if (p && typeof p.catch === 'function') {
+    p.then(() => { autoplayBlocked = false; })
+     .catch(err => {
+       autoplayBlocked = true;
+       console.warn(`[Backdrop] Autoplay blocked (${source}):`, err.name, err.message);
+       setBackdropStatus('BLOCKED — klikni Play', 'warn');
+     });
+  }
+}
+
+function syncVideoToFrame() {
+  if (!videoReady || videoFailed || state.branding !== 'preview') return;
+  const target = state.frame / FPS;
+  const dur = els.bgVideo.duration;
+  if (isFinite(dur) && target < dur - 0.01 && Math.abs(els.bgVideo.currentTime - target) > 0.05) {
+    try { els.bgVideo.currentTime = target; } catch (_) {}
+  }
+}
+
+function applyBrandingMode() {
+  console.log('[Backdrop] applyBrandingMode:', {
+    branding: state.branding,
+    show: state.show,
+    videoReady,
+    videoFailed,
+    videoReadyState: els.bgVideo.readyState,
+  });
+  if (state.branding === 'preview') {
+    // Preview: video if ready, otherwise transparent (stage's black bg shows).
+    // We intentionally do NOT show .bg-flat as a loading fallback — it looks
+    // nothing like the real режия backdrop and just confuses "is this the video?"
+    if (videoReady && !videoFailed) {
+      els.bgVideo.classList.add('visible');
+      syncVideoToFrame();
+      tryPlayVideo('applyBrandingMode');
+    } else {
+      els.bgVideo.classList.remove('visible');
+    }
+    els.bgFlat.style.display = 'none';
+  } else {
+    // Export: hide everything; renderFrame paints solid black.
+    els.bgVideo.classList.remove('visible');
+    els.bgFlat.style.display = 'none';
+    try { els.bgVideo.pause(); } catch (_) {}
+  }
+}
+
+/* =============================================================================
+   CANVAS RENDERER — identical block layout to Bar Chart so both templates
+   composite 1:1 under режия's top/bottom overlays.
+   ============================================================================= */
+const canvas = document.getElementById('stage-canvas');
+const ctx = canvas.getContext('2d');
+
+// Cached portrait Image (async-loaded from state.portrait data-URL)
+let portraitImageEl = null;
+let portraitImageSrc = null;     // currently loaded src; re-load on change
+
+// Default portrait — shipped silhouette PNG shown when no custom photo is set.
+// Matches the reference's default avatar so previews look "finished" out of the
+// box. Loaded once on boot; drawn same way as user-uploaded photos.
+// Strategy: try external file paths first (so user can swap PNG by replacing
+// the file), then fall back to a base64-embedded silhouette baked into this
+// HTML so the template always shows something — even with no assets folder.
+const DEFAULT_PORTRAIT_CANDIDATES = [
+  '../assets/citace-default-portrait.png',  // when template is in templates/
+  './assets/citace-default-portrait.png',   // when template is in root
+  'citace-default-portrait.png',            // sibling to template
+];
+// Embedded JPEG silhouette — used if every external path 404s. Keeps the
+// preview looking right even when the user hasn't put any assets in place yet.
+const EMBEDDED_PORTRAIT_DATA_URL =
+  'data:image/jpeg;base64,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';
+
+let defaultPortraitImg = null;
+(function loadDefaultPortrait() {
+  let idx = 0;
+  const tryNext = () => {
+    if (idx >= DEFAULT_PORTRAIT_CANDIDATES.length) {
+      // Every external path failed — use the embedded JPEG so we always have
+      // a portrait visible.
+      console.warn('[Portrait] No external PNG found — using embedded silhouette');
+      const emb = new Image();
+      emb.onload = () => { defaultPortraitImg = emb; if (typeof renderFrame === 'function') renderFrame(state.frame); };
+      emb.src = EMBEDDED_PORTRAIT_DATA_URL;
+      return;
+    }
+    const path = DEFAULT_PORTRAIT_CANDIDATES[idx++];
+    const img = new Image();
+    img.onload = () => {
+      console.log('[Portrait] Default loaded from:', path);
+      defaultPortraitImg = img;
+      if (typeof renderFrame === 'function') renderFrame(state.frame);
+    };
+    img.onerror = () => {
+      console.log('[Portrait] Not at:', path);
+      tryNext();
+    };
+    img.src = path;
+  };
+  tryNext();
+})();
+
+// SAME LAYOUT CONSTANTS AS BAR CHART — the block frame is the contract
+// that ties every template together. Do not divergé without updating both.
+// NOTE: TN citace has NO white title band (see PSD reference). The block is
+// one continuous gray panel from y=135 down to y=992. Sources live in the
+// top-right of that gray panel, name/role/quote anchor to the right column.
+// Timing + block-anchor still match Bar Chart so both sit under the same
+// режия top/bottom overlays.
+const LAYOUT = {
+  topBlackH:    135,   // y=0..134    режия header zone (transparent in preview)
+  chartTop:     135,   // y=135       gray panel starts (anchor Y)
+  chartBottom:  992,   // y=992       gray panel ends
+  // 992..1079 = режия TN+teal bar zone (transparent in preview)
+  sourceY:      202,   // baseline Y for 'zdroj:' caption (measured 1:1 from PSD)
+  sourceX:      1805,  // right edge — aligned to TN badge right edge (1920-115)
+};
+const BLOCK_ANCHOR_Y = 135;
+const W = 1920, H = 1080;
+
+// Stage content layout — portrait BLEEDS left edge (PSD has no left padding;
+// photo fills x=0..860), text column sits to the right. Measured from PSD.
+const CONTENT = {
+  // Portrait box — full-bleed left, matches PSD reference pixel geometry
+  portraitX: 0,
+  portraitY: 135,                // flush with gray panel top
+  portraitW: 860,                // width from PSD
+  portraitH: 857,                // 992 - 135
+  // Text column — all offsets measured 1:1 from PSD reference
+  textX:     946,                // left of name / role / quote (measured)
+  textY:     260,                // top reference anchor; name baseline at 308
+  textW:     820,                // 1754 - 946 + buffer — matches PSD line widths
+  padBot:    950,                // hard bottom stop for quote reflow
+};
+
+/* =============================================================================
+   STAGE SCALING — fit 1920×1080 into the available viewport.
+   ============================================================================= */
+const stageScale = $('stageScale');
+const stageWrap = $('stageWrap');
+function fitStage() {
+  const w = stageWrap.clientWidth - 32;   // minus padding
+  const h = stageWrap.clientHeight - 32;
+  const s = Math.min(w / CANVAS_W, h / CANVAS_H);
+  stageScale.style.transform = `scale(${s})`;
+}
+window.addEventListener('resize', fitStage);
+
+/* =============================================================================
+   TIMING HELPERS
+   ============================================================================= */
+// easeOutCubic: fast start, slow end — used for entry animations
+const easeOut = t => 1 - Math.pow(1 - t, 3);
+// easeInOut: for smooth scale pulses
+const easeInOut = t => t < 0.5 ? 2*t*t : 1 - Math.pow(-2*t + 2, 2) / 2;
+// Linear clamp in [0,1] given current frame and a (startF, endF) window
+function rampAt(f, startF, endF) {
+  if (endF <= startF) return f >= startF ? 1 : 0;
+  return Math.max(0, Math.min(1, (f - startF) / (endF - startF)));
+}
+
+/* =============================================================================
+   RENDER — all visuals are drawn into the canvas. DOM backdrop (video element)
+   is managed by applyBrandingMode() on mode change / video ready. The portrait
+   thumb and image element are handled by render() above.
+   ============================================================================= */
+
+function clamp01(x) { return Math.max(0, Math.min(1, x)); }
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+// ---------- Canvas frame render ----------
+
+// =============================================================================
+// AUTO-FIT TITLE — shrinks title font if it would collide with source caption.
+// Returns the font-size to use. Source font/position never changes.
+// =============================================================================
+function autoFitTitle(titleText, sourceText, baseFont) {
+  // Defensive: if anything goes wrong (ctx not ready, LAYOUT missing),
+  // just return the baseFont — caller will use the original size.
+  try {
+    const MIN_FONT = 32;
+    const STEP = 2;
+    const MIN_GAP = 50;
+    ctx.save();
+    ctx.font = '400 28px "Organica", sans-serif';
+    const sourceW = sourceText ? ctx.measureText(sourceText).width : 0;
+    const sourceLeftEdge = LAYOUT.sourceX - sourceW;
+    let font = baseFont;
+    while (font >= MIN_FONT) {
+      ctx.font = `800 ${font}px "Organica", sans-serif`;
+      const titleW = ctx.measureText(titleText || '').width;
+      const titleRightEdge = LAYOUT.titleX + titleW;
+      if (titleRightEdge + MIN_GAP <= sourceLeftEdge) break;
+      font -= STEP;
+    }
+    ctx.restore();
+    return font;
+  } catch (_) {
+    return baseFont;
+  }
+}
+
+// =============================================================================
+// FIT FONT — generic shrink-to-fit helper. Returns the largest font size ≤
+// baseFont (in px, integer) at which `text` fits within `maxWidth`. Floor at
+// minFont. Used for row cells, value labels, segment labels — anywhere a
+// dynamic string might overflow its column.
+// =============================================================================
+function fitFont(text, maxWidth, baseFont, weight, minFont, step) {
+  weight = weight || 800;
+  minFont = minFont || 24;
+  step = step || 2;
+  try {
+    let f = baseFont;
+    while (f >= minFont) {
+      ctx.font = `${weight} ${f}px "Organica", sans-serif`;
+      if (ctx.measureText(text || '').width <= maxWidth) return f;
+      f -= step;
+    }
+    return minFont;
+  } catch (_) { return baseFont; }
+}
+
+
+function renderFrame(f) {
+  state.frame = f;
+  const t = f / FPS;   // seconds elapsed
+  _photoHitAreas.length = 0;   // reset drag hit-test list each frame
+
+  ctx.save();
+  ctx.clearRect(0, 0, W, H);
+
+  // === Export clean: opaque black fill so PNG/video isn't transparent ===
+  if (state.branding === 'export') {
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, 0, W, H);
+  }
+
+  // === BLOCK SCALE-Y intro (same as Bar Chart) ===
+  // Anchor Y = 135, scale 0→1 over 0..0.44s, easeInOutCubic.
+  const blockP = clamp01(t / 0.44);
+  const blockScale = easeInOut(blockP);
+  ctx.translate(0, BLOCK_ANCHOR_Y);
+  ctx.scale(1, Math.max(blockScale, 0.0001));
+  ctx.translate(0, -BLOCK_ANCHOR_Y);
+  if (blockScale < 0.001) { ctx.restore(); return; }
+
+  // === Block background layers ===
+  // In EXPORT mode: opaque black top + bottom (placeholder for режия chrome).
+  // In PREVIEW mode: top + bottom stay transparent — the video behind shows.
+  if (state.branding === 'export') {
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, 0, W, LAYOUT.topBlackH);
+    ctx.fillRect(0, LAYOUT.chartBottom, W, H - LAYOUT.chartBottom);
+  }
+  // Main panel — #E0E4E8. The right column (x=860..1920) is nearly opaque
+  // (@ 95%), the left column (behind the portrait, x=0..860) is the same
+  // color but @ 52% so the режия video breathes through, matching the
+  // PSD reference's soft blue-gray field around the silhouette.
+  ctx.fillStyle = 'rgba(224, 228, 232, 0.52)';
+  ctx.fillRect(0, LAYOUT.chartTop, CONTENT.portraitW, LAYOUT.chartBottom - LAYOUT.chartTop);
+  ctx.fillStyle = 'rgba(224, 228, 232, 0.95)';
+  ctx.fillRect(CONTENT.portraitW, LAYOUT.chartTop, W - CONTENT.portraitW, LAYOUT.chartBottom - LAYOUT.chartTop);
+
+  // === Source caption top-right of gray panel ===
+  drawSourceCaption(t);
+
+  // === Content area: portrait (left) + quote block (right) ===
+  drawPortrait(t);
+  drawTextBlock(t);
+  // TN badge: režia přidává v postprodukci, nekreslíme.
+
+  ctx.restore();
+
+  // Timeline readout
+  els.scrubber.value = f;
+  els.tlRead.textContent = `${f + 1} / ${TOTAL_FRAMES}  ·  ${t.toFixed(2)}s`;
+}
+
+// --- Source caption: small gray label top-right of the gray panel (per PSD).
+//     Fade-in AFTER the name headline completes (~0.74s), per director note —
+//     keeps the source tag from stealing attention from the entrance.
+function drawSourceCaption(t) {
+  const p = easeOut(clamp01((t - 0.74) / 0.40));
+  if (p <= 0) return;
+  ctx.save();
+  ctx.globalAlpha = p;
+  ctx.fillStyle = '#5a5a5a';
+  ctx.font = '400 24px "Organica", sans-serif';
+  ctx.textBaseline = 'alphabetic';
+  ctx.textAlign = 'right';
+  ctx.fillText(state.source || '', LAYOUT.sourceX, LAYOUT.sourceY);
+  ctx.restore();
+}
+
+// --- TN badge: NEkreslíme — dodává režie v postprodukci.
+//     (Funkce drawTnBadge dříve renderovala červený čtverec 87×87 vpravo dole
+//     dle PSD reference; odstraněno 2025-01 na žádost uživatele.)
+
+// --- Portrait box: drawn to the left of the content area.
+//     Fixed opacity (~0.55) per PSD reference — the silhouette is a "ghost"
+//     that lets the blue video backdrop breathe through. No fade-in timing,
+//     no opacity animation; the block scale-Y intro is the only reveal.
+function drawPortrait(t) {
+  ctx.save();
+  // Vlastní fotka uživatele = plně neprůhledná (1.0).
+  // Default silueta:
+  //   • TN / TN mapy   → 0.55 (klasická "ghost" stylizace, modrý backdrop prosvítá)
+  //   • ostatní pořady → 0.95 (siluetě dáme dominantnější přítomnost na vlastních
+  //                            podkladech, kde mají specifické barvy a kontrast)
+  const isUserPhoto = !!(portraitImageEl && portraitImageEl.complete && portraitImageEl.naturalWidth > 0);
+  const isTNTheme = (state.show === 'tn' || state.show === 'tn-mapy');
+  const defaultAlpha = isTNTheme ? 0.55 : 0.95;
+  ctx.globalAlpha = isUserPhoto ? 1.0 : defaultAlpha;
+
+  const { portraitX: x, portraitY: y, portraitW: w, portraitH: h } = CONTENT;
+
+  // Clip to portrait rect
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(x, y, w, h);
+  ctx.clip();
+
+  if (isUserPhoto) {
+    // Cover-fit the image: scale so both dimensions fill, then apply offset
+    // (in source-image px) for pan/drag. portraitY slider is a baseline seed,
+    // portraitOffset is the user's drag adjustment on top.
+    const imgW = portraitImageEl.naturalWidth;
+    const imgH = portraitImageEl.naturalHeight;
+    // Photoshop-style cover crop with both axes pannable.
+    const sa = imgW / imgH;
+    const da = w / h;
+    let sx, sy, sw, sh;
+    if (sa > da) { sh = imgH; sw = imgH * da; sx = (imgW - sw) / 2; sy = 0; }
+    else         { sw = imgW; sh = imgW / da; sx = 0; sy = (imgH - sh) / 2; }
+    // portraitY slider: maps 0..100 → -range..+range on Y
+    if (sa <= da) {
+      const range = imgH - sh;
+      sy = (state.portraitY / 100) * range;
+    }
+    // Apply drag offset (source-image px), then clamp to bounds
+    const off = state.portraitOffset || { x: 0, y: 0 };
+    sx = Math.max(0, Math.min(imgW - sw, sx + off.x));
+    sy = Math.max(0, Math.min(imgH - sh, sy + off.y));
+    ctx.drawImage(portraitImageEl, sx, sy, sw, sh, x, y, w, h);
+    // Record hit-area for drag detection (only when user photo present)
+    _photoHitAreas.push({ x, y, w, h, photoW: w, photoH: h, kind: 'citace' });
+  } else {
+    // No user photo → default silhouette PNG. The silhouette itself is the
+    // whole portrait — no fill behind it, so the режия video (or our flat
+    // backdrop) shows through around the figure, matching the reference.
+    if (defaultPortraitImg && defaultPortraitImg.complete && defaultPortraitImg.naturalWidth > 0) {
+      // Cover-fit: scale so silhouette fills the entire portrait box.
+      // Source PNG already has transparent background — nothing behind it.
+      const imgW = defaultPortraitImg.naturalWidth;
+      const imgH = defaultPortraitImg.naturalHeight;
+      const scale = Math.max(w / imgW, h / imgH);
+      const drawW = imgW * scale;
+      const drawH = imgH * scale;
+      const drawX = x + (w - drawW) / 2;
+      const drawY = y + (h - drawH) / 2;
+      ctx.drawImage(defaultPortraitImg, drawX, drawY, drawW, drawH);
+    }
+  }
+  ctx.restore();   // unclip
+  ctx.restore();   // alpha
+}
+
+// --- Text block (inside gray content area, right of portrait) ---
+//     PSD reference stack, top→bottom:
+//       1. NAME   — OrganicaM-Bold  ~54px navy
+//       2. ROLE   — OrganicaM-Reg   ~32px mid-blue  (directly under name)
+//       3. QUOTE  — OrganicaM-Reg   auto-fit navy   (~60px gap above)
+//     Each block fades up with its own stagger so the eye reads top-down.
+function drawTextBlock(t) {
+  const { textX: x, textW: w } = CONTENT;
+  const yMax = CONTENT.padBot;
+
+  // === TYPE SCALE — all values measured 1:1 from PSD reference ===
+  //   NAME   baseline y=308    font bold 56px   navy
+  //   ROLE   baseline y=370    font reg 32px    mid-blue  (Δ from name: 62px)
+  //   QUOTE  line-1 base y=486 font reg 32px    navy      (Δ from role: 116px)
+  //   QUOTE  line-step 60px                               (reference center-to-center)
+  // ----------------------------------------------------------------
+
+  // ---- NAME ----
+  // Auto-fit: shrinks 56→36 px in 4 px steps if name overflows CONTENT.textW.
+  // Long names like "Jan Antonín Maria Wenzeslaus z Lobkovic" stay inside.
+  const nameBaseline = 308;
+  const nameP = easeOut(clamp01((t - 0.32) / 0.42));
+
+  if (nameP > 0) {
+    ctx.save();
+    ctx.globalAlpha = nameP;
+    ctx.fillStyle = getFontColor();              // theme primary
+    let nameFS = 56;
+    const MIN_NAME = 36;
+    while (nameFS >= MIN_NAME) {
+      ctx.font = `800 ${nameFS}px "Organica", sans-serif`;
+      if (ctx.measureText(state.name || ' ').width <= CONTENT.textW - 20) break;
+      nameFS -= 4;
+    }
+    ctx.font = `800 ${nameFS}px "Organica", sans-serif`;
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'alphabetic';
+    const shift = (1 - nameP) * 14;
+    ctx.fillText(state.name || ' ', x, nameBaseline + shift);
+    ctx.restore();
+  }
+
+  // ---- ROLE ----
+  const roleFS = 32;
+  const roleBaseline = 370;                        // 62px below name (measured)
+  const roleP = easeOut(clamp01((t - 0.48) / 0.42));
+
+  if (state.role && roleP > 0) {
+    ctx.save();
+    ctx.globalAlpha = roleP;
+    ctx.fillStyle = '#3b82c0';                    // mid-blue, matches PSD reference
+    ctx.font = `400 ${roleFS}px "Organica", sans-serif`;
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'alphabetic';
+    const shift = (1 - roleP) * 12;
+    ctx.fillText(state.role, x, roleBaseline + shift);
+    ctx.restore();
+  }
+
+  // ---- QUOTE ----
+  //     Auto-center vertically between role baseline (y=370) and card bottom
+  //     (y=992). The user can nudge with state.quoteYOffset, and tweak line
+  //     spacing with state.quoteLHOffset. Font-fit loop picks the largest size
+  //     that fits the available height, same ladder as before.
+  const quote = state.quote || '';
+
+  // Usable vertical range for the quote block
+  const topAvail = 398;                            // a bit below role baseline
+  const botAvail = LAYOUT.chartBottom - 20;        // small breathing room above bottom edge
+  const availH   = botAvail - topAvail;
+
+  // Base line-step table. User LH offset applies on top (clamped per font size).
+  const sizes = [32, 28, 24, 22];
+  const lhFor = (fs) => {
+    const base = fs === 32 ? 60 : Math.round(fs * 1.4);
+    const nudged = base + (state.quoteLHOffset || 0);
+    // Clamp so lh never goes below 90% of the font size (prevents collisions)
+    return Math.max(Math.round(fs * 0.9), nudged);
+  };
+
+  let fontSize = sizes[sizes.length - 1], lines = [''], lineHeight = lhFor(fontSize);
+  for (const fs of sizes) {
+    const lh = lhFor(fs);
+    ctx.font = `400 ${fs}px "Organica", sans-serif`;
+    const wrapped = wrapText(quote, w);
+    const totalH = wrapped.length * lh;           // approximate block height
+    if (totalH <= availH) {
+      fontSize = fs; lines = wrapped; lineHeight = lh;
+      break;
+    }
+    fontSize = fs; lines = wrapped; lineHeight = lh;
+  }
+
+  // Center the block vertically in [topAvail, botAvail], then apply user nudge.
+  // quoteBaseline1 = Y of the FIRST line's alphabetic baseline.
+  const blockH = lines.length * lineHeight;
+  const centeredTop = topAvail + Math.max(0, (availH - blockH) / 2);
+  const quoteBaseline1 = centeredTop + fontSize + (state.quoteYOffset || 0);
+
+  ctx.save();
+  ctx.fillStyle = '#0b1e3f';
+  ctx.font = `400 ${fontSize}px "Organica", sans-serif`;
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'alphabetic';
+
+  let yy = quoteBaseline1;
+  const baseStart = 0.72;
+  const perLine = 0.08;
+  const fadeDur = 0.4;
+  lines.forEach((line, i) => {
+    const start = baseStart + i * perLine;
+    const p = easeOut(clamp01((t - start) / fadeDur));
+    if (p > 0) {
+      ctx.save();
+      ctx.globalAlpha = p;
+      const shift = (1 - p) * 14;
+      ctx.fillText(line, x, yy + shift);
+      ctx.restore();
+    }
+    yy += lineHeight;
+  });
+  ctx.restore();
+}
+
+// Word-wrap helper — greedy line break at nearest space using current ctx.font.
+function wrapText(text, maxWidth) {
+  if (!text) return [''];
+  // Honor explicit \n first, then wrap each paragraph.
+  const out = [];
+  const paragraphs = String(text).replace(/\r\n/g, '\n').split('\n');
+  for (const para of paragraphs) {
+    const words = para.split(/\s+/).filter(Boolean);
+    if (words.length === 0) { out.push(''); continue; }
+    let line = words[0];
+    for (let i = 1; i < words.length; i++) {
+      const test = line + ' ' + words[i];
+      if (ctx.measureText(test).width <= maxWidth) {
+        line = test;
+      } else {
+        out.push(line);
+        line = words[i];
+      }
+    }
+    out.push(line);
+  }
+  return out;
+}
+
+// =============================================================================
+// PHOTO DRAG — pan inside the portrait box to reposition crop. Mirrors the
+// pattern used in tn-kartoteka. drawPortrait pushes one entry into
+// _photoHitAreas per frame when a user photo is loaded.
+// =============================================================================
+const _photoHitAreas = [];      // cleared at start of renderFrame()
+let _photoDragState = null;     // { startMouseX, startMouseY, startOffX, startOffY, photoW, photoH }
+
+function _canvasCoords(e) {
+  const rect = canvas.getBoundingClientRect();
+  const sx = W / rect.width;
+  const sy = H / rect.height;
+  return { x: (e.clientX - rect.left) * sx, y: (e.clientY - rect.top) * sy };
+}
+function _hitPhotoAt(cx, cy) {
+  for (let i = _photoHitAreas.length - 1; i >= 0; i--) {
+    const a = _photoHitAreas[i];
+    if (cx >= a.x && cx <= a.x + a.w && cy >= a.y && cy <= a.y + a.h) return a;
+  }
+  return null;
+}
+
+canvas.addEventListener('pointermove', (e) => {
+  if (_photoDragState) {
+    const c = _canvasCoords(e);
+    if (!portraitImageEl) return;
+    const iw = portraitImageEl.naturalWidth || portraitImageEl.width;
+    const ih = portraitImageEl.naturalHeight || portraitImageEl.height;
+    if (!iw || !ih) return;
+
+    // Cover-fit math — figure out source rect dimensions
+    const sa = iw / ih;
+    const da = _photoDragState.photoW / _photoDragState.photoH;
+    let sw, sh;
+    if (sa > da) { sh = ih; sw = ih * da; }
+    else         { sw = iw; sh = iw / da; }
+    const scaleX = sw / _photoDragState.photoW;
+    const scaleY = sh / _photoDragState.photoH;
+    // Photoshop hand-tool: drag right reveals more of LEFT side → negate
+    const dxSrc = -(c.x - _photoDragState.startMouseX) * scaleX;
+    const dySrc = -(c.y - _photoDragState.startMouseY) * scaleY;
+    if (!state.portraitOffset) state.portraitOffset = { x: 0, y: 0 };
+    state.portraitOffset.x = _photoDragState.startOffX + dxSrc;
+    state.portraitOffset.y = _photoDragState.startOffY + dySrc;
+    renderFrame(state.frame);
+    e.preventDefault();
+    return;
+  }
+  // Idle hover — show grab cursor over a photo
+  const c = _canvasCoords(e);
+  canvas.classList.toggle('over-photo', !!_hitPhotoAt(c.x, c.y));
+});
+canvas.addEventListener('pointerdown', (e) => {
+  const c = _canvasCoords(e);
+  const hit = _hitPhotoAt(c.x, c.y);
+  if (!hit) return;
+  const off = state.portraitOffset || { x: 0, y: 0 };
+  _photoDragState = {
+    startMouseX: c.x, startMouseY: c.y,
+    startOffX: off.x, startOffY: off.y,
+    photoW: hit.w, photoH: hit.h,
+  };
+  canvas.classList.add('dragging');
+  try { canvas.setPointerCapture(e.pointerId); } catch (_) {}
+  e.preventDefault();
+});
+function _endPhotoDrag(e) {
+  if (!_photoDragState) return;
+  _photoDragState = null;
+  canvas.classList.remove('dragging');
+  try { if (e && e.pointerId != null) canvas.releasePointerCapture(e.pointerId); } catch (_) {}
+}
+canvas.addEventListener('pointerup',     _endPhotoDrag);
+canvas.addEventListener('pointercancel', _endPhotoDrag);
+canvas.addEventListener('pointerleave', () => {
+  if (!_photoDragState) canvas.classList.remove('over-photo');
+});
+// Double-click photo → reset offset
+canvas.addEventListener('dblclick', (e) => {
+  const c = _canvasCoords(e);
+  if (!_hitPhotoAt(c.x, c.y)) return;
+  state.portraitOffset = { x: 0, y: 0 };
+  renderFrame(state.frame);
+});
+
+function render() {
+  // Keep the upload-row thumb preview in sync with state.portrait
+  if (els.portraitThumb) {
+    els.portraitThumb.style.backgroundImage = state.portrait
+      ? `url("${state.portrait}")`
+      : '';
+  }
+  // Async-load portrait Image for canvas rendering if it changed
+  if (state.portrait && state.portrait !== portraitImageSrc) {
+    portraitImageSrc = state.portrait;
+    const img = new Image();
+    img.onload = () => {
+      if (img.src === portraitImageSrc || img.src.endsWith(portraitImageSrc)) {
+        portraitImageEl = img;
+        renderFrame(state.frame);
+      }
+    };
+    img.onerror = () => { portraitImageEl = null; };
+    img.src = state.portrait;
+  } else if (!state.portrait) {
+    portraitImageEl = null;
+    portraitImageSrc = null;
+  }
+  renderFrame(state.frame);
+}
+
+
+// =============================================================================
+// FPS PILL — main button = currently selected FPS, hover reveals alternatives
+// =============================================================================
+function updateFpsPillUI() {
+  try {
+    const pill = document.getElementById('fpsActiveBtn');
+    if (!pill) return;
+    pill.innerHTML = `${FPS} FPS<span class="fps-pill-hint">${FPS === 50 ? 'TV' : 'WEB'}</span>`;
+    document.querySelectorAll('.fps-pill-menu button').forEach(b => {
+      b.classList.toggle('active', parseInt(b.dataset.fps, 10) === FPS);
+    });
+    const subLabel = document.getElementById('btnExportSubLabel');
+    if (subLabel) subLabel.textContent = `${FPS} FPS · ${FPS === 50 ? 'TV bitrate' : 'web bitrate'}`;
+  } catch (_) {}
+}
+document.querySelectorAll('.fps-pill-menu button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const newFps = parseInt(btn.dataset.fps, 10);
+    if (newFps !== 30 && newFps !== 50) return;
+    setFps(newFps);
+    updateFpsPillUI();
+    render();
+  });
+});
+
+// =============================================================================
+// EXPORT MENU — split button
+// =============================================================================
+const _exportMenuEl = document.getElementById('exportMenu');
+document.getElementById('btnExportMore')?.addEventListener('click', e => {
+  e.stopPropagation();
+  if (_exportMenuEl) _exportMenuEl.classList.toggle('open');
+});
+document.addEventListener('click', e => {
+  if (!_exportMenuEl) return;
+  if (!e.target.closest('.export-split')) _exportMenuEl.classList.remove('open');
+});
+
+/* =============================================================================
+   PLAYBACK
+   ============================================================================= */
+function setDuration(sec) {
+  DURATION = Math.max(1, Math.min(30, sec));
+  TOTAL_FRAMES = Math.round(DURATION * FPS);
+  els.scrubber.max = TOTAL_FRAMES - 1;
+  els.stDur.textContent = DURATION.toFixed(1) + ' s';
+  if (state.frame >= TOTAL_FRAMES) state.frame = TOTAL_FRAMES - 1;
+}
+function setFps(fps) {
+  FPS = fps;
+  TOTAL_FRAMES = Math.round(DURATION * FPS);
+  els.scrubber.max = TOTAL_FRAMES - 1;
+  els.stFps.textContent = FPS + ' fps';
+  if (state.frame >= TOTAL_FRAMES) state.frame = TOTAL_FRAMES - 1;
+  // Sync new FPS pill UI (50 FPS · TV / 30 FPS · WEB labels)
+  if (typeof updateFpsPillUI === 'function') updateFpsPillUI();
+}
+
+function startPlayback() {
+  if (playing) return;
+  playing = true;
+  els.btnPlay.textContent = '⏸';
+  if (state.frame >= TOTAL_FRAMES - 1) state.frame = 0;
+  playStart = performance.now();
+  playStartFrame = state.frame;
+
+  // Video backdrop: Chrome often blocks autoplay before first user gesture.
+  // Clicking Play is that gesture — use it to force-sync and play the backdrop,
+  // same pattern as bar-chart. Video keeps looping while anim runs.
+  if (state.branding === 'preview' && videoReady && !videoFailed) {
+    syncVideoToFrame();
+    tryPlayVideo('startPlayback');
+  }
+
+  const step = (now) => {
+    if (!playing) return;
+    const dt = (now - playStart) / 1000;
+    const f = Math.min(TOTAL_FRAMES - 1, playStartFrame + Math.floor(dt * FPS));
+    renderFrame(f);
+    if (f >= TOTAL_FRAMES - 1) {
+      stopPlayback();
+      return;
+    }
+    playRAF = requestAnimationFrame(step);
+  };
+  playRAF = requestAnimationFrame(step);
+}
+function stopPlayback() {
+  playing = false;
+  els.btnPlay.textContent = '▶';
+  if (playRAF) { cancelAnimationFrame(playRAF); playRAF = null; }
+  // Do NOT pause video in preview — let backdrop loop keep running so the
+  // stage never goes static behind the paused graphic.
+}
+function togglePlay() { playing ? stopPlayback() : startPlayback(); }
+
+/* =============================================================================
+   INPUT WIRING
+   ============================================================================= */
+$('inName').addEventListener('input', e => { state.name = e.target.value; render(); });
+$('inRole').addEventListener('input', e => { state.role = e.target.value; render(); });
+$('inQuote').addEventListener('input', e => { state.quote = e.target.value; render(); });
+$('inSource').addEventListener('input', e => { state.source = e.target.value; render(); });
+
+// Show theme listener
+(function () {
+  const sel = document.getElementById('inShow');
+  if (sel) sel.addEventListener('change', e => {
+    state.show = e.target.value;
+    applyShowTheme();
+  });
+  populateShowSelect();
+})();
+
+$('inDuration').addEventListener('input', e => {
+  const v = parseFloat(e.target.value);
+  if (!isNaN(v) && v > 0) { setDuration(v); render(); }
+});
+
+$('inQuoteY').addEventListener('input', e => {
+  state.quoteYOffset = parseInt(e.target.value, 10);
+  $('outQuoteY').textContent = `${state.quoteYOffset > 0 ? '+' : ''}${state.quoteYOffset} px`;
+  render();
+});
+$('inQuoteLH').addEventListener('input', e => {
+  state.quoteLHOffset = parseInt(e.target.value, 10);
+  $('outQuoteLH').textContent = `${state.quoteLHOffset > 0 ? '+' : ''}${state.quoteLHOffset} px`;
+  render();
+});
+$('inPortrait').addEventListener('change', e => {
+  const f = e.target.files?.[0];
+  if (!f) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    state.portrait = reader.result;
+    state.portraitOffset = { x: 0, y: 0 };   // reset drag for new photo
+    render();
+  };
+  reader.readAsDataURL(f);
+});
+$('btnClearPortrait').addEventListener('click', () => {
+  state.portrait = null;
+  state.portraitOffset = { x: 0, y: 0 };
+  $('inPortrait').value = '';
+  render();
+});
+
+// Toggle groups
+
+
+
+// Timeline
+els.scrubber.addEventListener('input', () => {
+  stopPlayback();
+  state.frame = parseInt(els.scrubber.value, 10);
+  // Scrubbing is a user gesture — sync + kick video so backdrop can start
+  // even if autoplay was blocked on boot.
+  if (state.branding === 'preview' && videoReady && !videoFailed) {
+    syncVideoToFrame();
+    tryPlayVideo('scrubber');
+  }
+  renderFrame(state.frame);
+});
+els.btnPlay.addEventListener('click', togglePlay);
+$('btnRewind').addEventListener('click', () => {
+  stopPlayback();
+  state.frame = 0;
+  renderFrame(0);
+});
+
+// Home button
+$('btnHome').addEventListener('click', () => {
+  if (isDirty() && !confirm('Máš neuložené změny. Opravdu odejít na hlavní stránku?')) return;
+  window.location.href = '../index.html';
+});
+
+/* =============================================================================
+   PROJECT STORAGE — shared contract with bar-chart.
+   ============================================================================= */
+function loadAllProjects() {
+  try { return JSON.parse(localStorage.getItem(LS_KEY) || '[]'); }
+  catch (e) { return []; }
+}
+function saveAllProjects(list) {
+  localStorage.setItem(LS_KEY, JSON.stringify(list));
+}
+function snapshotState() {
+  return {
+    template: TEMPLATE_ID,
+    name: state.name,
+    role: state.role,
+    quote: state.quote,
+    source: state.source,
+    portrait: state.portrait,
+    portraitY: state.portraitY,
+    portraitOffset: state.portraitOffset
+      ? { x: state.portraitOffset.x, y: state.portraitOffset.y }
+      : { x: 0, y: 0 },
+    branding: state.branding,
+    duration: DURATION,
+    fps: FPS,
+  };
+}
+function applySnapshot(snap) {
+  if (!snap) return;
+  state.name    = snap.name    ?? state.name;
+  state.role    = snap.role    ?? state.role;
+  state.quote   = snap.quote   ?? state.quote;
+  state.source  = snap.source  ?? state.source;
+  state.portrait = snap.portrait ?? null;
+  state.portraitY = snap.portraitY ?? 20;
+  state.portraitOffset = (snap.portraitOffset && typeof snap.portraitOffset === 'object')
+    ? { x: snap.portraitOffset.x || 0, y: snap.portraitOffset.y || 0 }
+    : { x: 0, y: 0 };
+  // Normalize legacy branding values from older saves: 'live' meant video backdrop,
+  // 'flat' meant solid gradient. Current scheme is only 'preview' (video) / 'export' (clean).
+  const rawBranding = snap.branding ?? 'preview';
+  state.branding = (rawBranding === 'live' || rawBranding === 'preview') ? 'preview' : 'export';
+  // Show theme — fall back to default 'tn' if missing or unknown.
+  const candidateShow = snap.show ?? state.show;
+  state.show = (window.TN_THEMES && TN_THEMES.SHOWS_BY_ID[candidateShow])
+    ? candidateShow : (window.TN_THEMES ? TN_THEMES.DEFAULT_SHOW_ID : 'tn');
+  if (snap.duration) DURATION = snap.duration;
+  // Legacy migration: 25 FPS no longer supported — auto-upgrade to 50 FPS
+  if (snap.fps === 25) snap.fps = 50;
+  if (snap.fps === 30 || snap.fps === 50) FPS = snap.fps;
+  setDuration(DURATION); setFps(FPS);
+
+  // Sync UI
+  $('inName').value = state.name;
+  $('inRole').value = state.role;
+  $('inQuote').value = state.quote;
+  $('inSource').value = state.source;
+  $('inDuration').value = DURATION;
+  // Portrait-Y slider was removed in favour of drag-to-pan; guard the legacy
+  // applySnapshot write so an undefined element doesn't crash preview/restore.
+  const _portraitY = $('inPortraitY'); if (_portraitY) _portraitY.value = state.portraitY;
+  $('inQuoteY').value = state.quoteYOffset || 0;
+  $('outQuoteY').textContent = `${(state.quoteYOffset || 0) > 0 ? '+' : ''}${state.quoteYOffset || 0} px`;
+  $('inQuoteLH').value = state.quoteLHOffset || 0;
+  $('outQuoteLH').textContent = `${(state.quoteLHOffset || 0) > 0 ? '+' : ''}${state.quoteLHOffset || 0} px`;
+  if (typeof updateFpsPillUI === 'function') updateFpsPillUI();
+  state.frame = TOTAL_FRAMES - 1;
+  els.scrubber.value = state.frame;
+  // Apply backdrop mode to DOM — video shows/hides based on loaded branding
+  applyBrandingMode();
+}
+function isDirty() {
+  return lastSavedSnapshot !== JSON.stringify(snapshotState());
+}
+function updateProjectMeta() {
+  const el = $('projMeta');
+  if (!currentProjectId) {
+    el.innerHTML = '<span>nový</span>';
+  } else {
+    el.innerHTML = isDirty() ? '<span class="dirty">● neuloženo</span>' : '<span class="saved">✓ uloženo</span>';
+  }
+}
+function saveProject(id, name) {
+  const all = loadAllProjects();
+  const now = Date.now();
+  const snap = snapshotState();
+  if (!id) {
+    id = 'p_' + now.toString(36) + '_' + Math.random().toString(36).slice(2, 6);
+    all.push({ id, name, createdAt: now, updatedAt: now, state: snap });
+  } else {
+    const idx = all.findIndex(p => p.id === id);
+    if (idx >= 0) {
+      all[idx].name = name;
+      all[idx].updatedAt = now;
+      all[idx].state = snap;
+    } else {
+      all.push({ id, name, createdAt: now, updatedAt: now, state: snap });
+    }
+  }
+  saveAllProjects(all);
+  currentProjectId = id;
+  localStorage.setItem(LS_CURRENT, id);
+  lastSavedSnapshot = JSON.stringify(snap);
+  updateProjectMeta();
+  return id;
+}
+function loadProject(id) {
+  const p = loadAllProjects().find(x => x.id === id);
+  if (!p) return;
+  applySnapshot(p.state);
+  currentProjectId = p.id;
+  $('projName').value = p.name;
+  localStorage.setItem(LS_CURRENT, id);
+  lastSavedSnapshot = JSON.stringify(snapshotState());
+  updateProjectMeta();
+  render();
+  showToast(`Otevřeno: ${p.name}`, 'success');
+}
+function deleteProject(id) {
+  const all = loadAllProjects().filter(p => p.id !== id);
+  saveAllProjects(all);
+  if (currentProjectId === id) {
+    currentProjectId = null;
+    localStorage.removeItem(LS_CURRENT);
+    updateProjectMeta();
+  }
+  renderProjectList();
+}
+
+// ---------- Modal UI ----------
+function renderProjectList() {
+  const list = $('projList');
+  // Show only projects for this template (or legacy untagged) — avoids
+  // bar-chart projects leaking into the quote template's Open dialog.
+  const all = loadAllProjects()
+    .filter(p => (p.state?.template || 'bar-chart-01') === TEMPLATE_ID)
+    .sort((a, b) => b.updatedAt - a.updatedAt);
+  if (all.length === 0) {
+    list.innerHTML = '<div class="proj-empty">Žádné uložené projekty v této šabloně.<br>Použij „Uložit jako…" pro vytvoření.</div>';
+    return;
+  }
+  list.innerHTML = all.map(p => {
+    const d = new Date(p.updatedAt);
+    const dateStr = d.toLocaleString('cs-CZ', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' });
+    const isCurrent = p.id === currentProjectId ? ' (current)' : '';
+    return `<div class="proj-item" data-id="${p.id}">
+      <div class="proj-info">
+        <div class="proj-title">${escapeHtml(p.name)}${isCurrent}</div>
+        <div class="proj-date">${dateStr}</div>
+      </div>
+      <button class="proj-btn load" data-action="load" data-id="${p.id}">Otevřít</button>
+      <button class="proj-btn del" data-action="delete" data-id="${p.id}" title="Smazat">Smazat</button>
+    </div>`;
+  }).join('');
+  list.querySelectorAll('.proj-btn').forEach(btn => {
+    btn.addEventListener('click', e => {
+      const id = e.target.dataset.id;
+      if (e.target.dataset.action === 'load') { closeProjModal(); loadProject(id); }
+      else if (e.target.dataset.action === 'delete') {
+        const p = loadAllProjects().find(x => x.id === id);
+        if (p && confirm(`Smazat projekt „${p.name}"?`)) deleteProject(id);
+      }
+    });
+  });
+}
+function openProjModal()  { renderProjectList(); $('projModal').classList.add('show'); }
+function closeProjModal() { $('projModal').classList.remove('show'); }
+
+$('projSave').addEventListener('click', () => {
+  const name = $('projName').value.trim() || 'Untitled';
+  saveProject(currentProjectId, name);
+  showToast(`Uloženo: ${name}`, 'success');
+});
+$('projSaveAs').addEventListener('click', () => {
+  const base = $('projName').value.trim() || 'Untitled';
+  const name = prompt('Název projektu:', `${base} copy`);
+  if (!name || !name.trim()) return;
+  $('projName').value = name.trim();
+  saveProject(null, name.trim());
+  showToast(`Vytvořeno: ${name.trim()}`, 'success');
+});
+$('projOpen').addEventListener('click', openProjModal);
+$('projNew').addEventListener('click', () => {
+  if (isDirty() && !confirm('Zahodit neuložené změny?')) return;
+  applySnapshot({
+    name: 'Pavel Vavřička',
+    role: 'grafik',
+    quote: 'Lorem ipsum dolor sit amet, consectetuer adipiscing elit, sed diam nonummy nibh euismod tincidunt ut laoreet dolore magna aliquam erat volutpat.',
+    source: 'zdroj: Facebook',
+    portrait: null, portraitY: 20,
+    branding: 'preview', show: 'tn', duration: 20, fps: 50,
+  });
+  currentProjectId = null;
+  localStorage.removeItem(LS_CURRENT);
+  $('projName').value = 'Untitled';
+  lastSavedSnapshot = JSON.stringify(snapshotState());
+  updateProjectMeta();
+  render();
+  showToast('Nový projekt', 'success');
+});
+$('projModalClose').addEventListener('click', closeProjModal);
+$('projModal').addEventListener('click', e => {
+  if (e.target.id === 'projModal') closeProjModal();
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeProjModal();
+  if (e.key === ' ' && e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
+    e.preventDefault(); togglePlay();
+  }
+});
+$('projName').addEventListener('input', updateProjectMeta);
+setInterval(updateProjectMeta, 1000);
+
+/* =============================================================================
+   EXPORT — the entire graphic is already in <canvas>, so we just toBlob
+   for PNG and captureStream + MediaRecorder for WebM. No DOM rasterization
+   dance. Export flips branding to 'export' first so the top/bottom strips
+   aren't transparent in the file.
+   ============================================================================= */
+
+
+
+
+
+function downloadBlob(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename; a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+$('btnExportPNG')?.addEventListener('click', async () => {
+  // DEFAULT: backdrop ON. Composite the live bg video under the stage canvas.
+  // Falls back to clean transparent (== current canvas only) when video isn't
+  // ready or branding is forced to 'export'.
+  await waitFonts();
+  renderFrame(state.frame);
+  try {
+    let blob;
+    const useVideo = (state.branding === 'preview') && videoReady && !videoFailed;
+    if (useVideo) {
+      const comp = document.createElement('canvas');
+      comp.width = W; comp.height = H;
+      const cctx = comp.getContext('2d');
+      const video = els.bgVideo;
+      // object-fit: cover composite
+      const vw = video.videoWidth || W;
+      const vh = video.videoHeight || H;
+      const scale = Math.max(W / vw, H / vh);
+      const dw = vw * scale, dh = vh * scale;
+      const dx = (W - dw) / 2, dy = (H - dh) / 2;
+      cctx.fillStyle = '#000';
+      cctx.fillRect(0, 0, W, H);
+      cctx.drawImage(video, dx, dy, dw, dh);
+      cctx.drawImage(canvas, 0, 0);
+      blob = await new Promise(r => comp.toBlob(r, 'image/png'));
+    } else {
+      // No video — paint black underneath (export branding rendered as 'export')
+      const comp = document.createElement('canvas');
+      comp.width = W; comp.height = H;
+      const cctx = comp.getContext('2d');
+      cctx.fillStyle = '#000';
+      cctx.fillRect(0, 0, W, H);
+      cctx.drawImage(canvas, 0, 0);
+      blob = await new Promise(r => comp.toBlob(r, 'image/png'));
+    }
+    downloadBlob(blob, `frame_${Date.now()}.png`);
+    showToast('PNG uložen', 'success');
+  } catch (err) {
+    console.error(err);
+    showToast('Export selhal: ' + err.message, 'error');
+  }
+});
+
+$('btnExportVideo')?.addEventListener('click', async () => {
+  // DEFAULT: backdrop ON. Records a composited canvas (video + stage) frame-
+  // by-frame via captureStream + MediaRecorder.
+  stopPlayback();
+  await waitFonts();
+  showToast('Export WebM — připravuji…', 'success');
+  try {
+    const useVideo = (state.branding === 'preview') && videoReady && !videoFailed;
+    const video    = els.bgVideo;
+    const comp = document.createElement('canvas');
+    comp.width = W; comp.height = H;
+    const cctx = comp.getContext('2d');
+
+    const stream = comp.captureStream(0);
+    const track = stream.getVideoTracks()[0];
+    const mimes = ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm'];
+    const mime = mimes.find(m => MediaRecorder.isTypeSupported(m));
+    if (!mime) throw new Error('Prohlížeč nepodporuje WebM nahrávání');
+    const recorder = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 8_000_000 });
+    const chunks = [];
+    recorder.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
+    const stopped = new Promise(r => recorder.onstop = r);
+    recorder.start();
+
+    if (useVideo) {
+      try { video.currentTime = 0; await video.play(); } catch (_) {}
+    }
+
+    for (let i = 0; i < TOTAL_FRAMES; i++) {
+      // 1) backdrop layer
+      cctx.fillStyle = '#000';
+      cctx.fillRect(0, 0, W, H);
+      if (useVideo && video.readyState >= 2) {
+        const vw = video.videoWidth || W;
+        const vh = video.videoHeight || H;
+        const scale = Math.max(W / vw, H / vh);
+        const dw = vw * scale, dh = vh * scale;
+        const dx = (W - dw) / 2, dy = (H - dh) / 2;
+        cctx.drawImage(video, dx, dy, dw, dh);
+      }
+      // 2) animation frame
+      renderFrame(i);
+      cctx.drawImage(canvas, 0, 0);
+      if (track.requestFrame) track.requestFrame();
+      await new Promise(r => setTimeout(r, 1000 / FPS));
+    }
+    await new Promise(r => setTimeout(r, 200));
+    recorder.stop();
+    await stopped;
+    if (useVideo) { try { video.pause(); } catch (_) {} }
+    const blob = new Blob(chunks, { type: mime });
+    downloadBlob(blob, `video_${Date.now()}.webm`);
+    showToast('Video exportováno', 'success');
+  } catch (err) {
+    console.error(err);
+    showToast('Export selhal: ' + err.message, 'error');
+  }
+});
+
+/* =============================================================================
+   PNG SEQUENCE (with backdrop) — writes PNGs straight into a user-picked folder
+   via the File System Access API. No zip step. Each frame is composited onto
+   an offscreen canvas: bg (video / flat gradient) first, then the main stage
+   canvas on top. AE-friendly naming: citace_0000.png … citace_NNNN.png.
+   ============================================================================= */
+$('btnExportSeq')?.addEventListener('click', async () => {
+  if (typeof window.showDirectoryPicker !== 'function') {
+    showToast('PNG sekvenci podporuje jen Chrome/Edge (File System Access API)', 'error');
+    return;
+  }
+
+  let dirHandle;
+  try {
+    dirHandle = await window.showDirectoryPicker({ mode: 'readwrite' });
+  } catch (err) {
+    // User cancelled picker — silent
+    if (err && err.name === 'AbortError') return;
+    console.error(err);
+    showToast('Nelze otevřít složku: ' + err.message, 'error');
+    return;
+  }
+
+  stopPlayback();
+  await waitFonts();
+  const prevBranding = state.branding;
+  // Keep whatever backdrop the user has chosen — we composite it ourselves,
+  // so no need to flip to 'export'. Just make sure the DOM state is sane.
+  applyBrandingMode();
+
+  // Offscreen compositor — same intrinsic size as the stage canvas.
+  const comp = document.createElement('canvas');
+  comp.width = W; comp.height = H;
+  const cctx = comp.getContext('2d');
+
+  // Pre-rasterize the flat gradient once (matches .bg-flat CSS so 'flat' and
+  // 'export' export identically to what designer sees).
+  const flatBg = document.createElement('canvas');
+  flatBg.width = W; flatBg.height = H;
+  const fctx = flatBg.getContext('2d');
+  // Base linear gradient
+  const lg = fctx.createLinearGradient(0, 0, 0, H);
+  lg.addColorStop(0,    '#0a2346');
+  lg.addColorStop(0.5,  '#0a2a4e');
+  lg.addColorStop(1,    '#1a5e6d');
+  fctx.fillStyle = lg; fctx.fillRect(0, 0, W, H);
+  // Top-right deep-blue glow
+  const r2 = fctx.createRadialGradient(W * 0.80, H * 0.10, 0, W * 0.80, H * 0.10, W * 0.50);
+  r2.addColorStop(0, 'rgba(14,62,128,0.6)');
+  r2.addColorStop(1, 'rgba(14,62,128,0)');
+  fctx.fillStyle = r2; fctx.fillRect(0, 0, W, H);
+  // Upper-left cyan glow
+  const r1 = fctx.createRadialGradient(W * 0.30, H * 0.20, 0, W * 0.30, H * 0.20, W * 0.55);
+  r1.addColorStop(0, 'rgba(56,143,230,0.35)');
+  r1.addColorStop(1, 'rgba(56,143,230,0)');
+  fctx.fillStyle = r1; fctx.fillRect(0, 0, W, H);
+
+  // In the new branding scheme, 'preview' = backdrop is video.
+  // 'export' = clean composite (no video baked).
+  const useVideo = (state.branding === 'preview');
+  const video    = els.bgVideo;
+  if (useVideo) {
+    // Rewind & play so frame 0 of the sequence lines up with video frame 0.
+    try { video.currentTime = 0; video.play(); } catch (_) {}
+  }
+
+  showToast(`Export PNG sekvence — ${TOTAL_FRAMES} snímků…`, 'success');
+
+  const pad = String(TOTAL_FRAMES - 1).length;
+  const frameInterval = 1000 / FPS;
+
+  try {
+    for (let i = 0; i < TOTAL_FRAMES; i++) {
+      // 1) backdrop
+      cctx.clearRect(0, 0, W, H);
+      if (useVideo && video.readyState >= 2) {
+        // object-fit: cover math — scale video to fill W×H, crop overflow.
+        const vw = video.videoWidth || W;
+        const vh = video.videoHeight || H;
+        const scale = Math.max(W / vw, H / vh);
+        const dw = vw * scale, dh = vh * scale;
+        const dx = (W - dw) / 2, dy = (H - dh) / 2;
+        cctx.drawImage(video, dx, dy, dw, dh);
+      } else {
+        // flat gradient or export (both render same gradient today)
+        cctx.drawImage(flatBg, 0, 0);
+      }
+
+      // 2) animation frame on top
+      renderFrame(i);
+      cctx.drawImage(canvas, 0, 0);
+
+      // 3) write PNG to folder
+      const blob = await new Promise(r => comp.toBlob(r, 'image/png'));
+      const name = `citace_${String(i).padStart(pad, '0')}.png`;
+      const fh = await dirHandle.getFileHandle(name, { create: true });
+      const w = await fh.createWritable();
+      await w.write(blob);
+      await w.close();
+
+      // Keep video in sync with the frame cadence when recording live bg.
+      if (useVideo) {
+        await new Promise(r => setTimeout(r, frameInterval));
+      }
+    }
+    showToast(`Hotovo — ${TOTAL_FRAMES} PNG snímků`, 'success');
+  } catch (err) {
+    console.error(err);
+    showToast('Export selhal: ' + err.message, 'error');
+  } finally {
+    if (useVideo) { try { video.pause(); } catch (_) {} }
+    state.branding = prevBranding;
+    render();
+  }
+});
+
+// =============================================================================
+// EXPORT WIRING — main button + dropdown items
+// New UI has 1 primary button (btnExportMP4) and a dropdown menu (exportMenu)
+// with PNG / sequence / WebM. We dispatch them to the legacy handlers which
+// still exist below. MP4 H.264 is a TODO — for now alias to Video (WebM).
+// =============================================================================
+(function () {
+  // Click dispatch on dropdown menu items
+  document.querySelectorAll('#exportMenu button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const fmt = btn.dataset.format;
+      const exportMenu = document.getElementById('exportMenu');
+      if (exportMenu) exportMenu.classList.remove('open');
+      // Trigger the legacy handler by simulating click
+      if (fmt === 'png')  { document.getElementById('btnExportPNG')?.click()
+                        || (window.__exportPng && window.__exportPng()); }
+      if (fmt === 'webm') { document.getElementById('btnExportVideo')?.click()
+                        || (window.__exportWebm && window.__exportWebm()); }
+      if (fmt === 'seq')  { document.getElementById('btnExportSeq')?.click()
+                        || (window.__exportSeq && window.__exportSeq()); }
+    });
+  });
+  // Main MP4 button — for now reuses the WebM/Video pipeline
+  // (TODO: implement true H.264 encoding via ffmpeg.wasm with TV/web bitrates)
+  })();
+
+
+/* =============================================================================
+   TOAST
+   ============================================================================= */
+function showToast(msg, kind) {
+  const stack = $('toastStack');
+  const el = document.createElement('div');
+  el.className = 'toast' + (kind ? ' ' + kind : '');
+  el.textContent = msg;
+  stack.appendChild(el);
+  setTimeout(() => {
+    el.style.transition = 'opacity .3s ease';
+    el.style.opacity = '0';
+    setTimeout(() => el.remove(), 300);
+  }, 2400);
+}
+
+/* =============================================================================
+   BOOT
+   ============================================================================= */
+async function waitFonts() {
+  try {
+    await Promise.all([
+      document.fonts.load('800 64px "Organica"'),
+      document.fonts.load('800 56px "Organica"'),
+      document.fonts.load('800 46px "Organica"'),
+      document.fonts.load('700 50px "Organica"'),
+      document.fonts.load('400 36px "Organica"'),
+      document.fonts.load('400 32px "Organica"'),
+      document.fonts.load('400 28px "Organica"'),
+      document.fonts.load('400 24px "Organica"'),
+      document.fonts.load('400 22px "Organica"'),
+    ]);
+    await document.fonts.ready;
+  } catch (e) { console.warn('Font load:', e); }
+}
+
+// URL params: ?project=<id> (auto-load) and ?preview=1&frame=N (thumbnail mode)
+const _params = new URLSearchParams(window.location.search);
+const _urlProjectId = _params.get('project');
+
+(async function boot() {
+  setDuration(DURATION);
+  setFps(FPS);
+  // URL ?show= override — when launcher links us with a specific show, use it
+  // as the initial theme. Per-projekt overrides may still apply later (when a
+  // saved project loads).
+  try {
+    const urlShow = _params.get('show');
+    if (urlShow && window.TN_THEMES && TN_THEMES.SHOWS_BY_ID[urlShow]) {
+      state.show = urlShow;
+    }
+  } catch (_) {}
+    populateShowSelect();
+  applyShowTheme();
+  // Ensure the blue fallback panel is hidden — it's legacy and only ever
+  // visually leaked when video was slow. Real preview uses video or black.
+  if (els.bgFlat) els.bgFlat.style.display = 'none';
+  await waitFonts();
+  fitStage();
+
+  // PREVIEW MODE — used by the launcher's iframe thumbs. Hide chrome + snap
+  // to a representative frame so the card looks settled.
+  if (_params.get('preview') === '1') {
+    // Hide chrome (sidebar + header + timeline) so the iframe shows just the canvas
+    document.querySelector('.control')?.style.setProperty('display', 'none');
+    document.querySelector('.stage-header')?.style.setProperty('display', 'none');
+    document.querySelector('.timeline')?.style.setProperty('display', 'none');
+    const stageWrap = document.querySelector('.stage-wrap');
+    if (stageWrap) stageWrap.style.padding = '0';
+    const appEl = document.querySelector('.app');
+    if (appEl) appEl.style.gridTemplateColumns = '1fr';
+    // Backdrop ON in preview thumbs (theme video shows behind the graphic)
+    state.branding = 'preview';
+    if (typeof applyBrandingMode === 'function') applyBrandingMode();
+    const requestedFrame = parseInt(_params.get('frame') || '60', 10);
+    // Duration may be short → clamp to TOTAL_FRAMES-1 to land on settled state
+    state.frame = Math.min(requestedFrame, TOTAL_FRAMES - 1);
+    render();
+    if (typeof fitStage === 'function') fitStage();
+    return;
+  }
+
+  // Load project from URL or last-open
+  const targetId = _urlProjectId || localStorage.getItem(LS_CURRENT);
+  if (targetId) {
+    const all = loadAllProjects();
+    const p = all.find(x => x.id === targetId && (x.state?.template === TEMPLATE_ID));
+    if (p) {
+      applySnapshot(p.state);
+      currentProjectId = p.id;
+      $('projName').value = p.name;
+    }
+  }
+  lastSavedSnapshot = JSON.stringify(snapshotState());
+  updateProjectMeta();
+
+  // Open on the SETTLED end frame (like Bar Chart does) so the stage isn't
+  // empty on first paint — the block scale-Y intro is at 0 at frame 0.
+  state.frame = TOTAL_FRAMES - 1;
+  render();
+  // Stage scale needs a second pass once the control panel settles.
+  // Layout can measure 0 on first paint before the flex grid stabilizes.
+  requestAnimationFrame(() => { fitStage(); render(); });
+  setTimeout(() => { fitStage(); render(); }, 150);
+})();
+
+// ZPĚT button (top-right of control-header) — proxies to btnHome which already
+// has the unsaved-changes confirm dialog wired up.
+document.getElementById('btnBack')?.addEventListener('click', () => {
+  document.getElementById('btnHome')?.click();
+});
+
+
+
+
+/* =============================================================================
+   MP4 EXPORT — H.264 via WebCodecs API + mp4-muxer (~28 KB lib).
+   Native browser API — no SharedArrayBuffer, no coi-serviceworker, no
+   ffmpeg.wasm. Hardware-accelerated on Chrome/Edge/Safari 16.4+.
+   ============================================================================= */
+let _mp4MuxerLoaded = false;
+async function loadMp4Muxer() {
+  if (_mp4MuxerLoaded || window.Mp4Muxer) { _mp4MuxerLoaded = true; return; }
+  const CDNS = [
+    'https://cdn.jsdelivr.net/npm/mp4-muxer@5.2.2/build/mp4-muxer.js',
+    'https://unpkg.com/mp4-muxer@5.2.2/build/mp4-muxer.js',
+  ];
+  let lastErr;
+  for (const url of CDNS) {
+    try {
+      console.log('[mp4-muxer] loading from', url);
+      await new Promise((resolve, reject) => {
+        const s = document.createElement('script');
+        s.src = url;
+        s.onload = resolve;
+        s.onerror = () => reject(new Error('script onerror: ' + url));
+        document.head.appendChild(s);
+      });
+      if (window.Mp4Muxer) {
+        _mp4MuxerLoaded = true;
+        console.log('[mp4-muxer] ready');
+        return;
+      }
+    } catch (err) {
+      lastErr = err;
+      console.warn('[mp4-muxer] CDN failed:', err.message);
+    }
+  }
+  throw new Error('mp4-muxer CDN load failed: ' + (lastErr ? lastErr.message : '?'));
+}
+
+async function pickH264Codec(width, height, fps, bitrate) {
+  const candidates = [
+    'avc1.640034',  // High L5.2
+    'avc1.64002A',  // High L4.2 (1080p60)
+    'avc1.640028',  // High L4.0 (1080p30)
+    'avc1.4D0034',  // Main L5.2
+    'avc1.42E028',  // Baseline L4.0
+  ];
+  for (const codec of candidates) {
+    try {
+      const support = await VideoEncoder.isConfigSupported({
+        codec, width, height, bitrate, framerate: fps,
+      });
+      if (support && support.supported) {
+        console.log('[encoder] picked codec:', codec);
+        return codec;
+      }
+    } catch (_) {}
+  }
+  throw new Error('No supported H.264 codec found in WebCodecs');
+}
+
+document.getElementById('btnExportMP4')?.addEventListener('click', async () => {
+  // Browser capability check
+  if (typeof VideoEncoder === 'undefined' || typeof VideoFrame === 'undefined') {
+    showToast?.('Prohlížeč nepodporuje WebCodecs. Použij Chrome/Edge/Safari 16.4+.', 'error');
+    return;
+  }
+
+  stopPlayback();
+  await waitFonts();
+  exportModalOpen();
+  exportModalSetStatus('Načítám mp4-muxer…');
+
+  try {
+    await loadMp4Muxer();
+  } catch (err) {
+    console.error('[Export MP4] muxer load:', err);
+    exportModalSetDone(false, 'mp4-muxer load failed: ' + err.message);
+    return;
+  }
+  if (_exportCancelled) { exportModalClose(); return; }
+
+  const isTV = (FPS === 50);
+  const bitrate = isTV ? 16000000 : 4000000;
+
+  exportModalSetStatus('Vybírám H.264 codec…');
+  let codec;
+  try {
+    codec = await pickH264Codec(W, H, FPS, bitrate);
+  } catch (err) {
+    console.error('[Export MP4] codec pick:', err);
+    exportModalSetDone(false, 'H.264 codec nedostupný: ' + err.message);
+    return;
+  }
+  if (_exportCancelled) { exportModalClose(); return; }
+
+  const muxer = new Mp4Muxer.Muxer({
+    target: new Mp4Muxer.ArrayBufferTarget(),
+    video: { codec: 'avc', width: W, height: H, frameRate: FPS },
+    fastStart: 'in-memory',
+    firstTimestampBehavior: 'offset',
+  });
+
+  const encoderErrors = [];
+  const encoder = new VideoEncoder({
+    output: (chunk, meta) => muxer.addVideoChunk(chunk, meta),
+    error: (e) => { encoderErrors.push(e); console.error('[encoder]', e); },
+  });
+
+  encoder.configure({
+    codec, width: W, height: H, bitrate, framerate: FPS,
+    avc: { format: 'avc' },
+  });
+
+  // Composite: bg video underneath, animation canvas on top.
+  const useVideo = (state.branding === 'preview') && videoReady && !videoFailed;
+  const video = els.bgVideo;
+  const comp = document.createElement('canvas');
+  comp.width = W; comp.height = H;
+  const cctx = comp.getContext('2d');
+
+  if (useVideo) {
+    try { video.currentTime = 0; await video.play(); } catch (_) {}
+  }
+
+  exportModalSetStatus('Enkóduji snímky (H.264 ' + (isTV ? 'TV 16M' : 'web 4M') + ')…');
+  exportModalSetMeta('0 / ' + TOTAL_FRAMES, '0 %');
+
+  const startTime = performance.now();
+
+  try {
+    for (let i = 0; i < TOTAL_FRAMES; i++) {
+      if (_exportCancelled) {
+        try { encoder.close(); } catch (_) {}
+        if (useVideo) { try { video.pause(); } catch (_) {} }
+        exportModalSetDone(false, 'Export zrušen');
+        return;
+      }
+
+      cctx.fillStyle = '#000';
+      cctx.fillRect(0, 0, W, H);
+      if (useVideo && video.readyState >= 2) {
+        const vw = video.videoWidth || W;
+        const vh = video.videoHeight || H;
+        const scale = Math.max(W / vw, H / vh);
+        const dw = vw * scale, dh = vh * scale;
+        const dx = (W - dw) / 2, dy = (H - dh) / 2;
+        cctx.drawImage(video, dx, dy, dw, dh);
+      }
+      renderFrame(i);
+      cctx.drawImage(canvas, 0, 0);
+
+      const frame = new VideoFrame(comp, {
+        timestamp: Math.round(i * 1000000 / FPS),
+      });
+      encoder.encode(frame, { keyFrame: i % FPS === 0 });
+      frame.close();
+
+      if (useVideo) {
+        await new Promise(r => setTimeout(r, 1000 / FPS));
+      } else if (i % 30 === 0) {
+        await new Promise(r => setTimeout(r, 0));
+      }
+
+      // Progress UI — update every frame for smooth bar; meta with ETA every 5
+      const pct = ((i + 1) / TOTAL_FRAMES) * 100;
+      exportModalSetProgress(pct, false);
+      if (i % 5 === 0 || i === TOTAL_FRAMES - 1) {
+        const elapsed = (performance.now() - startTime) / 1000;
+        const fps = (i + 1) / elapsed;
+        const remaining = (TOTAL_FRAMES - i - 1) / Math.max(0.1, fps);
+        const etaText = remaining > 60
+          ? Math.ceil(remaining / 60) + ' min'
+          : Math.ceil(remaining) + ' s';
+        exportModalSetMeta(
+          (i + 1) + ' / ' + TOTAL_FRAMES + ' · ' + fps.toFixed(1) + ' fps',
+          pct.toFixed(0) + ' % · ETA ' + etaText
+        );
+      }
+    }
+
+    if (useVideo) { try { video.pause(); } catch (_) {} }
+
+    exportModalSetStatus('Finalizuji MP4…');
+    exportModalSetProgress(100, false);
+    await encoder.flush();
+    muxer.finalize();
+    encoder.close();
+
+    if (encoderErrors.length) {
+      throw new Error('Encoder errors: ' + encoderErrors[0].message);
+    }
+
+    const blob = new Blob([muxer.target.buffer], { type: 'video/mp4' });
+    downloadBlob(blob, 'citace_' + Date.now() + '.mp4');
+    const sizeMB = (blob.size / 1024 / 1024).toFixed(1);
+    const elapsed = ((performance.now() - startTime) / 1000).toFixed(1);
+    exportModalSetMeta(sizeMB + ' MB', elapsed + ' s');
+    exportModalSetDone(true, 'Hotovo · ' + sizeMB + ' MB · ' + elapsed + ' s');
+  } catch (err) {
+    console.error('[Export MP4]', err);
+    exportModalSetDone(false, 'Export selhal: ' + err.message);
+    try { encoder.close(); } catch (_) {}
+    if (useVideo) { try { video.pause(); } catch (_) {} }
+  }
+});
+
+/* ============================================================
+   EXPORT MODAL — programmatic API used by the MP4 export handler.
+   Blocks all UI; only Cancel button is interactive while modal is open.
+   ============================================================ */
+let _exportCancelled = false;
+function exportModalOpen() {
+  _exportCancelled = false;
+  const m = document.getElementById('exportModal');
+  if (!m) return;
+  m.classList.add('open');
+  exportModalSetStatus('Příprava…');
+  exportModalSetProgress(0, true);   // indeterminate
+  exportModalSetMeta('—', '—');
+  const cancelBtn = document.getElementById('exportModalCancel');
+  const closeBtn  = document.getElementById('exportModalClose');
+  if (cancelBtn) { cancelBtn.style.display = ''; cancelBtn.disabled = false; cancelBtn.textContent = 'Cancel'; }
+  if (closeBtn)  closeBtn.style.display = 'none';
+  const fill = document.getElementById('exportModalFill');
+  if (fill) { fill.classList.remove('error', 'success'); }
+}
+function exportModalClose() {
+  const m = document.getElementById('exportModal');
+  if (m) m.classList.remove('open');
+}
+function exportModalSetStatus(text) {
+  const el = document.getElementById('exportModalStatus');
+  if (el) el.textContent = text;
+}
+function exportModalSetProgress(pct, indeterminate) {
+  const fill = document.getElementById('exportModalFill');
+  if (!fill) return;
+  if (indeterminate) {
+    fill.classList.add('indeterminate');
+    fill.style.width = '';
+  } else {
+    fill.classList.remove('indeterminate');
+    fill.style.width = Math.max(0, Math.min(100, pct)) + '%';
+  }
+}
+function exportModalSetMeta(left, right) {
+  const l = document.getElementById('exportModalLeft');
+  const r = document.getElementById('exportModalRight');
+  if (l) l.textContent = left;
+  if (r) r.textContent = right;
+}
+function exportModalSetDone(success, message) {
+  const fill = document.getElementById('exportModalFill');
+  const cancelBtn = document.getElementById('exportModalCancel');
+  const closeBtn  = document.getElementById('exportModalClose');
+  if (fill) {
+    fill.classList.remove('indeterminate');
+    fill.classList.add(success ? 'success' : 'error');
+    if (success) fill.style.width = '100%';
+  }
+  if (cancelBtn) cancelBtn.style.display = 'none';
+  if (closeBtn)  closeBtn.style.display = '';
+  if (message) exportModalSetStatus(message);
+}
+// Wire cancel + close buttons (idempotent — safe to call multiple times)
+(function wireExportModal() {
+  const cancelBtn = document.getElementById('exportModalCancel');
+  const closeBtn  = document.getElementById('exportModalClose');
+  if (cancelBtn && !cancelBtn._wired) {
+    cancelBtn._wired = true;
+    cancelBtn.addEventListener('click', () => {
+      _exportCancelled = true;
+      cancelBtn.disabled = true;
+      cancelBtn.textContent = 'Ruším…';
+      exportModalSetStatus('Ruším export…');
+    });
+  }
+  if (closeBtn && !closeBtn._wired) {
+    closeBtn._wired = true;
+    closeBtn.addEventListener('click', exportModalClose);
+  }
+})();
+</script>
+
+<!-- Full-screen export progress modal — blocks all interaction during MP4 encode. -->
+<div class="export-modal" id="exportModal" role="dialog" aria-modal="true" aria-labelledby="exportModalTitle">
+  <div class="export-modal-panel">
+    <div class="export-modal-title" id="exportModalTitle">Export MP4</div>
+    <div class="export-modal-status" id="exportModalStatus">Příprava…</div>
+    <div class="export-modal-progress-track"><div class="export-modal-progress-fill" id="exportModalFill"></div></div>
+    <div class="export-modal-meta">
+      <span id="exportModalLeft">—</span>
+      <span id="exportModalRight">—</span>
+    </div>
+    <div class="export-modal-actions">
+      <button class="export-modal-btn" id="exportModalCancel">Cancel</button>
+      <button class="export-modal-btn primary" id="exportModalClose" style="display:none">Zavřít</button>
+    </div>
+  </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,2783 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TN Horizontal Bar — Template 07</title>
+<script src="../theme.js"></script>
+<!-- TN CITACE (quote card) — Graph Generator template 06 -->
+<!-- Layout derived from PSD reference (uploads/citace-reference.png): -->
+<!--   1920×1080 stage, light card inset ~60/70/60/110 px, registration corner ticks, -->
+<!--   portrait left ~40% / text right ~55%, Nova logo top-left, TN badge bottom-right. -->
+<!-- Same shared storage contract as bar-chart (LS_KEY=tn_graphics_engine_projects_v2). -->
+
+<link rel="stylesheet" href="../assets/organica-fonts.css">
+<style>
+  :root {
+    /* TN brand palette */
+    --tn-red:     #e60013;
+    --tn-red-dk:  #b80010;
+    --tn-red-sft: #ffeeef;
+
+    --bg-0:   #ffffff;
+    --bg-1:   #f7f7f7;
+    --bg-2:   #eeeeee;
+    --bg-3:   #1a1a1a;
+    --line:   #e2e2e2;
+    --line-2: #d4d4d4;
+
+    --text-0: #0f0f0f;
+    --text-1: #4a4a4a;
+    --text-2: #8a8a8a;
+    --text-inv: #ffffff;
+
+    --accent: var(--tn-red);
+    --accent-hover: var(--tn-red-dk);
+    --ok: #00a651;
+    --warn: var(--tn-red);
+
+    --font-ui:   'Inter', system-ui, -apple-system, sans-serif;
+    --font-mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+
+    /* Stage palette — pixel-sampled from the PSD composite reference */
+    --card-fill:   #dee2e6;       /* light gray card body */
+    --mint:        #5ee6c3;       /* registration tick color */
+    --nova-teal:   #2dd3c4;       /* Nova wordmark tint */
+    --name-navy:   #0b1e3f;       /* name, quote body */
+    --role-blue:   #2e7fd8;       /* role/subtitle accent */
+    --src-gray:    #7d8791;       /* "zdroj: ..." caption */
+    --portrait-1:  #7d91a8;       /* silhouette mid */
+    --portrait-2:  #556478;       /* silhouette shadow */
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; overflow: hidden; }
+  body {
+    font-family: var(--font-ui);
+    background: var(--bg-1);
+    color: var(--text-0);
+    font-size: 15px;
+    line-height: 1.5;
+  }
+
+  .app {
+    display: grid;
+    grid-template-columns: 600px 1fr;
+    height: 100vh;
+    background: var(--line);
+    gap: 1px;
+  }
+
+  /* =========================================================================
+     CONTROL PANEL — left column. Mirrors bar-chart visual language so the two
+     templates feel like one product. Red masthead, dark project bar, body.
+     ========================================================================= */
+  .control { background: var(--bg-0); overflow-y: auto; display: flex; flex-direction: column; }
+  .control::-webkit-scrollbar { width: 8px; }
+  .control::-webkit-scrollbar-track { background: var(--bg-1); }
+  .control::-webkit-scrollbar-thumb { background: var(--line-2); border: 2px solid var(--bg-1); border-radius: 4px; }
+
+  .control-header {
+    padding: 22px 24px 20px;
+    background: var(--tn-red);
+    color: var(--text-inv);
+    position: relative;
+    border-bottom: 4px solid var(--tn-red-dk);
+  }
+  .brand-row { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+  .tn-mark {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 28px; height: 28px;
+    background: var(--text-inv);
+    color: var(--tn-red);
+    font-weight: 800; font-size: 14px; letter-spacing: -0.02em;
+    font-family: var(--font-ui);
+    border: 0; cursor: pointer; padding: 0;
+    transition: transform .1s ease;
+  }
+  .tn-mark:hover { transform: scale(1.08); }
+  .tn-mark:active { transform: scale(0.95); }
+  .brand {
+    font-family: var(--font-mono);
+    font-weight: 600;
+    font-size: 13px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.82);
+  }
+  .template-badge {
+    display: flex; align-items: baseline; gap: 12px;
+    margin-top: 10px; padding-top: 10px;
+    border-top: 1px solid rgba(255,255,255,0.25);
+  }
+  .tpl-num {
+    font-family: var(--font-mono);
+    font-size: 13px; letter-spacing: 0.2em;
+    color: rgba(255,255,255,0.7);
+    text-transform: uppercase;
+  }
+  .tpl-name {
+    font-family: var(--font-ui);
+    font-weight: 800; font-size: 22px;
+    letter-spacing: -0.01em;
+    color: var(--text-inv); line-height: 1;
+  }
+
+  /* Project bar (identical pattern to bar-chart) */
+  .project-bar {
+    padding: 14px 24px 16px;
+    background: #2a2a2a;
+    border-bottom: 1px solid #1a1a1a;
+    color: #e0e0e0;
+  }
+  .pb-row { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+  .pb-row:last-child { margin-bottom: 0; }
+  .pb-label {
+    font-family: var(--font-mono);
+    font-size: 11px; letter-spacing: 0.2em;
+    text-transform: uppercase; color: #a0a0a0;
+    flex-shrink: 0;
+  }
+  .pb-name {
+    flex: 1;
+    padding: 8px 12px;
+    background: #1a1a1a;
+    border: 1px solid #3a3a3a;
+    color: #f0f0f0;
+    font-family: var(--font-ui);
+    font-size: 14px;
+    border-radius: 2px;
+  }
+  .pb-name:focus { outline: none; border-color: var(--tn-red); }
+  .pb-btn {
+    padding: 7px 12px;
+    background: #3a3a3a;
+    border: 1px solid #4a4a4a;
+    color: #f0f0f0;
+    font-family: var(--font-ui);
+    font-size: 13px; font-weight: 600;
+    letter-spacing: 0.02em;
+    cursor: pointer;
+    border-radius: 2px;
+    transition: background .15s ease;
+  }
+  .pb-btn:hover { background: #4a4a4a; }
+  .pb-btn.primary { background: var(--tn-red); border-color: var(--tn-red-dk); }
+  .pb-btn.primary:hover { background: var(--tn-red-dk); }
+  .pb-meta {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: #777;
+    letter-spacing: 0.04em;
+  }
+  .pb-meta .dirty { color: #ffb75b; }
+  .pb-meta .saved { color: #62d672; }
+
+  /* Panel sections */
+  .section {
+    padding: 18px 24px;
+    border-bottom: 1px solid var(--line);
+  }
+  .section:last-child { border-bottom: 0; }
+  .section h3 {
+    font-size: 11px;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+    color: var(--text-2);
+    font-family: var(--font-mono);
+    font-weight: 600;
+    margin-bottom: 12px;
+  }
+  .field { margin-bottom: 12px; }
+  .field:last-child { margin-bottom: 0; }
+  .field label {
+    display: block;
+    font-size: 13px;
+    color: var(--text-1);
+    margin-bottom: 5px;
+    font-weight: 500;
+  }
+  .field input[type="text"],
+  .field textarea,
+  .field select {
+    width: 100%;
+    padding: 8px 10px;
+    background: var(--bg-0);
+    border: 1px solid var(--line-2);
+    color: var(--text-0);
+    font-family: var(--font-ui);
+    font-size: 14px;
+    border-radius: 2px;
+  }
+  .field input[type="text"]:focus,
+  .field textarea:focus,
+  .field select:focus {
+    outline: none;
+    border-color: var(--tn-red);
+  }
+  .field textarea {
+    resize: vertical;
+    min-height: 110px;
+    font-family: var(--font-ui);
+    line-height: 1.45;
+  }
+  .field .help {
+    font-size: 13px;
+    color: var(--text-2);
+    margin-top: 4px;
+    font-style: italic;
+  }
+
+  .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+  /* File upload for portrait */
+  .upload-row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px; background: var(--bg-1);
+    border: 1px dashed var(--line-2);
+    border-radius: 2px;
+  }
+  .upload-row .thumb {
+    width: 52px; height: 52px; flex-shrink: 0;
+    background: var(--bg-2);
+    border: 1px solid var(--line);
+    background-size: cover; background-position: center;
+  }
+  .upload-row .upload-ctrl { flex: 1; display: flex; gap: 6px; flex-wrap: wrap; }
+  .upload-btn {
+    padding: 6px 10px; font-size: 13px; font-weight: 600;
+    background: var(--bg-0); border: 1px solid var(--line-2);
+    color: var(--text-0); cursor: pointer; border-radius: 2px;
+    font-family: var(--font-ui);
+  }
+  .upload-btn:hover { background: var(--bg-1); }
+  .upload-btn.clear { color: var(--tn-red); border-color: var(--tn-red); }
+
+  /* Rows editor — 3-column layout (label | mid | value | delete) */
+  .rows-list { display: flex; flex-direction: column; gap: 6px; }
+  .row-item {
+    display: grid;
+    grid-template-columns: 1fr 0.8fr 1fr 28px;
+    gap: 6px;
+    align-items: stretch;
+  }
+  .row-item input {
+    padding: 8px 10px;
+    font-size: 14px;
+    font-family: var(--font-ui);
+    background: var(--bg-0);
+    border: 1px solid var(--line-2);
+    color: var(--text-0);
+    border-radius: 2px;
+    outline: none;
+    min-width: 0;
+  }
+  .row-item input:focus { border-color: var(--tn-red); }
+  .row-item input.value { font-weight: 700; text-align: right; }
+  .row-del {
+    background: transparent;
+    border: 1px solid var(--line-2);
+    color: var(--text-2);
+    cursor: pointer;
+    font-size: 14px;
+    border-radius: 2px;
+    padding: 0;
+  }
+  .row-del:hover { color: var(--tn-red); border-color: var(--tn-red); }
+
+  /* Toggle-group pattern shared with bar-chart */
+  .toggle-group {
+    display: inline-flex;
+    background: var(--bg-1);
+    border: 1px solid var(--line);
+    padding: 2px;
+    gap: 2px;
+    border-radius: 2px;
+  }
+  .toggle-group button {
+    padding: 6px 12px;
+    background: transparent;
+    border: 0;
+    color: var(--text-1);
+    font-size: 13px; font-weight: 600;
+    cursor: pointer;
+    font-family: var(--font-ui);
+    border-radius: 2px;
+  }
+  .toggle-group button.active {
+    background: var(--text-0); color: var(--text-inv);
+  }
+  /* Show theme dropdown — full-width native <select> styled to match the rest */
+  .select-show {
+    width: 100%;
+    padding: 10px 12px;
+    background: var(--bg-0);
+    border: 1px solid var(--line-2);
+    color: var(--text-0);
+    font-family: var(--font-ui);
+    font-size: 14px;
+    font-weight: 500;
+    border-radius: 2px;
+    outline: none;
+    cursor: pointer;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'><path d='M1 1l5 5 5-5' stroke='%23999' stroke-width='1.5' fill='none'/></svg>");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+  }
+  .select-show:focus { border-color: var(--tn-red); }
+
+
+  /* Export buttons */
+  .export-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .btn-export {
+    padding: 10px 12px;
+    background: var(--text-0); color: var(--text-inv);
+    border: 0; border-radius: 2px;
+    font-family: var(--font-ui);
+    font-weight: 600; font-size: 13px;
+    letter-spacing: 0.02em;
+    cursor: pointer;
+  }
+  .btn-export:hover { background: #333; }
+  .btn-export.primary { background: var(--tn-red); }
+  .btn-export.primary:hover { background: var(--tn-red-dk); }
+
+  /* =========================================================================
+     STAGE — right column. 1920×1080 canvas scaled to fit.
+     ========================================================================= */
+  .stage-col {
+    background: var(--bg-3);
+    display: flex; flex-direction: column;
+    overflow: hidden;
+  }
+  .stage-header {
+    padding: 10px 16px;
+    background: #222;
+    border-bottom: 1px solid #111;
+    color: #aaa;
+    font-family: var(--font-mono);
+    font-size: 13px; letter-spacing: 0.12em;
+    display: flex; align-items: center; gap: 14px;
+    flex-shrink: 0;
+  }
+  .stage-header .meta { color: #666; }
+  .stage-header .spacer { flex: 1; }
+  .stage-header .pill {
+    padding: 3px 8px;
+    background: #333;
+    border-radius: 10px;
+    color: #ddd;
+    letter-spacing: 0.05em;
+  }
+
+  .stage-wrap {
+    flex: 1; min-height: 0;
+    padding: 16px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  /* The outer wrapper does the scaling — keep the inner stage at a fixed
+     1920×1080 for pixel-perfect rendering. */
+  .stage-scale {
+    width: 1920px; height: 1080px;
+    transform-origin: center center;
+    position: relative;
+    flex-shrink: 0;
+  }
+  .stage {
+    position: absolute; inset: 0;
+    overflow: hidden;
+    background: #000;
+  }
+  /* The canvas sits ABOVE the bg-video, transparent where режia will later
+     composite top/bottom chrome. 1920×1080 intrinsic, stretched to stage. */
+  .stage canvas#stage-canvas {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%;
+    z-index: 2;
+    pointer-events: none;
+  }
+  .stage .bg-video,
+  .stage .bg-flat {
+    z-index: 1;
+  }
+
+  /* Timeline */
+  .timeline {
+    padding: 10px 16px 12px;
+    background: #1f1f1f;
+    border-top: 1px solid #0f0f0f;
+    color: #aaa;
+    display: flex; align-items: center; gap: 12px;
+    flex-shrink: 0;
+  }
+  .tl-btn {
+    width: 34px; height: 34px;
+    background: #333; border: 1px solid #444;
+    color: #fff; cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 14px;
+    border-radius: 2px;
+  }
+  .tl-btn:hover { background: #444; }
+  .tl-scrubber {
+    flex: 1;
+    -webkit-appearance: none; appearance: none;
+    height: 6px;
+    background: #333;
+    border-radius: 3px;
+    outline: none;
+  }
+  .tl-scrubber::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 14px; height: 14px;
+    background: var(--tn-red);
+    border-radius: 50%;
+    cursor: pointer;
+  }
+  .tl-scrubber::-moz-range-thumb {
+    width: 14px; height: 14px;
+    background: var(--tn-red);
+    border-radius: 50%;
+    cursor: pointer; border: 0;
+  }
+  .tl-readout {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: #aaa;
+    min-width: 100px;
+    text-align: right;
+  }
+
+  /* =========================================================================
+     STAGE CONTENT — drawn inside a 1920×1080 <canvas>. The block layout is
+     identical to the Bar Chart template (topBlack/titleBand/chart/bottomBlack)
+     so the two templates composite identically over the TN režia backdrop.
+     The canvas is transparent in preview mode (top/bottom strips not drawn);
+     режia paints the blue header + teal/TN bar behind via the looped video.
+     ========================================================================= */
+
+  /* Backdrop video — GRAF-style. Hidden by default; JS toggles `.visible`
+     once video is ready. Frame-synced via currentTime, not autoplay loop. */
+  .bg-video {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%;
+    object-fit: cover;
+    pointer-events: none;
+    display: none;
+  }
+  .bg-video.visible { display: block; }
+  /* Solid fallback / export-clean backdrop. Shown when state.branding==='export'. */
+  .bg-flat {
+    position: absolute; inset: 0;
+    background:
+      radial-gradient(ellipse at 30% 20%, rgba(56,143,230,0.35) 0%, rgba(0,0,0,0) 55%),
+      radial-gradient(ellipse at 80% 10%, rgba(14,62,128,0.6) 0%, rgba(0,0,0,0) 50%),
+      linear-gradient(180deg, #0a2346 0%, #0a2a4e 50%, #1a5e6d 100%);
+  }
+
+  /* =========================================================================
+     OVERLAY MODAL (Save/Load project) — same visual as bar-chart
+     ========================================================================= */
+  .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 100; }
+  .modal.show { display: flex; align-items: center; justify-content: center; }
+  .modal-card {
+    background: var(--bg-0);
+    border-radius: 4px;
+    width: 520px; max-width: 90vw; max-height: 80vh;
+    display: flex; flex-direction: column;
+    overflow: hidden;
+  }
+  .modal-head {
+    padding: 16px 20px;
+    background: var(--tn-red); color: var(--text-inv);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .modal-head h2 {
+    font-size: 14px; letter-spacing: 0.12em; text-transform: uppercase;
+    font-family: var(--font-mono); font-weight: 600;
+  }
+  .modal-close {
+    background: transparent; border: 0; color: var(--text-inv);
+    font-size: 18px; cursor: pointer; padding: 4px 8px;
+  }
+  .modal-body { padding: 8px; overflow-y: auto; flex: 1; }
+  .proj-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 12px;
+    border: 1px solid var(--line);
+    border-radius: 2px;
+    margin-bottom: 6px;
+    background: var(--bg-0);
+  }
+  .proj-info { flex: 1; min-width: 0; }
+  .proj-title {
+    font-weight: 600; font-size: 14px; color: var(--text-0);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .proj-date { font-family: var(--font-mono); font-size: 11px; color: var(--text-2); margin-top: 2px; }
+  .proj-btn {
+    padding: 6px 10px; font-size: 13px; font-weight: 600;
+    background: var(--bg-0); border: 1px solid var(--line-2);
+    color: var(--text-0); cursor: pointer; border-radius: 2px;
+    font-family: var(--font-ui);
+  }
+  .proj-btn.load:hover { background: var(--bg-1); }
+  .proj-btn.del { color: var(--tn-red); border-color: var(--tn-red); }
+  .proj-btn.del:hover { background: var(--tn-red-sft); }
+  .proj-empty {
+    text-align: center; padding: 40px 20px;
+    color: var(--text-2); font-size: 14px;
+  }
+
+  /* Toast */
+  .toast-stack {
+    position: fixed; bottom: 20px; right: 20px;
+    display: flex; flex-direction: column-reverse; gap: 8px;
+    z-index: 200; pointer-events: none;
+  }
+  .toast {
+    padding: 10px 14px;
+    background: var(--text-0); color: var(--text-inv);
+    border-radius: 2px;
+    font-size: 14px; font-weight: 500;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    animation: toast-in .25s ease;
+    pointer-events: auto;
+  }
+  .toast.success { background: var(--ok); }
+  .toast.error { background: var(--tn-red); }
+  @keyframes toast-in {
+    from { transform: translateY(10px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+
+  /* ===== Info tooltip bubble (i) ===== */
+  .info-tip {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px; height: 16px;
+    margin-left: 6px;
+    border-radius: 50%;
+    background: var(--bg-2);
+    color: var(--text-2);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 700;
+    font-style: italic;
+    cursor: help;
+    user-select: none;
+    position: relative;
+    vertical-align: middle;
+    line-height: 1;
+    transition: background 0.15s, color 0.15s;
+  }
+  .info-tip:hover { background: var(--text-0); color: var(--text-inv); }
+  .info-tip::after {
+    content: attr(data-tip);
+    position: absolute;
+    bottom: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: #1a1a1a;
+    color: #f0f0f0;
+    padding: 8px 12px;
+    border-radius: 4px;
+    font-family: var(--font-ui);
+    font-size: 12px;
+    font-weight: 400;
+    font-style: normal;
+    line-height: 1.4;
+    letter-spacing: normal;
+    text-transform: none;
+    white-space: normal;
+    width: 240px;
+    z-index: 1000;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.15s, visibility 0.15s;
+    pointer-events: none;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  }
+  .info-tip::before {
+    content: '';
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 6px solid transparent;
+    border-top-color: #1a1a1a;
+    margin-bottom: 2px;
+    z-index: 1001;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.15s, visibility 0.15s;
+  }
+  .info-tip:hover::after,
+  .info-tip:hover::before { opacity: 1; visibility: visible; }
+
+  /* ===== FPS pill ===== */
+  .fps-pill { position: relative; display: inline-block; }
+  .fps-pill-active {
+    background: var(--bg-2);
+    border: 1px solid var(--line);
+    color: var(--text-0);
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-weight: 700;
+    padding: 8px 14px;
+    border-radius: 3px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    letter-spacing: 0.05em;
+  }
+  .fps-pill-active:hover { background: var(--text-0); color: var(--text-inv); }
+  .fps-pill-hint {
+    font-size: 9px;
+    font-weight: 600;
+    opacity: 0.6;
+    letter-spacing: 0.1em;
+  }
+  .fps-pill-menu {
+    display: none;
+    position: absolute;
+    top: calc(100% + 4px);
+    right: 0;
+    background: #1a1a1a;
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    z-index: 100;
+    min-width: 180px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  }
+  .fps-pill:hover .fps-pill-menu { display: block; }
+  .fps-pill-menu button {
+    display: block;
+    width: 100%;
+    text-align: left;
+    background: transparent;
+    border: 0;
+    color: #f0f0f0;
+    padding: 10px 14px;
+    cursor: pointer;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.05em;
+  }
+  .fps-pill-menu button:hover { background: rgba(255,255,255,0.1); }
+  .fps-pill-menu button.active { background: var(--tn-red); color: white; }
+
+  /* ===== Export split-button ===== */
+  .export-split {
+    position: relative;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 1px;
+  }
+  .export-split .btn-export.primary {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 12px 16px;
+    background: var(--tn-red);
+    color: white;
+    border: 0;
+    border-radius: 3px 0 0 3px;
+    cursor: pointer;
+    font-family: var(--font-ui);
+    transition: background 0.15s;
+  }
+  .export-split .btn-export.primary:hover { background: #b80825; }
+  .export-split .btn-export.primary .btn-main {
+    font-size: 14px; font-weight: 700; letter-spacing: 0.02em;
+  }
+  .export-split .btn-export.primary .btn-sub {
+    font-size: 10px; opacity: 0.85; margin-top: 2px;
+    font-family: var(--font-mono); letter-spacing: 0.05em;
+  }
+  .btn-export-more {
+    background: var(--tn-red);
+    color: white;
+    border: 0;
+    border-radius: 0 3px 3px 0;
+    padding: 0 14px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 700;
+    border-left: 1px solid rgba(255,255,255,0.2);
+    transition: background 0.15s;
+  }
+  .btn-export-more:hover { background: #b80825; }
+  .export-menu {
+    display: none;
+    position: absolute;
+    top: calc(100% + 4px);
+    right: 0;
+    background: #1a1a1a;
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    z-index: 100;
+    min-width: 240px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  }
+  .export-menu.open { display: block; }
+  .export-menu button {
+    display: block;
+    width: 100%;
+    text-align: left;
+    background: transparent;
+    border: 0;
+    color: #f0f0f0;
+    padding: 10px 14px;
+    cursor: pointer;
+    font-family: var(--font-ui);
+    font-size: 13px;
+  }
+  .export-menu button:hover { background: rgba(255,255,255,0.1); }
+
+  /* ===== ZPĚT button (top-right of control-header, mirrors tn-mark on left) ===== */
+  .back-btn {
+    position: absolute;
+    top: 22px; right: 24px;
+    background: var(--text-inv); color: var(--tn-red);
+    font-family: var(--font-mono);
+    font-weight: 700; font-size: 11px;
+    letter-spacing: 0.12em;
+    padding: 7px 14px;
+    border: 0; cursor: pointer;
+    transition: transform .1s ease, background .15s ease;
+    display: inline-flex; align-items: center; gap: 4px;
+  }
+  .back-btn:hover { transform: translateX(-3px); }
+  .back-btn:active { transform: scale(0.95); }
+
+  /* ============================================================
+     EXPORT MODAL — full-screen overlay during MP4 export.
+     Blocks all input; only Cancel button is interactive.
+     ============================================================ */
+  .export-modal {
+    position: fixed; inset: 0; z-index: 9999;
+    background: rgba(0, 0, 0, 0.88);
+    display: none;
+    align-items: center; justify-content: center;
+    backdrop-filter: blur(4px);
+  }
+  .export-modal.open { display: flex; }
+  .export-modal-panel {
+    background: #141414;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 32px 40px;
+    min-width: 480px; max-width: 600px;
+    color: #fff;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+  }
+  .export-modal-title {
+    font-family: 'Organica', sans-serif;
+    font-weight: 600;
+    font-size: 16px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #DC0F2E;
+    margin-bottom: 8px;
+  }
+  .export-modal-status {
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.85);
+    margin-bottom: 24px;
+    min-height: 20px;
+    line-height: 1.4;
+  }
+  .export-modal-progress-track {
+    width: 100%;
+    height: 8px;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 8px;
+  }
+  .export-modal-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #DC0F2E 0%, #ff4960 100%);
+    border-radius: 4px;
+    width: 0%;
+    transition: width 200ms ease-out;
+  }
+  .export-modal-progress-fill.indeterminate {
+    width: 30% !important;
+    animation: exportIndeterminate 1.4s ease-in-out infinite;
+  }
+  @keyframes exportIndeterminate {
+    0%   { transform: translateX(-100%); }
+    100% { transform: translateX(400%); }
+  }
+  .export-modal-progress-fill.error {
+    background: #DC0F2E;
+  }
+  .export-modal-progress-fill.success {
+    background: linear-gradient(90deg, #2D9B40 0%, #4CC95E 100%);
+  }
+  .export-modal-meta {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.5);
+    font-feature-settings: 'tnum';
+    margin-bottom: 28px;
+    display: flex;
+    justify-content: space-between;
+  }
+  .export-modal-actions {
+    display: flex; justify-content: flex-end;
+    gap: 12px;
+  }
+  .export-modal-btn {
+    background: transparent;
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    padding: 10px 24px;
+    border-radius: 6px;
+    font-family: 'Organica', sans-serif;
+    font-weight: 500;
+    font-size: 13px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 150ms ease;
+  }
+  .export-modal-btn:hover { background: rgba(255, 255, 255, 0.08); border-color: rgba(255, 255, 255, 0.4); }
+  .export-modal-btn.primary {
+    background: #DC0F2E;
+    border-color: #DC0F2E;
+  }
+  .export-modal-btn.primary:hover { background: #b80825; border-color: #b80825; }
+  .export-modal-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+    background: transparent;
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ============================ CONTROL ============================ -->
+  <aside class="control">
+    <header class="control-header">
+      <div class="brand-row">
+        <button class="tn-mark" id="btnHome" title="Zpět na hlavní rozcestník">tn</button>
+        <span class="brand">Graphics Engine</span>
+      </div>
+      <div class="template-badge">
+        <span class="tpl-num">07 / TEMPLATE</span>
+        <span class="tpl-name">TN horizontal bar</span>
+      </div>
+    
+      <button class="back-btn" id="btnBack" title="Zpět na rozcestník">‹ ZPĚT</button>
+    </header>
+
+    <div class="project-bar">
+      <div class="pb-row">
+        <span class="pb-label">Projekt</span>
+        <input type="text" class="pb-name" id="projName" value="Untitled" />
+        <span class="pb-meta" id="projMeta">nový</span>
+      </div>
+      <div class="pb-row">
+        <button class="pb-btn primary" id="projSave">Uložit</button>
+        <button class="pb-btn" id="projSaveAs">Uložit jako…</button>
+        <button class="pb-btn" id="projOpen">Otevřít…</button>
+        <button class="pb-btn" id="projNew">Nový</button>
+      </div>
+    </div>
+
+    <!-- Content fields -->
+    <div class="section">
+      <h3>Obsah</h3>
+      <div class="field">
+        <label for="inTitle">Nadpis</label>
+        <input type="text" id="inTitle" value="Podíl dokončených rekonstrukcí (v %)" />
+        <div class="help">Tip: jednotku napiš přímo do nadpisu (např. „… (v %)" nebo „… v mil. Kč"), aby ji bylo vidět hned na začátku.</div>
+      </div>
+      <div class="field">
+        <label for="inSource">Zdroj (top-right)</label>
+        <input type="text" id="inSource" value="zdroj: Facebook" />
+      </div>
+    </div>
+
+    <!-- Bar editor — 1–8 bars, each with label, color, value -->
+    <div class="section">
+      <h3>Sloupce <span id="barCount" style="color:var(--text-2);font-weight:400;font-size:11px">(6)</span></h3>
+      <div class="help" style="margin-bottom:10px">
+        Každý sloupec má svou barvu, popisek (vlevo od osy) a hodnotu (vpravo). Pořadí seznamu = pořadí shora dolů. Maximum 8 sloupců.
+      </div>
+      <div id="barsList" class="series-list"></div>
+      <button class="upload-btn" id="btnAddBar" style="margin-top:8px">+ Přidat sloupec</button>
+    </div>
+
+    <div class="section">
+      <h3>Pořad</h3>
+      <div class="field">
+        <label for="inShow">Téma (pozadí + doprovodná barva)</label>
+        <select id="inShow" class="select-show"></select>
+        <div class="help">Volba pořadu přepne backdrop video a doprovodnou barvu (subtitle, callouty, akcenty). Per-projekt — ukládá se s projektem.</div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h3>
+        Pozadí
+        <span class="info-tip" data-tip="Backdrop video se mění automaticky podle vybraného pořadu (sekce Pořad). Studio preview je vždy zapnutý — režii dodá clean export přímo z časové osy.">i</span>
+      </h3>
+      <div class="help" id="backdropStatus" style="cursor:pointer" title="Klikni pro reload videa">
+        <strong>Aktivní:</strong> <code id="backdropPath">../assets/bg-loop.mp4</code>
+      </div>
+    </div>
+
+    <div class="section">
+      <h3>
+        Animace &amp; Časování
+        <span class="info-tip" data-tip="Délka určuje celkovou dobu animace. FPS volí počet snímků za sekundu — 50 FPS pro TV výstup (broadcast), 30 FPS pro web (sociální sítě).">i</span>
+      </h3>
+      <div class="field">
+        <label>
+          Délka (sekundy)
+          <span class="info-tip" data-tip="Celková délka animace v sekundách. Default 20 s.">i</span>
+        </label>
+        <div class="field-row">
+          <input type="text" id="inDuration" value="20" />
+          <div class="fps-pill" id="fpsPill">
+            <button class="fps-pill-active" id="fpsActiveBtn" data-fps="50">50 FPS<span class="fps-pill-hint">TV</span></button>
+            <div class="fps-pill-menu">
+              <button data-fps="50">50 FPS · TV výstup</button>
+              <button data-fps="30">30 FPS · web výstup</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h3>
+        Export
+        <span class="info-tip" data-tip="Hlavní tlačítko: vyrenderuje MP4 H.264 s aktuálním pozadím. Bitrate se škáluje podle FPS — 50 FPS = vysoký bitrate (TV broadcast), 30 FPS = nižší bitrate (web). Šipka napravo nabídne další formáty.">i</span>
+      </h3>
+      <div class="export-split">
+        <button class="btn-export primary" id="btnExportMP4">
+          <span class="btn-main">Export MP4</span>
+          <span class="btn-sub" id="btnExportSubLabel">50 FPS · TV bitrate</span>
+        </button>
+        <button class="btn-export-more" id="btnExportMore" title="Další možnosti">▾</button>
+        <div class="export-menu" id="exportMenu">
+          <button data-format="png">Aktuální snímek (PNG)</button>
+          <button data-format="seq">PNG sekvence (do složky)</button>
+          <button data-format="webm">WebM (browser native)</button>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ============================ STAGE ============================ -->
+  <main class="stage-col">
+    <div class="stage-header">
+      <span>1920 × 1080 • 16:9</span>
+      <span class="meta">Template 06 · TN citace</span>
+      <span class="spacer"></span>
+      <span class="pill" id="stFps">50 fps</span>
+      <span class="pill" id="stDur">20.00 s</span>
+    </div>
+
+    <div class="stage-wrap" id="stageWrap">
+      <div class="stage-scale" id="stageScale">
+        <div class="stage" id="stage">
+          <!-- BACKDROP LAYERS — режия's live video sits behind the graphic.
+               Top 135px + bottom 88px of the canvas stay transparent so the
+               режия composite (blue header, teal+TN bottom) shows through. -->
+          <video class="bg-video" id="bgVideo" src="../assets/bg-loop.mp4" crossorigin="anonymous" autoplay loop muted playsinline preload="auto"></video>
+          <div class="bg-flat" id="bgFlat" style="display:none"></div>
+          <!-- The ENTIRE graphic is rendered here. Same layout frame as Bar Chart. -->
+          <canvas id="stage-canvas" width="1920" height="1080"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="timeline">
+      <button class="tl-btn" id="btnPlay" title="Přehrát / Zastavit">▶</button>
+      <button class="tl-btn" id="btnRewind" title="Na začátek">⏮</button>
+      <input type="range" class="tl-scrubber" id="scrubber" min="0" max="74" value="74" step="1" />
+      <div class="tl-readout" id="tlRead">75 / 75</div>
+    </div>
+  </main>
+</div>
+
+<!-- ============================ PROJECT MODAL ============================ -->
+<div class="modal" id="projModal">
+  <div class="modal-card">
+    <div class="modal-head">
+      <h2>Projekty</h2>
+      <button class="modal-close" id="projModalClose">×</button>
+    </div>
+    <div class="modal-body">
+      <div id="projList"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Toast stack -->
+<div class="toast-stack" id="toastStack"></div>
+
+<script>
+/* =============================================================================
+   TN CITACE — runtime.
+   State is a single `state` object; `render()` is idempotent per frame.
+   Playback loops a requestAnimationFrame at FPS; scrubber + export use the same
+   renderFrame(i) so everything stays in sync.
+   ============================================================================= */
+
+const TEMPLATE_ID = 'tn-hbar-01';
+const LS_KEY = 'tn_graphics_engine_projects_v2';
+const LS_CURRENT = 'tn_graphics_engine_current_v2';
+
+/* ---- state ---- */
+const state = {
+  title: 'Podíl dokončených rekonstrukcí (v %)',
+  source: 'zdroj: Facebook',
+  // Bars (1–8). Each has label, color (user-pickable), value (number).
+  // Bars sort visually in source order (top → bottom). Empty/null values
+  // are skipped from rendering but kept in the editor.
+  bars: [
+    { label: 'Česko',      color: '#3981D6', value: 32   },
+    { label: 'Německo',    color: '#3981D6', value: 21   },
+    { label: 'Rakousko',   color: '#3981D6', value: 13.5 },
+    { label: 'Chorvatsko', color: '#3981D6', value: 10.5 },
+    { label: 'Řecko',      color: '#3981D6', value: 6.5  },
+    { label: 'Portugalsko',color: '#3981D6', value: 5.5  },
+  ],
+  show: 'tn',
+  branding: 'preview',
+  frame: 0,
+};
+
+// ---- Show theme helpers (uses theme.js) ----
+function getAccent() {
+  return (window.TN_THEMES ? TN_THEMES.accent(state.show) : '#2668AC');
+}
+function getThemeVideo() {
+  return (window.TN_THEMES ? TN_THEMES.video(state.show) : '../assets/bg-loop.mp4');
+}
+function populateShowSelect() {
+  if (!window.TN_THEMES) return;
+  const sel = document.getElementById('inShow');
+  if (sel) sel.innerHTML = TN_THEMES.optionsHtml(state.show);
+}
+function applyShowTheme() {
+  if (typeof els !== 'undefined' && els && els.bgVideo && window.TN_THEMES) {
+    const newSrc = TN_THEMES.video(state.show);
+    if (!els.bgVideo.currentSrc || !els.bgVideo.currentSrc.endsWith(newSrc.replace(/^\.\.\//, ''))) {
+      els.bgVideo.src = newSrc;
+      els.bgVideo.load();
+      try { els.bgVideo.play(); } catch (_) {}
+    }
+  }
+  // Bars with default '#3981D6' (= follow theme) need their color picker
+  // swatches refreshed when the show changes — rebuild the list.
+  if (typeof rebuildBarsList === 'function') rebuildBarsList();
+  if (typeof render === 'function') render();
+}
+
+function getFontColor() {
+  return (window.TN_THEMES ? TN_THEMES.fontColor(state.show) : '#0a0a0a');
+}
+
+
+
+let FPS = 50;
+let DURATION = 20;                     // seconds (animation finishes ~1.6s, +0.8s hold)
+let TOTAL_FRAMES = Math.round(DURATION * FPS);
+const CANVAS_W = 1920, CANVAS_H = 1080;
+
+let currentProjectId = null;
+let lastSavedSnapshot = null;
+let playing = false;
+let playRAF = null;
+let playStart = 0;
+let playStartFrame = 0;
+
+/* ---- DOM refs ---- */
+const $ = id => document.getElementById(id);
+const els = {
+  bgVideo: $('bgVideo'),
+  bgFlat: $('bgFlat'),
+  scrubber: $('scrubber'),
+  tlRead: $('tlRead'),
+  btnPlay: $('btnPlay'),
+  stFps: $('stFps'),
+  stDur: $('stDur'),
+  backdropStatus: $('backdropStatus'),
+};
+
+/* =============================================================================
+   BACKDROP VIDEO — GRAF-style. The video is NOT on autoplay-loop; we advance
+   its currentTime in sync with state.frame every render. In 'export' mode
+   the video is hidden and режия composites its own clean chrome over black.
+   ============================================================================= */
+let videoReady  = false;
+let videoFailed = false;
+let autoplayBlocked = false;
+
+function setBackdropStatus(msg, kind) {
+  // Non-fatal if the status element isn't there (e.g. during partial boot)
+  if (!els.backdropStatus) return;
+  const videoPath = (window.TN_THEMES ? TN_THEMES.video(state.show) : '../assets/bg-loop.mp4');
+  const prefix = `<strong>Aktivní:</strong> <code id="backdropPath">${videoPath}</code>`;
+  if (!msg) { els.backdropStatus.innerHTML = prefix; return; }
+  const color = kind === 'error' ? 'var(--tn-red)'
+              : kind === 'warn'  ? '#c89522'
+              : kind === 'loading' ? '#888'
+              : 'var(--ok)';
+  els.backdropStatus.innerHTML = `<span style="color:${color};font-weight:600">${msg}</span><br>${prefix}`;
+}
+
+els.bgVideo.addEventListener('error', (e) => markVideoFailed('error event', e));
+els.bgVideo.addEventListener('stalled', () => console.warn('[Backdrop] stalled'));
+
+// --- ROBUST INIT (identical pattern to bar-chart.html) -----------------------
+// A single 'loadeddata' listener misses videos that loaded from cache BEFORE
+// this JS attached. We listen to MULTIPLE ready-events + a readyState fallback
+// + a 5s safety timeout so the backdrop always resolves to either OK or MISSING.
+function markVideoReady(source) {
+  if (videoReady || videoFailed) return;
+  videoReady = true;
+  const dur = isFinite(els.bgVideo.duration) ? els.bgVideo.duration.toFixed(1) + 's' : '?s';
+  setBackdropStatus(`${dur} OK`, 'ok');
+  console.log(`[Backdrop] Ready (via ${source}), readyState=${els.bgVideo.readyState}`);
+  populateShowSelect();
+  applyBrandingMode();
+  applyShowTheme();
+}
+function markVideoFailed(source, detail) {
+  if (videoFailed || videoReady) return;
+  videoFailed = true;
+  setBackdropStatus('MISSING — klikni pro pokus znovu', 'error');
+  console.error(`[Backdrop] Failed (${source}):`, detail || els.bgVideo.error);
+}
+
+// Any one of these events flips us to ready — whichever fires first wins.
+els.bgVideo.addEventListener('loadedmetadata', () => markVideoReady('loadedmetadata'));
+els.bgVideo.addEventListener('loadeddata',     () => markVideoReady('loadeddata'));
+els.bgVideo.addEventListener('canplay',        () => markVideoReady('canplay'));
+els.bgVideo.addEventListener('canplaythrough', () => markVideoReady('canplaythrough'));
+
+// Race-condition guard: if video was already cached/loaded before this script
+// ran, the events above fired before we could attach. Check readyState now.
+//   0=NOTHING  1=METADATA  2=CURRENT_DATA  3=FUTURE_DATA  4=ENOUGH_DATA
+if (els.bgVideo.readyState >= 1) {
+  console.log('[Backdrop] Already loaded at script start, readyState =', els.bgVideo.readyState);
+  markVideoReady('already-ready-at-init');
+}
+
+// Safety net: if nothing happened in 5s, bail out with a clear error.
+setTimeout(() => {
+  if (!videoReady && !videoFailed) {
+    console.warn('[Backdrop] 5s timeout. readyState =', els.bgVideo.readyState,
+                 'networkState =', els.bgVideo.networkState, 'error =', els.bgVideo.error);
+    markVideoFailed('5s timeout', `readyState=${els.bgVideo.readyState} networkState=${els.bgVideo.networkState}`);
+  }
+}, 5000);
+
+// Click the status help to force-reload video (same UX as GRAF)
+if (els.backdropStatus) {
+  els.backdropStatus.addEventListener('click', () => {
+    console.log('[Backdrop] Manual retry');
+    videoReady = false; videoFailed = false;
+    setBackdropStatus('RELOADING…', 'loading');
+    els.bgVideo.classList.remove('visible');
+    const srcBase = '../assets/bg-loop.mp4';
+    els.bgVideo.src = srcBase + '?t=' + Date.now();
+    els.bgVideo.load();
+  });
+}
+
+function tryPlayVideo(source) {
+  if (!videoReady || videoFailed) return;
+  const p = els.bgVideo.play();
+  if (p && typeof p.catch === 'function') {
+    p.then(() => { autoplayBlocked = false; })
+     .catch(err => {
+       autoplayBlocked = true;
+       console.warn(`[Backdrop] Autoplay blocked (${source}):`, err.name, err.message);
+       setBackdropStatus('BLOCKED — klikni Play', 'warn');
+     });
+  }
+}
+
+function syncVideoToFrame() {
+  if (!videoReady || videoFailed || state.branding !== 'preview') return;
+  const target = state.frame / FPS;
+  const dur = els.bgVideo.duration;
+  if (isFinite(dur) && target < dur - 0.01 && Math.abs(els.bgVideo.currentTime - target) > 0.05) {
+    try { els.bgVideo.currentTime = target; } catch (_) {}
+  }
+}
+
+function applyBrandingMode() {
+  console.log('[Backdrop] applyBrandingMode:', {
+    branding: state.branding,
+    show: state.show,
+    videoReady,
+    videoFailed,
+    videoReadyState: els.bgVideo.readyState,
+  });
+  if (state.branding === 'preview') {
+    // Preview: video if ready, otherwise transparent (stage's black bg shows).
+    // We intentionally do NOT show .bg-flat as a loading fallback — it looks
+    // nothing like the real режия backdrop and just confuses "is this the video?"
+    if (videoReady && !videoFailed) {
+      els.bgVideo.classList.add('visible');
+      syncVideoToFrame();
+      tryPlayVideo('applyBrandingMode');
+    } else {
+      els.bgVideo.classList.remove('visible');
+    }
+    els.bgFlat.style.display = 'none';
+  } else {
+    // Export: hide everything; renderFrame paints solid black.
+    els.bgVideo.classList.remove('visible');
+    els.bgFlat.style.display = 'none';
+    try { els.bgVideo.pause(); } catch (_) {}
+  }
+}
+
+/* =============================================================================
+   CANVAS RENDERER — identical block layout to Bar Chart so both templates
+   composite 1:1 under режия's top/bottom overlays.
+   ============================================================================= */
+const canvas = document.getElementById('stage-canvas');
+const ctx = canvas.getContext('2d');
+
+// (Tabulka template doesn't use a default portrait — left side is a user-
+// uploaded illustration that defaults to TN red fill when empty.)
+
+// =============================================================================
+// GLOBAL TN BRAND COLORS — share these across every template. Whenever a
+// template needs a brand color, pull from here, never invent a custom hex.
+// =============================================================================
+const TN_COLORS = {
+  red:           '#DC0F2E',  // TN editorial red
+  blue:          '#2668AC',  // TN editorial blue (subtitles, tags)
+  barBlue:       '#3981D6',  // Default bar color (matches Graf 4 reference)
+  textPrimary:   '#0a0a0a',
+  textSecondary: '#222222',
+  axisLine:      'rgba(120, 140, 165, 0.55)',
+  divider:       'rgba(120, 140, 165, 0.45)',
+  panelGray:     '#e0e0e0',
+  titleBandGray: 'rgba(242, 242, 242, 0.95)',
+};
+
+// LAYOUT — HORIZONTAL BAR CHART
+// Same outer frame as bar-chart (top black 0..134, white title band 135..222,
+// gray panel 222..992). Inside the gray panel: category labels left, bars
+// extending right, value numbers at the far-right (right-aligned at the
+// global TN safe-edge 1805).
+const LAYOUT = {
+  topBlackH:     135,
+  titleBandTop:  135,
+  titleBandH:     87,
+  titleBandBot:  222,
+  chartTop:      222,
+  chartBottom:   992,
+  // Title text
+  titleX:        115,
+  titleY:        198,
+  sourceX:       1805,   // GLOBAL TN right-edge alignment
+  // Left vertical axis (thin guide line) where bars start
+  axisX:         394,    // measured 1:1 from PSD reference
+  // Plot horizontal range — bars extend from axisX to plotRight at maximum.
+  // value text and its left padding sit between plotRight and sourceX.
+  plotRight:    1700,    // hard ceiling for bar END so value text fits at 1805
+  // Category labels (right-aligned just left of axisX)
+  catLabelRightX: 365,   // leaves ~30 px gap before axisX
+  // Vertical safe-area for bar group (centered between)
+  barAreaTop:    282,    // top of first bar's slot center... see drawBars
+  barAreaBot:    910,    // bottom of last bar's slot
+  // Bar visual params — height and gap auto-adjust based on count
+  barMaxHeight:  82,
+  barMinHeight:  32,
+  // TN red logo box reservation
+  logoBoxW:      270,
+  logoBoxH:      155,
+};
+const BLOCK_ANCHOR_Y = 135;
+const W = 1920, H = 1080;
+
+/* =============================================================================
+   STAGE SCALING — fit 1920×1080 into the available viewport.
+   ============================================================================= */
+const stageScale = $('stageScale');
+const stageWrap = $('stageWrap');
+function fitStage() {
+  const w = stageWrap.clientWidth - 32;   // minus padding
+  const h = stageWrap.clientHeight - 32;
+  const s = Math.min(w / CANVAS_W, h / CANVAS_H);
+  stageScale.style.transform = `scale(${s})`;
+}
+window.addEventListener('resize', fitStage);
+
+/* =============================================================================
+   TIMING HELPERS
+   ============================================================================= */
+// easeOutCubic: fast start, slow end — used for entry animations
+const easeOut = t => 1 - Math.pow(1 - t, 3);
+// easeInOut: for smooth scale pulses
+const easeInOut = t => t < 0.5 ? 2*t*t : 1 - Math.pow(-2*t + 2, 2) / 2;
+// Linear clamp in [0,1] given current frame and a (startF, endF) window
+function rampAt(f, startF, endF) {
+  if (endF <= startF) return f >= startF ? 1 : 0;
+  return Math.max(0, Math.min(1, (f - startF) / (endF - startF)));
+}
+
+/* =============================================================================
+   RENDER — all visuals are drawn into the canvas. DOM backdrop (video element)
+   is managed by applyBrandingMode() on mode change / video ready. The portrait
+   thumb and image element are handled by render() above.
+   ============================================================================= */
+
+function clamp01(x) { return Math.max(0, Math.min(1, x)); }
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+// ---------- Helpers ----------
+function easeInCubic(x)   { return x * x * x; }
+function easeOutCubic(x)  { return 1 - Math.pow(1 - x, 3); }
+function easeOutQuart(x)  { return 1 - Math.pow(1 - x, 4); }
+
+// =============================================================================
+// HORIZONTAL BAR CHART RENDER
+// =============================================================================
+
+// =============================================================================
+// AUTO-FIT TITLE — shrinks title font if it would collide with source caption.
+// Returns the font-size to use. Source font/position never changes.
+// =============================================================================
+function autoFitTitle(titleText, sourceText, baseFont) {
+  // Defensive: if anything goes wrong (ctx not ready, LAYOUT missing),
+  // just return the baseFont — caller will use the original size.
+  try {
+    const MIN_FONT = 32;
+    const STEP = 2;
+    const MIN_GAP = 50;
+    ctx.save();
+    ctx.font = '400 28px "Organica", sans-serif';
+    const sourceW = sourceText ? ctx.measureText(sourceText).width : 0;
+    const sourceLeftEdge = LAYOUT.sourceX - sourceW;
+    let font = baseFont;
+    while (font >= MIN_FONT) {
+      ctx.font = `800 ${font}px "Organica", sans-serif`;
+      const titleW = ctx.measureText(titleText || '').width;
+      const titleRightEdge = LAYOUT.titleX + titleW;
+      if (titleRightEdge + MIN_GAP <= sourceLeftEdge) break;
+      font -= STEP;
+    }
+    ctx.restore();
+    return font;
+  } catch (_) {
+    return baseFont;
+  }
+}
+
+// =============================================================================
+// FIT FONT — generic shrink-to-fit helper. Returns the largest font size ≤
+// baseFont (in px, integer) at which `text` fits within `maxWidth`. Floor at
+// minFont. Used for row cells, value labels, segment labels — anywhere a
+// dynamic string might overflow its column.
+// =============================================================================
+function fitFont(text, maxWidth, baseFont, weight, minFont, step) {
+  weight = weight || 800;
+  minFont = minFont || 24;
+  step = step || 2;
+  try {
+    let f = baseFont;
+    while (f >= minFont) {
+      ctx.font = `${weight} ${f}px "Organica", sans-serif`;
+      if (ctx.measureText(text || '').width <= maxWidth) return f;
+      f -= step;
+    }
+    return minFont;
+  } catch (_) { return baseFont; }
+}
+
+
+function renderFrame(f) {
+  state.frame = f;
+  const t = f / FPS;   // seconds elapsed
+
+  ctx.save();
+  ctx.clearRect(0, 0, W, H);
+
+  // EXPORT clean: opaque black under everything
+  if (state.branding === 'export') {
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, 0, W, H);
+  }
+
+  // === BLOCK SCALE-Y intro (anchor y=135) ===
+  const blockP = clamp01(t / 0.44);
+  const blockScale = easeInOut(blockP);
+  ctx.translate(0, BLOCK_ANCHOR_Y);
+  ctx.scale(1, Math.max(blockScale, 0.0001));
+  ctx.translate(0, -BLOCK_ANCHOR_Y);
+  if (blockScale < 0.001) { ctx.restore(); return; }
+
+  if (state.branding === 'export') {
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, 0, W, LAYOUT.topBlackH);
+    ctx.fillRect(0, LAYOUT.chartBottom, W, H - LAYOUT.chartBottom);
+  }
+
+  // === White title band (always visible)
+  ctx.fillStyle = TN_COLORS.titleBandGray;
+  ctx.fillRect(0, LAYOUT.titleBandTop, W, LAYOUT.titleBandH);
+
+  // === Title + source — fade-in 0.48..0.88s
+  const titleP = easeOutCubic(clamp01((t - 0.48) / 0.40));
+  if (titleP > 0) {
+    ctx.save();
+    ctx.globalAlpha = titleP;
+    ctx.fillStyle = getFontColor();
+    ctx.font = `800 ${autoFitTitle(state.title || '', state.source || '', 54)}px "Organica", sans-serif`;
+    ctx.textBaseline = 'alphabetic';
+    ctx.textAlign = 'left';
+    ctx.fillText(state.title || '', LAYOUT.titleX, LAYOUT.titleY);
+    ctx.fillStyle = TN_COLORS.textSecondary;
+    ctx.font = '400 28px "Organica", sans-serif';
+    ctx.textAlign = 'right';
+    ctx.fillText(state.source || '', LAYOUT.sourceX, LAYOUT.titleY);
+    ctx.restore();
+  }
+
+  // === Gray chart panel — fade in 0.20..0.55s
+  const panelP = easeOutCubic(clamp01((t - 0.20) / 0.35));
+  if (panelP > 0) {
+    ctx.save();
+    ctx.globalAlpha = panelP;
+    ctx.fillStyle = TN_COLORS.panelGray;
+    ctx.fillRect(0, LAYOUT.chartTop, W, LAYOUT.chartBottom - LAYOUT.chartTop);
+    ctx.restore();
+  }
+  if (panelP <= 0) { ctx.restore(); return; }
+
+  // === Left axis vertical guide line — fades with panel
+  drawAxis(t);
+
+  // === Category labels (left of axis), bars extending right, values at far-right
+  drawBars(t);
+
+  ctx.restore();
+
+  els.scrubber.value = f;
+  els.tlRead.textContent = `${f + 1} / ${TOTAL_FRAMES}  ·  ${t.toFixed(2)}s`;
+}
+
+// ---------- Left axis vertical line ----------
+function drawAxis(t) {
+  const p = easeOutCubic(clamp01((t - 0.40) / 0.40));
+  if (p <= 0) return;
+  ctx.save();
+  ctx.globalAlpha = p;
+  ctx.strokeStyle = TN_COLORS.axisLine || 'rgba(120,140,165,0.55)';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(LAYOUT.axisX, LAYOUT.barAreaTop - 18);
+  ctx.lineTo(LAYOUT.axisX, LAYOUT.barAreaBot + 18);
+  ctx.stroke();
+  ctx.restore();
+}
+
+// ---------- Bars + labels + values ----------
+// Each row: category label (right-aligned at catLabelRightX), bar extending
+// from axisX to (axisX + barWidth_for_this_value), and value number BOLD
+// right-aligned at sourceX (1805).
+//
+// LABEL FITTING: long labels (e.g. "Spojené království Velké Británie") could
+// overflow off the left edge if we used a fixed catLabelRightX. The function
+// dynamically measures every label, then either:
+//   1) pushes the whole axis (and label right edge) further right to fit all
+//      labels at the default font size, OR
+//   2) if pushing would eat too much of the bar area (axis would go past
+//      a reasonable limit), shrinks the label font progressively until it fits
+// This keeps long labels visible without surprise truncation, while preserving
+// at least minimal bar plot width for readability.
+function drawBars(t) {
+  const bars = (state.bars || []).filter(b => b.value != null && !isNaN(b.value));
+  if (bars.length === 0) return;
+
+  // Y layout — distribute bars evenly inside barAreaTop..barAreaBot
+  const areaH = LAYOUT.barAreaBot - LAYOUT.barAreaTop;
+  const slotH = areaH / bars.length;
+  const barH = Math.max(LAYOUT.barMinHeight, Math.min(LAYOUT.barMaxHeight, slotH * 0.65));
+
+  // === LABEL FITTING ===
+  // Frame safe-left margin: how close to x=0 we allow text to start.
+  const SAFE_LEFT_X    = 60;
+  const LABEL_AXIS_GAP = 30;     // px gap between label right edge and axis
+  // Maximum X we allow the axis to slide to (so bars don't get crushed).
+  // If even this isn't enough, we start shrinking the font.
+  const AXIS_MAX_X     = 700;
+  const FONT_DEFAULT   = 44;
+  const FONT_MIN       = 24;
+
+  // Measure widest label at default font
+  let widest = 0;
+  ctx.save();
+  let labelFont = FONT_DEFAULT;
+  ctx.font = `500 ${labelFont}px "Organica", sans-serif`;
+  for (const b of bars) {
+    const w = ctx.measureText(b.label || '').width;
+    if (w > widest) widest = w;
+  }
+
+  // Required axis position so the widest label fits with the gap.
+  let axisX = Math.max(LAYOUT.axisX, SAFE_LEFT_X + widest + LABEL_AXIS_GAP);
+
+  // If axis would push too far right, shrink the font until labels fit.
+  if (axisX > AXIS_MAX_X) {
+    const availableLabelW = AXIS_MAX_X - SAFE_LEFT_X - LABEL_AXIS_GAP;
+    // Linear shrink approximation — measure at smaller fonts in 2 px steps.
+    while (labelFont > FONT_MIN) {
+      labelFont -= 2;
+      ctx.font = `500 ${labelFont}px "Organica", sans-serif`;
+      let w2 = 0;
+      for (const b of bars) {
+        const w = ctx.measureText(b.label || '').width;
+        if (w > w2) w2 = w;
+      }
+      if (w2 <= availableLabelW) {
+        widest = w2;
+        break;
+      }
+    }
+    axisX = AXIS_MAX_X;
+  }
+  ctx.restore();
+
+  const labelRightX = axisX - LABEL_AXIS_GAP;
+
+  // === Bar plot range ===
+  // Determine max value for scaling
+  let maxV = 0;
+  for (const b of bars) {
+    const v = Math.abs(+b.value || 0);
+    if (v > maxV) maxV = v;
+  }
+  if (maxV <= 0) maxV = 1;
+
+  const plotW = LAYOUT.plotRight - axisX;
+
+  // === Left axis line (drawn here so it picks up the dynamic axisX) ===
+  // (drawAxis() in renderFrame draws the original at LAYOUT.axisX. We
+  // override here by re-stroking at the dynamic position.)
+  // To avoid a double line we DON'T re-stroke if axisX equals LAYOUT.axisX.
+  if (axisX !== LAYOUT.axisX) {
+    const axisP = easeOutCubic(clamp01((t - 0.40) / 0.40));
+    if (axisP > 0) {
+      // Erase the old line (paint gray panel over it) then redraw at new pos
+      ctx.save();
+      ctx.fillStyle = TN_COLORS.panelGray;
+      ctx.fillRect(LAYOUT.axisX - 2, LAYOUT.barAreaTop - 18, 4, (LAYOUT.barAreaBot - LAYOUT.barAreaTop) + 36);
+      ctx.globalAlpha = axisP;
+      ctx.strokeStyle = TN_COLORS.axisLine;
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(axisX, LAYOUT.barAreaTop - 18);
+      ctx.lineTo(axisX, LAYOUT.barAreaBot + 18);
+      ctx.stroke();
+      ctx.restore();
+    }
+  }
+
+  bars.forEach((b, i) => {
+    const cy = LAYOUT.barAreaTop + slotH * (i + 0.5);
+    const barTop = cy - barH / 2;
+
+    // Per-row stagger
+    const start = 0.55 + i * 0.10;
+
+    // === Category label (right-aligned at labelRightX, dynamic font)
+    const labelP = easeOutCubic(clamp01((t - (start - 0.10)) / 0.40));
+    if (labelP > 0) {
+      ctx.save();
+      ctx.globalAlpha = labelP;
+      ctx.fillStyle = getFontColor();
+      ctx.font = `500 ${labelFont}px "Organica", sans-serif`;
+      ctx.textAlign = 'right';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(b.label || '', labelRightX, cy);
+      ctx.restore();
+    }
+
+    // === Bar grow
+    const growP = easeOutCubic(clamp01((t - start) / 0.55));
+    if (growP > 0) {
+      const targetW = (Math.abs(+b.value) / maxV) * plotW;
+      const barW = targetW * growP;
+      ctx.save();
+      // Default '#3981D6' = "follow theme" — uses current show's accent.
+      // Custom user-picked colors override.
+      const _isDefault = !b.color || b.color === '#3981D6';
+      ctx.fillStyle = _isDefault ? getAccent() : b.color;
+      ctx.fillRect(axisX, barTop, barW, barH);
+      ctx.restore();
+    }
+
+    // === Value number — fades in once the bar finishes growing
+    if (growP >= 0.999 || (t >= start + 0.55)) {
+      const valStart = start + 0.45;
+      const valP = easeOutCubic(clamp01((t - valStart) / 0.30));
+      if (valP > 0) {
+        ctx.save();
+        ctx.globalAlpha = valP;
+        ctx.fillStyle = getFontColor();
+        // Auto-fit value number — bar values can grow long (1 234 567 etc).
+        // Reserve a fixed 280px column anchored at sourceX (right-aligned).
+        const valueText = formatBarValue(b.value);
+        const valueFont = fitFont(valueText, 280, 56, 800, 28, 2);
+        ctx.font = `800 ${valueFont}px "Organica", sans-serif`;
+        ctx.textAlign = 'right';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(valueText, LAYOUT.sourceX, cy);
+        ctx.restore();
+      }
+    }
+  });
+}
+
+function formatBarValue(v) {
+  if (v == null || isNaN(v)) return '';
+  if (Math.abs(v) >= 1000) return Math.round(v).toLocaleString('cs-CZ').replace(/,/g, ' ');
+  if (Math.abs(v - Math.round(v)) < 0.01) return String(Math.round(v));
+  return v.toFixed(1).replace('.', ',');
+}
+
+function render() {
+  renderFrame(state.frame);
+}
+
+
+// =============================================================================
+// FPS PILL — main button = currently selected FPS, hover reveals alternatives
+// =============================================================================
+function updateFpsPillUI() {
+  try {
+    const pill = document.getElementById('fpsActiveBtn');
+    if (!pill) return;
+    pill.innerHTML = `${FPS} FPS<span class="fps-pill-hint">${FPS === 50 ? 'TV' : 'WEB'}</span>`;
+    document.querySelectorAll('.fps-pill-menu button').forEach(b => {
+      b.classList.toggle('active', parseInt(b.dataset.fps, 10) === FPS);
+    });
+    const subLabel = document.getElementById('btnExportSubLabel');
+    if (subLabel) subLabel.textContent = `${FPS} FPS · ${FPS === 50 ? 'TV bitrate' : 'web bitrate'}`;
+  } catch (_) {}
+}
+document.querySelectorAll('.fps-pill-menu button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const newFps = parseInt(btn.dataset.fps, 10);
+    if (newFps !== 30 && newFps !== 50) return;
+    setFps(newFps);
+    updateFpsPillUI();
+    render();
+  });
+});
+
+// =============================================================================
+// EXPORT MENU — split button
+// =============================================================================
+const _exportMenuEl = document.getElementById('exportMenu');
+document.getElementById('btnExportMore')?.addEventListener('click', e => {
+  e.stopPropagation();
+  if (_exportMenuEl) _exportMenuEl.classList.toggle('open');
+});
+document.addEventListener('click', e => {
+  if (!_exportMenuEl) return;
+  if (!e.target.closest('.export-split')) _exportMenuEl.classList.remove('open');
+});
+
+/* =============================================================================
+   PLAYBACK
+   ============================================================================= */
+function setDuration(sec) {
+  DURATION = Math.max(1, Math.min(30, sec));
+  TOTAL_FRAMES = Math.round(DURATION * FPS);
+  els.scrubber.max = TOTAL_FRAMES - 1;
+  els.stDur.textContent = DURATION.toFixed(1) + ' s';
+  if (state.frame >= TOTAL_FRAMES) state.frame = TOTAL_FRAMES - 1;
+}
+function setFps(fps) {
+  FPS = fps;
+  TOTAL_FRAMES = Math.round(DURATION * FPS);
+  els.scrubber.max = TOTAL_FRAMES - 1;
+  els.stFps.textContent = FPS + ' fps';
+  if (state.frame >= TOTAL_FRAMES) state.frame = TOTAL_FRAMES - 1;
+  // Sync new FPS pill UI (50 FPS · TV / 30 FPS · WEB labels)
+  if (typeof updateFpsPillUI === 'function') updateFpsPillUI();
+}
+
+function startPlayback() {
+  if (playing) return;
+  playing = true;
+  els.btnPlay.textContent = '⏸';
+  if (state.frame >= TOTAL_FRAMES - 1) state.frame = 0;
+  playStart = performance.now();
+  playStartFrame = state.frame;
+
+  // Video backdrop: Chrome often blocks autoplay before first user gesture.
+  // Clicking Play is that gesture — use it to force-sync and play the backdrop,
+  // same pattern as bar-chart. Video keeps looping while anim runs.
+  if (state.branding === 'preview' && videoReady && !videoFailed) {
+    syncVideoToFrame();
+    tryPlayVideo('startPlayback');
+  }
+
+  const step = (now) => {
+    if (!playing) return;
+    const dt = (now - playStart) / 1000;
+    const f = Math.min(TOTAL_FRAMES - 1, playStartFrame + Math.floor(dt * FPS));
+    renderFrame(f);
+    if (f >= TOTAL_FRAMES - 1) {
+      stopPlayback();
+      return;
+    }
+    playRAF = requestAnimationFrame(step);
+  };
+  playRAF = requestAnimationFrame(step);
+}
+function stopPlayback() {
+  playing = false;
+  els.btnPlay.textContent = '▶';
+  if (playRAF) { cancelAnimationFrame(playRAF); playRAF = null; }
+  // Do NOT pause video in preview — let backdrop loop keep running so the
+  // stage never goes static behind the paused graphic.
+}
+function togglePlay() { playing ? stopPlayback() : startPlayback(); }
+
+/* =============================================================================
+   INPUT WIRING
+   ============================================================================= */
+$('inTitle').addEventListener('input', e => { state.title = e.target.value; render(); });
+$('inSource').addEventListener('input', e => { state.source = e.target.value; render(); });
+
+// Show theme listener
+(function () {
+  const sel = document.getElementById('inShow');
+  if (sel) sel.addEventListener('change', e => {
+    state.show = e.target.value;
+    applyShowTheme();
+  });
+  populateShowSelect();
+})();
+
+$('inDuration').addEventListener('input', e => {
+  const v = parseFloat(e.target.value);
+  if (!isNaN(v) && v > 0) { setDuration(v); render(); }
+});
+
+// === Bar editor ===
+function rebuildBarsList() {
+  const list = $('barsList');
+  const bars = state.bars || [];
+
+  list.innerHTML = bars.map((b, i) => {
+    const valDisplay = (b.value == null || isNaN(b.value)) ? '' : String(b.value);
+    return `
+      <div class="series-card" data-idx="${i}">
+        <div class="series-head" style="grid-template-columns: 36px 1fr 100px 28px">
+          <input type="color"  class="color" value="${escapeHtml((!b.color || b.color === '#3981D6') ? getAccent() : b.color)}" />
+          <input type="text"   class="label" placeholder="popisek (např. země)" value="${escapeHtml(b.label || '')}" />
+          <input type="number" step="any" min="0" class="value" placeholder="hodnota" value="${escapeHtml(valDisplay)}" />
+          <button class="series-del" title="Smazat sloupec">×</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  list.querySelectorAll('.series-card').forEach((card, i) => {
+    card.querySelector('.color').addEventListener('input', e => {
+      state.bars[i].color = e.target.value;
+      render();
+    });
+    card.querySelector('.label').addEventListener('input', e => {
+      state.bars[i].label = e.target.value;
+      render();
+    });
+    card.querySelector('.value').addEventListener('input', e => {
+      const raw = e.target.value;
+      if (raw === '') state.bars[i].value = null;
+      else {
+        const parsed = parseFloat(raw.replace(',', '.'));
+        // Hbar: záporné nemají smysl (sloupec nemůže růst doleva od osy).
+        // Clamp na 0 a opravit zobrazení v inputu.
+        if (!isNaN(parsed) && parsed < 0) {
+          state.bars[i].value = 0;
+          e.target.value = '0';
+        } else {
+          state.bars[i].value = isNaN(parsed) ? null : parsed;
+        }
+      }
+      render();
+    });
+    card.querySelector('.series-del').addEventListener('click', () => {
+      if (state.bars.length <= 1) return;
+      state.bars.splice(i, 1);
+      rebuildBarsList();
+      $('barCount').textContent = `(${state.bars.length})`;
+      render();
+    });
+  });
+  $('barCount').textContent = `(${state.bars.length})`;
+}
+
+$('btnAddBar').addEventListener('click', () => {
+  if (state.bars.length >= 8) return;
+  state.bars.push({
+    label: '',
+    color: '#3981D6',
+    value: 0,
+  });
+  rebuildBarsList();
+  render();
+});
+
+// Toggle groups
+
+
+
+// Timeline
+els.scrubber.addEventListener('input', () => {
+  stopPlayback();
+  state.frame = parseInt(els.scrubber.value, 10);
+  // Scrubbing is a user gesture — sync + kick video so backdrop can start
+  // even if autoplay was blocked on boot.
+  if (state.branding === 'preview' && videoReady && !videoFailed) {
+    syncVideoToFrame();
+    tryPlayVideo('scrubber');
+  }
+  renderFrame(state.frame);
+});
+els.btnPlay.addEventListener('click', togglePlay);
+$('btnRewind').addEventListener('click', () => {
+  stopPlayback();
+  state.frame = 0;
+  renderFrame(0);
+});
+
+// Home button
+$('btnHome').addEventListener('click', () => {
+  if (isDirty() && !confirm('Máš neuložené změny. Opravdu odejít na hlavní stránku?')) return;
+  window.location.href = '../index.html';
+});
+
+/* =============================================================================
+   PROJECT STORAGE — shared contract with bar-chart.
+   ============================================================================= */
+function loadAllProjects() {
+  try { return JSON.parse(localStorage.getItem(LS_KEY) || '[]'); }
+  catch (e) { return []; }
+}
+function saveAllProjects(list) {
+  localStorage.setItem(LS_KEY, JSON.stringify(list));
+}
+function snapshotState() {
+  return {
+    template: TEMPLATE_ID,
+    title: state.title,
+    source: state.source,
+    bars: state.bars.map(b => ({
+      label: b.label,
+      color: b.color,
+      value: b.value,
+    })),
+    branding: state.branding,
+    duration: DURATION,
+    fps: FPS,
+  };
+}
+function applySnapshot(snap) {
+  if (!snap) return;
+  state.title  = snap.title  ?? state.title;
+  state.source = snap.source ?? state.source;
+  if (Array.isArray(snap.bars) && snap.bars.length > 0) {
+    state.bars = snap.bars.map(b => ({
+      label: b.label || '',
+      color: b.color || '#3981D6',
+      value: (typeof b.value === 'number') ? b.value : null,
+    }));
+  }
+  const rawBranding = snap.branding ?? 'preview';
+  state.branding = (rawBranding === 'live' || rawBranding === 'preview') ? 'preview' : 'export';
+  // Show theme — fall back to default 'tn' if missing or unknown.
+  const candidateShow = snap.show ?? state.show;
+  state.show = (window.TN_THEMES && TN_THEMES.SHOWS_BY_ID[candidateShow])
+    ? candidateShow : (window.TN_THEMES ? TN_THEMES.DEFAULT_SHOW_ID : 'tn');
+  if (snap.duration) DURATION = snap.duration;
+  // Legacy migration: 25 FPS no longer supported — auto-upgrade to 50 FPS
+  if (snap.fps === 25) snap.fps = 50;
+  if (snap.fps === 30 || snap.fps === 50) FPS = snap.fps;
+  setDuration(DURATION); setFps(FPS);
+
+  // Sync UI
+  $('inTitle').value  = state.title;
+  $('inSource').value = state.source;
+  $('inDuration').value = DURATION;
+  rebuildBarsList();
+  if (typeof updateFpsPillUI === 'function') updateFpsPillUI();
+  state.frame = TOTAL_FRAMES - 1;
+  els.scrubber.value = state.frame;
+  applyBrandingMode();
+}
+function isDirty() {
+  return lastSavedSnapshot !== JSON.stringify(snapshotState());
+}
+function updateProjectMeta() {
+  const el = $('projMeta');
+  if (!currentProjectId) {
+    el.innerHTML = '<span>nový</span>';
+  } else {
+    el.innerHTML = isDirty() ? '<span class="dirty">● neuloženo</span>' : '<span class="saved">✓ uloženo</span>';
+  }
+}
+function saveProject(id, name) {
+  const all = loadAllProjects();
+  const now = Date.now();
+  const snap = snapshotState();
+  if (!id) {
+    id = 'p_' + now.toString(36) + '_' + Math.random().toString(36).slice(2, 6);
+    all.push({ id, name, createdAt: now, updatedAt: now, state: snap });
+  } else {
+    const idx = all.findIndex(p => p.id === id);
+    if (idx >= 0) {
+      all[idx].name = name;
+      all[idx].updatedAt = now;
+      all[idx].state = snap;
+    } else {
+      all.push({ id, name, createdAt: now, updatedAt: now, state: snap });
+    }
+  }
+  saveAllProjects(all);
+  currentProjectId = id;
+  localStorage.setItem(LS_CURRENT, id);
+  lastSavedSnapshot = JSON.stringify(snap);
+  updateProjectMeta();
+  return id;
+}
+function loadProject(id) {
+  const p = loadAllProjects().find(x => x.id === id);
+  if (!p) return;
+  applySnapshot(p.state);
+  currentProjectId = p.id;
+  $('projName').value = p.name;
+  localStorage.setItem(LS_CURRENT, id);
+  lastSavedSnapshot = JSON.stringify(snapshotState());
+  updateProjectMeta();
+  render();
+  showToast(`Otevřeno: ${p.name}`, 'success');
+}
+function deleteProject(id) {
+  const all = loadAllProjects().filter(p => p.id !== id);
+  saveAllProjects(all);
+  if (currentProjectId === id) {
+    currentProjectId = null;
+    localStorage.removeItem(LS_CURRENT);
+    updateProjectMeta();
+  }
+  renderProjectList();
+}
+
+// ---------- Modal UI ----------
+function renderProjectList() {
+  const list = $('projList');
+  // Show only projects for this template (or legacy untagged) — avoids
+  // bar-chart projects leaking into the quote template's Open dialog.
+  const all = loadAllProjects()
+    .filter(p => (p.state?.template || 'bar-chart-01') === TEMPLATE_ID)
+    .sort((a, b) => b.updatedAt - a.updatedAt);
+  if (all.length === 0) {
+    list.innerHTML = '<div class="proj-empty">Žádné uložené projekty v této šabloně.<br>Použij „Uložit jako…" pro vytvoření.</div>';
+    return;
+  }
+  list.innerHTML = all.map(p => {
+    const d = new Date(p.updatedAt);
+    const dateStr = d.toLocaleString('cs-CZ', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' });
+    const isCurrent = p.id === currentProjectId ? ' (current)' : '';
+    return `<div class="proj-item" data-id="${p.id}">
+      <div class="proj-info">
+        <div class="proj-title">${escapeHtml(p.name)}${isCurrent}</div>
+        <div class="proj-date">${dateStr}</div>
+      </div>
+      <button class="proj-btn load" data-action="load" data-id="${p.id}">Otevřít</button>
+      <button class="proj-btn del" data-action="delete" data-id="${p.id}" title="Smazat">Smazat</button>
+    </div>`;
+  }).join('');
+  list.querySelectorAll('.proj-btn').forEach(btn => {
+    btn.addEventListener('click', e => {
+      const id = e.target.dataset.id;
+      if (e.target.dataset.action === 'load') { closeProjModal(); loadProject(id); }
+      else if (e.target.dataset.action === 'delete') {
+        const p = loadAllProjects().find(x => x.id === id);
+        if (p && confirm(`Smazat projekt „${p.name}"?`)) deleteProject(id);
+      }
+    });
+  });
+}
+function openProjModal()  { renderProjectList(); $('projModal').classList.add('show'); }
+function closeProjModal() { $('projModal').classList.remove('show'); }
+
+$('projSave').addEventListener('click', () => {
+  const name = $('projName').value.trim() || 'Untitled';
+  saveProject(currentProjectId, name);
+  showToast(`Uloženo: ${name}`, 'success');
+});
+$('projSaveAs').addEventListener('click', () => {
+  const base = $('projName').value.trim() || 'Untitled';
+  const name = prompt('Název projektu:', `${base} copy`);
+  if (!name || !name.trim()) return;
+  $('projName').value = name.trim();
+  saveProject(null, name.trim());
+  showToast(`Vytvořeno: ${name.trim()}`, 'success');
+});
+$('projOpen').addEventListener('click', openProjModal);
+$('projNew').addEventListener('click', () => {
+  if (isDirty() && !confirm('Zahodit neuložené změny?')) return;
+  applySnapshot({
+    title: 'Podíl dokončených rekonstrukcí (v %)',
+    source: 'zdroj: Facebook',
+    bars: [
+      { label: 'Česko',      color: '#3981D6', value: 32   },
+      { label: 'Německo',    color: '#3981D6', value: 21   },
+      { label: 'Rakousko',   color: '#3981D6', value: 13.5 },
+      { label: 'Chorvatsko', color: '#3981D6', value: 10.5 },
+      { label: 'Řecko',      color: '#3981D6', value: 6.5  },
+      { label: 'Portugalsko',color: '#3981D6', value: 5.5  },
+    ],
+    branding: 'preview', show: 'tn', duration: 20, fps: 50,
+  });
+  currentProjectId = null;
+  localStorage.removeItem(LS_CURRENT);
+  $('projName').value = 'Untitled';
+  lastSavedSnapshot = JSON.stringify(snapshotState());
+  updateProjectMeta();
+  render();
+  showToast('Nový projekt', 'success');
+});
+$('projModalClose').addEventListener('click', closeProjModal);
+$('projModal').addEventListener('click', e => {
+  if (e.target.id === 'projModal') closeProjModal();
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeProjModal();
+  if (e.key === ' ' && e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
+    e.preventDefault(); togglePlay();
+  }
+});
+$('projName').addEventListener('input', updateProjectMeta);
+setInterval(updateProjectMeta, 1000);
+
+/* =============================================================================
+   EXPORT — the entire graphic is already in <canvas>, so we just toBlob
+   for PNG and captureStream + MediaRecorder for WebM. No DOM rasterization
+   dance. Export flips branding to 'export' first so the top/bottom strips
+   aren't transparent in the file.
+   ============================================================================= */
+
+
+
+
+
+function downloadBlob(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename; a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+$('btnExportPNG')?.addEventListener('click', async () => {
+  // DEFAULT: backdrop ON. Composite the live bg video under the stage canvas.
+  // Falls back to clean transparent (== current canvas only) when video isn't
+  // ready or branding is forced to 'export'.
+  await waitFonts();
+  renderFrame(state.frame);
+  try {
+    let blob;
+    const useVideo = (state.branding === 'preview') && videoReady && !videoFailed;
+    if (useVideo) {
+      const comp = document.createElement('canvas');
+      comp.width = W; comp.height = H;
+      const cctx = comp.getContext('2d');
+      const video = els.bgVideo;
+      // object-fit: cover composite
+      const vw = video.videoWidth || W;
+      const vh = video.videoHeight || H;
+      const scale = Math.max(W / vw, H / vh);
+      const dw = vw * scale, dh = vh * scale;
+      const dx = (W - dw) / 2, dy = (H - dh) / 2;
+      cctx.fillStyle = '#000';
+      cctx.fillRect(0, 0, W, H);
+      cctx.drawImage(video, dx, dy, dw, dh);
+      cctx.drawImage(canvas, 0, 0);
+      blob = await new Promise(r => comp.toBlob(r, 'image/png'));
+    } else {
+      // No video — paint black underneath (export branding rendered as 'export')
+      const comp = document.createElement('canvas');
+      comp.width = W; comp.height = H;
+      const cctx = comp.getContext('2d');
+      cctx.fillStyle = '#000';
+      cctx.fillRect(0, 0, W, H);
+      cctx.drawImage(canvas, 0, 0);
+      blob = await new Promise(r => comp.toBlob(r, 'image/png'));
+    }
+    downloadBlob(blob, `frame_${Date.now()}.png`);
+    showToast('PNG uložen', 'success');
+  } catch (err) {
+    console.error(err);
+    showToast('Export selhal: ' + err.message, 'error');
+  }
+});
+
+$('btnExportVideo')?.addEventListener('click', async () => {
+  // DEFAULT: backdrop ON. Records a composited canvas (video + stage) frame-
+  // by-frame via captureStream + MediaRecorder.
+  stopPlayback();
+  await waitFonts();
+  showToast('Export WebM — připravuji…', 'success');
+  try {
+    const useVideo = (state.branding === 'preview') && videoReady && !videoFailed;
+    const video    = els.bgVideo;
+    const comp = document.createElement('canvas');
+    comp.width = W; comp.height = H;
+    const cctx = comp.getContext('2d');
+
+    const stream = comp.captureStream(0);
+    const track = stream.getVideoTracks()[0];
+    const mimes = ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm'];
+    const mime = mimes.find(m => MediaRecorder.isTypeSupported(m));
+    if (!mime) throw new Error('Prohlížeč nepodporuje WebM nahrávání');
+    const recorder = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 8_000_000 });
+    const chunks = [];
+    recorder.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
+    const stopped = new Promise(r => recorder.onstop = r);
+    recorder.start();
+
+    if (useVideo) {
+      try { video.currentTime = 0; await video.play(); } catch (_) {}
+    }
+
+    for (let i = 0; i < TOTAL_FRAMES; i++) {
+      // 1) backdrop layer
+      cctx.fillStyle = '#000';
+      cctx.fillRect(0, 0, W, H);
+      if (useVideo && video.readyState >= 2) {
+        const vw = video.videoWidth || W;
+        const vh = video.videoHeight || H;
+        const scale = Math.max(W / vw, H / vh);
+        const dw = vw * scale, dh = vh * scale;
+        const dx = (W - dw) / 2, dy = (H - dh) / 2;
+        cctx.drawImage(video, dx, dy, dw, dh);
+      }
+      // 2) animation frame
+      renderFrame(i);
+      cctx.drawImage(canvas, 0, 0);
+      if (track.requestFrame) track.requestFrame();
+      await new Promise(r => setTimeout(r, 1000 / FPS));
+    }
+    await new Promise(r => setTimeout(r, 200));
+    recorder.stop();
+    await stopped;
+    if (useVideo) { try { video.pause(); } catch (_) {} }
+    const blob = new Blob(chunks, { type: mime });
+    downloadBlob(blob, `video_${Date.now()}.webm`);
+    showToast('Video exportováno', 'success');
+  } catch (err) {
+    console.error(err);
+    showToast('Export selhal: ' + err.message, 'error');
+  }
+});
+
+/* =============================================================================
+   PNG SEQUENCE (with backdrop) — writes PNGs straight into a user-picked folder
+   via the File System Access API. No zip step. Each frame is composited onto
+   an offscreen canvas: bg (video / flat gradient) first, then the main stage
+   canvas on top. AE-friendly naming: citace_0000.png … citace_NNNN.png.
+   ============================================================================= */
+$('btnExportSeq')?.addEventListener('click', async () => {
+  if (typeof window.showDirectoryPicker !== 'function') {
+    showToast('PNG sekvenci podporuje jen Chrome/Edge (File System Access API)', 'error');
+    return;
+  }
+
+  let dirHandle;
+  try {
+    dirHandle = await window.showDirectoryPicker({ mode: 'readwrite' });
+  } catch (err) {
+    // User cancelled picker — silent
+    if (err && err.name === 'AbortError') return;
+    console.error(err);
+    showToast('Nelze otevřít složku: ' + err.message, 'error');
+    return;
+  }
+
+  stopPlayback();
+  await waitFonts();
+  const prevBranding = state.branding;
+  // Keep whatever backdrop the user has chosen — we composite it ourselves,
+  // so no need to flip to 'export'. Just make sure the DOM state is sane.
+  applyBrandingMode();
+
+  // Offscreen compositor — same intrinsic size as the stage canvas.
+  const comp = document.createElement('canvas');
+  comp.width = W; comp.height = H;
+  const cctx = comp.getContext('2d');
+
+  // Pre-rasterize the flat gradient once (matches .bg-flat CSS so 'flat' and
+  // 'export' export identically to what designer sees).
+  const flatBg = document.createElement('canvas');
+  flatBg.width = W; flatBg.height = H;
+  const fctx = flatBg.getContext('2d');
+  // Base linear gradient
+  const lg = fctx.createLinearGradient(0, 0, 0, H);
+  lg.addColorStop(0,    '#0a2346');
+  lg.addColorStop(0.5,  '#0a2a4e');
+  lg.addColorStop(1,    '#1a5e6d');
+  fctx.fillStyle = lg; fctx.fillRect(0, 0, W, H);
+  // Top-right deep-blue glow
+  const r2 = fctx.createRadialGradient(W * 0.80, H * 0.10, 0, W * 0.80, H * 0.10, W * 0.50);
+  r2.addColorStop(0, 'rgba(14,62,128,0.6)');
+  r2.addColorStop(1, 'rgba(14,62,128,0)');
+  fctx.fillStyle = r2; fctx.fillRect(0, 0, W, H);
+  // Upper-left cyan glow
+  const r1 = fctx.createRadialGradient(W * 0.30, H * 0.20, 0, W * 0.30, H * 0.20, W * 0.55);
+  r1.addColorStop(0, 'rgba(56,143,230,0.35)');
+  r1.addColorStop(1, 'rgba(56,143,230,0)');
+  fctx.fillStyle = r1; fctx.fillRect(0, 0, W, H);
+
+  // In the new branding scheme, 'preview' = backdrop is video.
+  // 'export' = clean composite (no video baked).
+  const useVideo = (state.branding === 'preview');
+  const video    = els.bgVideo;
+  if (useVideo) {
+    // Rewind & play so frame 0 of the sequence lines up with video frame 0.
+    try { video.currentTime = 0; video.play(); } catch (_) {}
+  }
+
+  showToast(`Export PNG sekvence — ${TOTAL_FRAMES} snímků…`, 'success');
+
+  const pad = String(TOTAL_FRAMES - 1).length;
+  const frameInterval = 1000 / FPS;
+
+  try {
+    for (let i = 0; i < TOTAL_FRAMES; i++) {
+      // 1) backdrop
+      cctx.clearRect(0, 0, W, H);
+      if (useVideo && video.readyState >= 2) {
+        // object-fit: cover math — scale video to fill W×H, crop overflow.
+        const vw = video.videoWidth || W;
+        const vh = video.videoHeight || H;
+        const scale = Math.max(W / vw, H / vh);
+        const dw = vw * scale, dh = vh * scale;
+        const dx = (W - dw) / 2, dy = (H - dh) / 2;
+        cctx.drawImage(video, dx, dy, dw, dh);
+      } else {
+        // flat gradient or export (both render same gradient today)
+        cctx.drawImage(flatBg, 0, 0);
+      }
+
+      // 2) animation frame on top
+      renderFrame(i);
+      cctx.drawImage(canvas, 0, 0);
+
+      // 3) write PNG to folder
+      const blob = await new Promise(r => comp.toBlob(r, 'image/png'));
+      const name = `citace_${String(i).padStart(pad, '0')}.png`;
+      const fh = await dirHandle.getFileHandle(name, { create: true });
+      const w = await fh.createWritable();
+      await w.write(blob);
+      await w.close();
+
+      // Keep video in sync with the frame cadence when recording live bg.
+      if (useVideo) {
+        await new Promise(r => setTimeout(r, frameInterval));
+      }
+    }
+    showToast(`Hotovo — ${TOTAL_FRAMES} PNG snímků`, 'success');
+  } catch (err) {
+    console.error(err);
+    showToast('Export selhal: ' + err.message, 'error');
+  } finally {
+    if (useVideo) { try { video.pause(); } catch (_) {} }
+    state.branding = prevBranding;
+    render();
+  }
+});
+
+// =============================================================================
+// EXPORT WIRING — main button + dropdown items
+// New UI has 1 primary button (btnExportMP4) and a dropdown menu (exportMenu)
+// with PNG / sequence / WebM. We dispatch them to the legacy handlers which
+// still exist below. MP4 H.264 is a TODO — for now alias to Video (WebM).
+// =============================================================================
+(function () {
+  // Click dispatch on dropdown menu items
+  document.querySelectorAll('#exportMenu button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const fmt = btn.dataset.format;
+      const exportMenu = document.getElementById('exportMenu');
+      if (exportMenu) exportMenu.classList.remove('open');
+      // Trigger the legacy handler by simulating click
+      if (fmt === 'png')  { document.getElementById('btnExportPNG')?.click()
+                        || (window.__exportPng && window.__exportPng()); }
+      if (fmt === 'webm') { document.getElementById('btnExportVideo')?.click()
+                        || (window.__exportWebm && window.__exportWebm()); }
+      if (fmt === 'seq')  { document.getElementById('btnExportSeq')?.click()
+                        || (window.__exportSeq && window.__exportSeq()); }
+    });
+  });
+  // Main MP4 button — for now reuses the WebM/Video pipeline
+  // (TODO: implement true H.264 encoding via ffmpeg.wasm with TV/web bitrates)
+  })();
+
+
+/* =============================================================================
+   TOAST
+   ============================================================================= */
+function showToast(msg, kind) {
+  const stack = $('toastStack');
+  const el = document.createElement('div');
+  el.className = 'toast' + (kind ? ' ' + kind : '');
+  el.textContent = msg;
+  stack.appendChild(el);
+  setTimeout(() => {
+    el.style.transition = 'opacity .3s ease';
+    el.style.opacity = '0';
+    setTimeout(() => el.remove(), 300);
+  }, 2400);
+}
+
+/* =============================================================================
+   BOOT
+   ============================================================================= */
+async function waitFonts() {
+  try {
+    await Promise.all([
+      // Title (800 / 54px)
+      document.fonts.load('800 54px "Organica"'),
+      // Source (400 / 28px)
+      document.fonts.load('400 28px "Organica"'),
+      // Row label (500 / 44px) — semibold
+      document.fonts.load('500 44px "Organica"'),
+      // Row mid (400 / 38px) — regular
+      document.fonts.load('400 38px "Organica"'),
+      // Row value (800 / 44px) — heavy bold
+      document.fonts.load('800 44px "Organica"'),
+      // Other sizes used elsewhere or in preview
+      document.fonts.load('800 64px "Organica"'),
+      document.fonts.load('800 56px "Organica"'),
+      document.fonts.load('700 50px "Organica"'),
+      document.fonts.load('400 24px "Organica"'),
+    ]);
+    await document.fonts.ready;
+  } catch (e) { console.warn('Font load:', e); }
+}
+
+// URL params: ?project=<id> (auto-load) and ?preview=1&frame=N (thumbnail mode)
+const _params = new URLSearchParams(window.location.search);
+const _urlProjectId = _params.get('project');
+
+(async function boot() {
+  console.log('%c[TN Horizontal Bar] v1',
+    'background:#3981D6;color:white;padding:4px 8px;font-weight:bold;border-radius:2px');
+  setDuration(DURATION);
+  setFps(FPS);
+  // URL ?show= override — when launcher links us with a specific show, use it
+  // as the initial theme. Per-projekt overrides may still apply later (when a
+  // saved project loads).
+  try {
+    const urlShow = _params.get('show');
+    if (urlShow && window.TN_THEMES && TN_THEMES.SHOWS_BY_ID[urlShow]) {
+      state.show = urlShow;
+    }
+  } catch (_) {}
+    populateShowSelect();
+  applyShowTheme();
+  rebuildBarsList();
+  if (els.bgFlat) els.bgFlat.style.display = 'none';
+  await waitFonts();
+  fitStage();
+
+  if (_params.get('preview') === '1') {
+    // Hide chrome (sidebar + header + timeline) so the iframe shows just the canvas
+    document.querySelector('.control')?.style.setProperty('display', 'none');
+    document.querySelector('.stage-header')?.style.setProperty('display', 'none');
+    document.querySelector('.timeline')?.style.setProperty('display', 'none');
+    const stageWrap = document.querySelector('.stage-wrap');
+    if (stageWrap) stageWrap.style.padding = '0';
+    const appEl = document.querySelector('.app');
+    if (appEl) appEl.style.gridTemplateColumns = '1fr';
+    // Backdrop ON in preview thumbs (theme video shows behind the graphic)
+    state.branding = 'preview';
+    if (typeof applyBrandingMode === 'function') applyBrandingMode();
+    const requestedFrame = parseInt(_params.get('frame') || '60', 10);
+    // Duration may be short → clamp to TOTAL_FRAMES-1 to land on settled state
+    state.frame = Math.min(requestedFrame, TOTAL_FRAMES - 1);
+    render();
+    if (typeof fitStage === 'function') fitStage();
+    return;
+  }
+
+  const targetId = _urlProjectId || localStorage.getItem(LS_CURRENT);
+  if (targetId) {
+    const all = loadAllProjects();
+    const p = all.find(x => x.id === targetId && (x.state?.template === TEMPLATE_ID));
+    if (p) {
+      applySnapshot(p.state);
+      currentProjectId = p.id;
+      $('projName').value = p.name;
+    }
+  }
+
+  // Safety net: ensure state.bars is sane after load.
+  if (!Array.isArray(state.bars) || state.bars.length === 0) {
+    console.warn('[Hbar] state.bars empty — restoring defaults');
+    state.bars = [
+      { label: 'Česko',      color: '#3981D6', value: 32   },
+      { label: 'Německo',    color: '#3981D6', value: 21   },
+      { label: 'Rakousko',   color: '#3981D6', value: 13.5 },
+      { label: 'Chorvatsko', color: '#3981D6', value: 10.5 },
+      { label: 'Řecko',      color: '#3981D6', value: 6.5  },
+      { label: 'Portugalsko',color: '#3981D6', value: 5.5  },
+    ];
+    rebuildBarsList();
+  }
+
+  lastSavedSnapshot = JSON.stringify(snapshotState());
+  updateProjectMeta();
+
+  // Open on the SETTLED end frame (like Bar Chart does) so the stage isn't
+  // empty on first paint — the block scale-Y intro is at 0 at frame 0.
+  state.frame = TOTAL_FRAMES - 1;
+  render();
+  // Stage scale needs a second pass once the control panel settles.
+  // Layout can measure 0 on first paint before the flex grid stabilizes.
+  requestAnimationFrame(() => { fitStage(); render(); });
+  setTimeout(() => { fitStage(); render(); }, 150);
+})();
+
+// ZPĚT button (top-right of control-header) — proxies to btnHome which already
+// has the unsaved-changes confirm dialog wired up.
+document.getElementById('btnBack')?.addEventListener('click', () => {
+  document.getElementById('btnHome')?.click();
+});
+
+
+
+
+/* =============================================================================
+   MP4 EXPORT — H.264 via WebCodecs API + mp4-muxer (~28 KB lib).
+   Native browser API — no SharedArrayBuffer, no coi-serviceworker, no
+   ffmpeg.wasm. Hardware-accelerated on Chrome/Edge/Safari 16.4+.
+   ============================================================================= */
+let _mp4MuxerLoaded = false;
+async function loadMp4Muxer() {
+  if (_mp4MuxerLoaded || window.Mp4Muxer) { _mp4MuxerLoaded = true; return; }
+  const CDNS = [
+    'https://cdn.jsdelivr.net/npm/mp4-muxer@5.2.2/build/mp4-muxer.js',
+    'https://unpkg.com/mp4-muxer@5.2.2/build/mp4-muxer.js',
+  ];
+  let lastErr;
+  for (const url of CDNS) {
+    try {
+      console.log('[mp4-muxer] loading from', url);
+      await new Promise((resolve, reject) => {
+        const s = document.createElement('script');
+        s.src = url;
+        s.onload = resolve;
+        s.onerror = () => reject(new Error('script onerror: ' + url));
+        document.head.appendChild(s);
+      });
+      if (window.Mp4Muxer) {
+        _mp4MuxerLoaded = true;
+        console.log('[mp4-muxer] ready');
+        return;
+      }
+    } catch (err) {
+      lastErr = err;
+      console.warn('[mp4-muxer] CDN failed:', err.message);
+    }
+  }
+  throw new Error('mp4-muxer CDN load failed: ' + (lastErr ? lastErr.message : '?'));
+}
+
+async function pickH264Codec(width, height, fps, bitrate) {
+  const candidates = [
+    'avc1.640034',  // High L5.2
+    'avc1.64002A',  // High L4.2 (1080p60)
+    'avc1.640028',  // High L4.0 (1080p30)
+    'avc1.4D0034',  // Main L5.2
+    'avc1.42E028',  // Baseline L4.0
+  ];
+  for (const codec of candidates) {
+    try {
+      const support = await VideoEncoder.isConfigSupported({
+        codec, width, height, bitrate, framerate: fps,
+      });
+      if (support && support.supported) {
+        console.log('[encoder] picked codec:', codec);
+        return codec;
+      }
+    } catch (_) {}
+  }
+  throw new Error('No supported H.264 codec found in WebCodecs');
+}
+
+document.getElementById('btnExportMP4')?.addEventListener('click', async () => {
+  // Browser capability check
+  if (typeof VideoEncoder === 'undefined' || typeof VideoFrame === 'undefined') {
+    showToast?.('Prohlížeč nepodporuje WebCodecs. Použij Chrome/Edge/Safari 16.4+.', 'error');
+    return;
+  }
+
+  stopPlayback();
+  await waitFonts();
+  exportModalOpen();
+  exportModalSetStatus('Načítám mp4-muxer…');
+
+  try {
+    await loadMp4Muxer();
+  } catch (err) {
+    console.error('[Export MP4] muxer load:', err);
+    exportModalSetDone(false, 'mp4-muxer load failed: ' + err.message);
+    return;
+  }
+  if (_exportCancelled) { exportModalClose(); return; }
+
+  const isTV = (FPS === 50);
+  const bitrate = isTV ? 16000000 : 4000000;
+
+  exportModalSetStatus('Vybírám H.264 codec…');
+  let codec;
+  try {
+    codec = await pickH264Codec(W, H, FPS, bitrate);
+  } catch (err) {
+    console.error('[Export MP4] codec pick:', err);
+    exportModalSetDone(false, 'H.264 codec nedostupný: ' + err.message);
+    return;
+  }
+  if (_exportCancelled) { exportModalClose(); return; }
+
+  const muxer = new Mp4Muxer.Muxer({
+    target: new Mp4Muxer.ArrayBufferTarget(),
+    video: { codec: 'avc', width: W, height: H, frameRate: FPS },
+    fastStart: 'in-memory',
+    firstTimestampBehavior: 'offset',
+  });
+
+  const encoderErrors = [];
+  const encoder = new VideoEncoder({
+    output: (chunk, meta) => muxer.addVideoChunk(chunk, meta),
+    error: (e) => { encoderErrors.push(e); console.error('[encoder]', e); },
+  });
+
+  encoder.configure({
+    codec, width: W, height: H, bitrate, framerate: FPS,
+    avc: { format: 'avc' },
+  });
+
+  // Composite: bg video underneath, animation canvas on top.
+  const useVideo = (state.branding === 'preview') && videoReady && !videoFailed;
+  const video = els.bgVideo;
+  const comp = document.createElement('canvas');
+  comp.width = W; comp.height = H;
+  const cctx = comp.getContext('2d');
+
+  if (useVideo) {
+    try { video.currentTime = 0; await video.play(); } catch (_) {}
+  }
+
+  exportModalSetStatus('Enkóduji snímky (H.264 ' + (isTV ? 'TV 16M' : 'web 4M') + ')…');
+  exportModalSetMeta('0 / ' + TOTAL_FRAMES, '0 %');
+
+  const startTime = performance.now();
+
+  try {
+    for (let i = 0; i < TOTAL_FRAMES; i++) {
+      if (_exportCancelled) {
+        try { encoder.close(); } catch (_) {}
+        if (useVideo) { try { video.pause(); } catch (_) {} }
+        exportModalSetDone(false, 'Export zrušen');
+        return;
+      }
+
+      cctx.fillStyle = '#000';
+      cctx.fillRect(0, 0, W, H);
+      if (useVideo && video.readyState >= 2) {
+        const vw = video.videoWidth || W;
+        const vh = video.videoHeight || H;
+        const scale = Math.max(W / vw, H / vh);
+        const dw = vw * scale, dh = vh * scale;
+        const dx = (W - dw) / 2, dy = (H - dh) / 2;
+        cctx.drawImage(video, dx, dy, dw, dh);
+      }
+      renderFrame(i);
+      cctx.drawImage(canvas, 0, 0);
+
+      const frame = new VideoFrame(comp, {
+        timestamp: Math.round(i * 1000000 / FPS),
+      });
+      encoder.encode(frame, { keyFrame: i % FPS === 0 });
+      frame.close();
+
+      if (useVideo) {
+        await new Promise(r => setTimeout(r, 1000 / FPS));
+      } else if (i % 30 === 0) {
+        await new Promise(r => setTimeout(r, 0));
+      }
+
+      // Progress UI — update every frame for smooth bar; meta with ETA every 5
+      const pct = ((i + 1) / TOTAL_FRAMES) * 100;
+      exportModalSetProgress(pct, false);
+      if (i % 5 === 0 || i === TOTAL_FRAMES - 1) {
+        const elapsed = (performance.now() - startTime) / 1000;
+        const fps = (i + 1) / elapsed;
+        const remaining = (TOTAL_FRAMES - i - 1) / Math.max(0.1, fps);
+        const etaText = remaining > 60
+          ? Math.ceil(remaining / 60) + ' min'
+          : Math.ceil(remaining) + ' s';
+        exportModalSetMeta(
+          (i + 1) + ' / ' + TOTAL_FRAMES + ' · ' + fps.toFixed(1) + ' fps',
+          pct.toFixed(0) + ' % · ETA ' + etaText
+        );
+      }
+    }
+
+    if (useVideo) { try { video.pause(); } catch (_) {} }
+
+    exportModalSetStatus('Finalizuji MP4…');
+    exportModalSetProgress(100, false);
+    await encoder.flush();
+    muxer.finalize();
+    encoder.close();
+
+    if (encoderErrors.length) {
+      throw new Error('Encoder errors: ' + encoderErrors[0].message);
+    }
+
+    const blob = new Blob([muxer.target.buffer], { type: 'video/mp4' });
+    downloadBlob(blob, 'vodorovny-graf_' + Date.now() + '.mp4');
+    const sizeMB = (blob.size / 1024 / 1024).toFixed(1);
+    const elapsed = ((performance.now() - startTime) / 1000).toFixed(1);
+    exportModalSetMeta(sizeMB + ' MB', elapsed + ' s');
+    exportModalSetDone(true, 'Hotovo · ' + sizeMB + ' MB · ' + elapsed + ' s');
+  } catch (err) {
+    console.error('[Export MP4]', err);
+    exportModalSetDone(false, 'Export selhal: ' + err.message);
+    try { encoder.close(); } catch (_) {}
+    if (useVideo) { try { video.pause(); } catch (_) {} }
+  }
+});
+
+/* ============================================================
+   EXPORT MODAL — programmatic API used by the MP4 export handler.
+   Blocks all UI; only Cancel button is interactive while modal is open.
+   ============================================================ */
+let _exportCancelled = false;
+function exportModalOpen() {
+  _exportCancelled = false;
+  const m = document.getElementById('exportModal');
+  if (!m) return;
+  m.classList.add('open');
+  exportModalSetStatus('Příprava…');
+  exportModalSetProgress(0, true);   // indeterminate
+  exportModalSetMeta('—', '—');
+  const cancelBtn = document.getElementById('exportModalCancel');
+  const closeBtn  = document.getElementById('exportModalClose');
+  if (cancelBtn) { cancelBtn.style.display = ''; cancelBtn.disabled = false; cancelBtn.textContent = 'Cancel'; }
+  if (closeBtn)  closeBtn.style.display = 'none';
+  const fill = document.getElementById('exportModalFill');
+  if (fill) { fill.classList.remove('error', 'success'); }
+}
+function exportModalClose() {
+  const m = document.getElementById('exportModal');
+  if (m) m.classList.remove('open');
+}
+function exportModalSetStatus(text) {
+  const el = document.getElementById('exportModalStatus');
+  if (el) el.textContent = text;
+}
+function exportModalSetProgress(pct, indeterminate) {
+  const fill = document.getElementById('exportModalFill');
+  if (!fill) return;
+  if (indeterminate) {
+    fill.classList.add('indeterminate');
+    fill.style.width = '';
+  } else {
+    fill.classList.remove('indeterminate');
+    fill.style.width = Math.max(0, Math.min(100, pct)) + '%';
+  }
+}
+function exportModalSetMeta(left, right) {
+  const l = document.getElementById('exportModalLeft');
+  const r = document.getElementById('exportModalRight');
+  if (l) l.textContent = left;
+  if (r) r.textContent = right;
+}
+function exportModalSetDone(success, message) {
+  const fill = document.getElementById('exportModalFill');
+  const cancelBtn = document.getElementById('exportModalCancel');
+  const closeBtn  = document.getElementById('exportModalClose');
+  if (fill) {
+    fill.classList.remove('indeterminate');
+    fill.classList.add(success ? 'success' : 'error');
+    if (success) fill.style.width = '100%';
+  }
+  if (cancelBtn) cancelBtn.style.display = 'none';
+  if (closeBtn)  closeBtn.style.display = '';
+  if (message) exportModalSetStatus(message);
+}
+// Wire cancel + close buttons (idempotent — safe to call multiple times)
+(function wireExportModal() {
+  const cancelBtn = document.getElementById('exportModalCancel');
+  const closeBtn  = document.getElementById('exportModalClose');
+  if (cancelBtn && !cancelBtn._wired) {
+    cancelBtn._wired = true;
+    cancelBtn.addEventListener('click', () => {
+      _exportCancelled = true;
+      cancelBtn.disabled = true;
+      cancelBtn.textContent = 'Ruším…';
+      exportModalSetStatus('Ruším export…');
+    });
+  }
+  if (closeBtn && !closeBtn._wired) {
+    closeBtn._wired = true;
+    closeBtn.addEventListener('click', exportModalClose);
+  }
+})();
+</script>
+
+<!-- Full-screen export progress modal — blocks all interaction during MP4 encode. -->
+<div class="export-modal" id="exportModal" role="dialog" aria-modal="true" aria-labelledby="exportModalTitle">
+  <div class="export-modal-panel">
+    <div class="export-modal-title" id="exportModalTitle">Export MP4</div>
+    <div class="export-modal-status" id="exportModalStatus">Příprava…</div>
+    <div class="export-modal-progress-track"><div class="export-modal-progress-fill" id="exportModalFill"></div></div>
+    <div class="export-modal-meta">
+      <span id="exportModalLeft">—</span>
+      <span id="exportModalRight">—</span>
+    </div>
+    <div class="export-modal-actions">
+      <button class="export-modal-btn" id="exportModalCancel">Cancel</button>
+      <button class="export-modal-btn primary" id="exportModalClose" style="display:none">Zavřít</button>
+    </div>
+  </div>
+</div>
+</body>
+</html>
