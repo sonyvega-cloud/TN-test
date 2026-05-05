@@ -4,8 +4,6 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>TN Graphics Engine</title>
-<script src="./coi-serviceworker.js"></script>
-<script src="theme.js"></script>
 <!-- TN LAUNCHER — template picker + saved projects -->
 
 <style>
@@ -48,12 +46,13 @@
     gap: 16px;
   }
   .tn-mark {
-    /* Inline SVG of TN logo — original viewBox 1237×865 (~ratio 1.43) */
-    width: 56px;
-    height: 39px;
-    flex-shrink: 0;
+    width: 36px; height: 36px;
+    background: var(--text-inv);
+    color: var(--tn-red);
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 800; font-size: 16px;
+    letter-spacing: -0.02em;
   }
-  .tn-mark .st0 { fill: #ffffff; }   /* recolor to white on red masthead */
   .masthead .title {
     font-weight: 800;
     font-size: 20px;
@@ -100,69 +99,6 @@
     padding: 2px 8px;
     border-radius: 2px;
     letter-spacing: 0.1em;
-  }
-
-  /* ===== Show selector — full-width banner above the templates grid =====
-     Visually loud: the chosen show's accent color washes the entire bar so
-     you can never miss which show you're producing for. */
-  .show-bar {
-    margin-bottom: 36px;
-    padding: 28px 36px;
-    border-radius: 4px;
-    background: var(--show-accent, #762929);
-    color: #fff;
-    display: grid;
-    grid-template-columns: auto 1fr auto;
-    align-items: center;
-    gap: 28px;
-    transition: background 250ms ease;
-  }
-  .show-bar .show-bar-label {
-    font-family: var(--font-mono);
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.22em;
-    text-transform: uppercase;
-    opacity: 0.85;
-  }
-  .show-bar .show-bar-name {
-    font-size: 32px;
-    font-weight: 800;
-    letter-spacing: -0.01em;
-    line-height: 1;
-  }
-  .show-bar select {
-    appearance: none;
-    -webkit-appearance: none;
-    -moz-appearance: none;
-    background: rgba(0,0,0,0.25);
-    border: 1px solid rgba(255,255,255,0.4);
-    color: #fff;
-    font-family: var(--font-ui);
-    font-size: 16px;
-    font-weight: 600;
-    padding: 14px 48px 14px 18px;
-    border-radius: 3px;
-    cursor: pointer;
-    outline: none;
-    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'><path d='M1 1l5 5 5-5' stroke='%23ffffff' stroke-width='1.5' fill='none'/></svg>");
-    background-repeat: no-repeat;
-    background-position: right 16px center;
-    min-width: 240px;
-  }
-  .show-bar select:hover { background-color: rgba(0,0,0,0.4); }
-  .show-bar select option {
-    background: #1a1a1a;
-    color: #fff;
-  }
-  .show-bar .show-bar-meta {
-    font-family: var(--font-mono);
-    font-size: 11px;
-    font-weight: 500;
-    letter-spacing: 0.15em;
-    text-transform: uppercase;
-    opacity: 0.75;
-    margin-top: 6px;
   }
 
   /* ===== Template grid ===== */
@@ -396,13 +332,13 @@
     color: var(--text-2);
   }
 </style>
+<script src="login.js"></script>
+<script src="projects.js"></script>
 </head>
 <body>
 
 <header class="masthead">
-  <svg class="tn-mark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1237.21 865.16" aria-label="TN logo">
-    <path class="st0" d="M480.94,294.91v275.33h275.33v-275.33h-275.33ZM719.46,491.63h-28.47l-51.15-67.82v67.82h-28.07v-91.73h-39.19v91.73h-29.19v-91.73h-33.91v-25.85h130.36l51.15,68.1v-68.1h28.47v117.58Z"/>
-  </svg>
+  <span class="tn-mark">TN</span>
   <span class="title">Graphics Engine</span>
   <span class="sub">Televizní Noviny · Template Library</span>
 </header>
@@ -410,16 +346,6 @@
 <main class="page">
   <!-- LEFT: templates -->
   <section>
-    <div class="show-bar" id="showBar">
-      <div>
-        <div class="show-bar-label">Aktivní pořad</div>
-        <div class="show-bar-name" id="showBarName">TN</div>
-        <div class="show-bar-meta" id="showBarMeta">Televizní Noviny · doprovodná barva #762929</div>
-      </div>
-      <div></div>
-      <select id="showSelect"></select>
-    </div>
-
     <div class="section-label">
       New project · pick a template
       <span class="count" id="tplCount">6 templates</span>
@@ -447,89 +373,62 @@
 </footer>
 
 <script>
+// TN Login — gate UI on login. Badge in masthead; logout reloads.
+TNLogin.requireLogin().then(nick => {
+  console.log('[index] logged in as', nick);
+  TNLogin.attachBadge(document.querySelector('.masthead'), {
+    onChange: () => { window.location.reload(); }   // reload so projects re-filter etc.
+  });
+});
+
+
 /* ==================== TEMPLATE REGISTRY ==================== */
-// Ready templates listed first (low numbers); upcoming templates after.
-// Each TEMPLATE.id is the contract used by saved projects to know which
-// renderer can open them (see openProject below).
 const TEMPLATES = [
   {
     id: 'bar-chart-01',
     num: '01',
-    name: 'Graf',
+    name: 'Bar Chart',
     desc: 'Sloupcový graf s časovou řadou a anotovanými hodnotami. Produkčně použito pro Televizní Noviny.',
     url: 'templates/bar-chart.html',
-    previewUrl: 'templates/bar-chart.html?preview=1&frame=55',
+    previewFrame: 49,
     ready: true,
   },
   {
-    id: 'tn-citace-01',
+    id: 'line-chart-01',
     num: '02',
-    name: 'Citace',
+    name: 'Line Chart',
+    desc: 'Trend / časová řada jako křivka. Ideální pro srovnání víc období bez kategorizace.',
+    ready: false,
+  },
+  {
+    id: 'pie-chart-01',
+    num: '03',
+    name: 'Pie / Donut',
+    desc: 'Podíly segmentů na celku. 3–6 kategorií, ostatní v "other" řezu.',
+    ready: false,
+  },
+  {
+    id: 'stacked-bar-01',
+    num: '04',
+    name: 'Stacked / Grouped Bar',
+    desc: 'Dvě dimenze najednou — např. rozložení hlasů v čase nebo srovnání víc kategorií mezi obdobími.',
+    ready: false,
+  },
+  {
+    id: 'table-01',
+    num: '05',
+    name: 'Table / Standings',
+    desc: 'Výsledkový žebříček, tabulka s fade-in řádky a zvýrazněním top N.',
+    ready: false,
+  },
+  {
+    id: 'tn-citace-01',
+    num: '06',
+    name: 'TN citace',
     desc: 'Citát s fotografií, jménem a funkcí. Světlá karta na Nova TN pozadí s registračními značkami.',
     url: 'templates/tn-citace.html',
     previewUrl: 'templates/tn-citace.html?preview=1&frame=60',
     ready: true,
-  },
-  {
-    id: 'tn-tabulka-01',
-    num: '03',
-    name: 'Tabulka',
-    desc: 'Tabulka s ilustrační fotkou vlevo a 1–10 řádky vpravo (3 sloupce). Stejný frame jako citace, řádky se postupně rozkreslují.',
-    url: 'templates/tn-tabulka.html',
-    previewUrl: 'templates/tn-tabulka.html?preview=1&frame=55',
-    ready: true,
-  },
-  {
-    id: 'tn-identikit-01',
-    num: '04',
-    name: 'Identikit',
-    desc: 'Identikit hledané osoby — fotka vlevo, jméno + popis (výška, oči, postava…) vpravo. Editovatelná tabulka.',
-    url: 'templates/tn-identikit.html',
-    previewUrl: 'templates/tn-identikit.html?preview=1&frame=55',
-    ready: true,
-  },
-  {
-    id: 'tn-line-chart-01',
-    num: '05',
-    name: 'Liniový graf',
-    desc: 'Trend / časová řada jako křivka. 1–5 sérií, color-pick, jednotka u poslední hodnoty (%, Kč, mil. Kč, …). Adaptivní Y osa.',
-    url: 'templates/tn-line-chart.html',
-    previewUrl: 'templates/tn-line-chart.html?preview=1&frame=55',
-    ready: true,
-  },
-  {
-    id: 'tn-donut-01',
-    num: '06',
-    name: 'Donut',
-    desc: 'Kruhový (donut) graf s 1–8 segmenty. Color-pick, vlastní popisky, hodnoty se nemusí sčítat na 100 — výseč se počítá poměrně. Legenda vpravo.',
-    url: 'templates/tn-donut.html',
-    previewUrl: 'templates/tn-donut.html?preview=1&frame=55',
-    ready: true,
-  },
-  {
-    id: 'tn-hbar-01',
-    num: '07',
-    name: 'Vodorovný graf',
-    desc: 'Vodorovný sloupcový graf. 1–8 řádků, vlastní barvy, hodnoty se počítají poměrně. Kategorie vlevo, hodnoty vpravo zarovnané na TN safe edge 1805 px.',
-    url: 'templates/tn-hbar.html',
-    previewUrl: 'templates/tn-hbar.html?preview=1&frame=55',
-    ready: true,
-  },
-  {
-    id: 'tn-kartoteka-01',
-    num: '08',
-    name: 'Kartotéka',
-    desc: 'Karty kandidátů / svědků / hostů. 1–8 karet, layout adaptivní (1, 2×1, 1×3, 2×2, 2×3, 2×4). Default modrá silueta nebo upload vlastní fotky per karta.',
-    url: 'templates/tn-kartoteka.html',
-    previewUrl: 'templates/tn-kartoteka.html?preview=1&frame=55',
-    ready: true,
-  },
-  {
-    id: 'stacked-bar-01',
-    num: '09',
-    name: 'Stacked / Grouped Bar',
-    desc: 'Dvě dimenze najednou — např. rozložení hlasů v čase nebo srovnání víc kategorií mezi obdobími.',
-    ready: false,
   },
 ];
 
@@ -584,92 +483,23 @@ function openProject(p) {
   window.location.href = `${tpl.url}?project=${encodeURIComponent(p.id)}`;
 }
 
-/* ==================== SHOW THEME (global launcher selector) ==================== */
-const LS_SHOW_KEY = 'tn_graphics_engine_active_show_v1';
-let _currentShow = (() => {
-  try {
-    const stored = localStorage.getItem(LS_SHOW_KEY);
-    if (stored && window.TN_THEMES && TN_THEMES.SHOWS_BY_ID[stored]) return stored;
-  } catch (_) {}
-  return window.TN_THEMES ? TN_THEMES.DEFAULT_SHOW_ID : 'tn';
-})();
-
-function getShow() { return _currentShow; }
-function setShow(id) {
-  if (!window.TN_THEMES) return;
-  if (!TN_THEMES.SHOWS_BY_ID[id]) return;
-  _currentShow = id;
-  try { localStorage.setItem(LS_SHOW_KEY, id); } catch (_) {}
-  applyShowBarVisuals();
-  renderTemplates();        // re-render so card hrefs + iframe srcs include ?show=
-}
-
-function applyShowBarVisuals() {
-  if (!window.TN_THEMES) {
-    console.error('[Launcher] window.TN_THEMES is missing — theme.js failed to load');
-    document.getElementById('showBarName').textContent = 'theme.js chybí';
-    document.getElementById('showBarMeta').textContent =
-      'Polož theme.js do rootu projektu (vedle index.html)';
-    document.getElementById('showBar').style.setProperty('--show-accent', '#888');
-    return;
-  }
-  const show = TN_THEMES.get(_currentShow);
-  const bar = document.getElementById('showBar');
-  bar.style.setProperty('--show-accent', show.accent);
-  document.getElementById('showBarName').textContent = show.name;
-  document.getElementById('showBarMeta').textContent =
-    `doprovodná barva ${show.accent}  ·  backdrop ${show.video.replace('../', '')}`;
-  console.log(`[Launcher] Active show: ${show.name} (${show.id}) · accent ${show.accent}`);
-}
-
-function populateShowBar() {
-  console.log('[Launcher] populateShowBar called. window.TN_THEMES =',
-    typeof window.TN_THEMES);
-  if (!window.TN_THEMES) {
-    applyShowBarVisuals();   // shows the error message
-    return;
-  }
-  const sel = document.getElementById('showSelect');
-  sel.innerHTML = TN_THEMES.optionsHtml(_currentShow);
-  sel.addEventListener('change', e => setShow(e.target.value));
-  applyShowBarVisuals();
-}
-
-// Append `?show=...` (or `&show=...`) to a template URL/preview URL
-function withShow(url) {
-  if (!url) return url;
-  const sep = url.includes('?') ? '&' : '?';
-  return `${url}${sep}show=${encodeURIComponent(_currentShow)}`;
-}
-
 /* ==================== RENDER: TEMPLATES ==================== */
 function renderTemplates() {
   const grid = document.getElementById('tplGrid');
   document.getElementById('tplCount').textContent = `${TEMPLATES.length} templates`;
   grid.innerHTML = TEMPLATES.map(t => {
-    // Prefer explicit previewUrl when given; otherwise build from url + frame.
-    // This lets each template choose its own settled preview moment. We also
-    // append ?show=<id> so the iframe preview reflects the current theme.
-    let preview;
-    if (t.ready) {
-      const baseSrc = t.previewUrl
-        ? t.previewUrl
-        : `${t.url}?preview=1&frame=${t.previewFrame ?? 49}`;
-      const src = withShow(baseSrc);
-      preview = `<iframe src="${src}" loading="lazy" title="${t.name} preview"></iframe>`;
-    } else {
-      preview = `<div class="placeholder">
+    const preview = t.ready
+      ? `<iframe src="${t.url}?preview=1&frame=${t.previewFrame ?? 49}" loading="lazy" title="${t.name} preview"></iframe>`
+      : `<div class="placeholder">
            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
              <rect x="3" y="3" width="18" height="18" rx="2"/>
              <path d="M8 14l3-3 2 2 3-4"/>
            </svg>
            Coming soon
          </div>`;
-    }
-    const href = t.ready ? `href="${withShow(t.url)}"` : '';
     return `
       <a class="tpl-card ${t.ready ? '' : 'coming'}"
-         ${href}
+         ${t.ready ? `href="${t.url}"` : ''}
          data-id="${t.id}">
         <div class="tpl-preview" data-id="${t.id}">${preview}</div>
         <div class="tpl-body">
@@ -758,13 +588,64 @@ function escapeHtml(s) {
   return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
 
+
+// === Cloud projects bridge (Cloudflare Worker → GitHub Gist) ===
+// Keeps localStorage as a fast-path cache so the recent list shows immediately,
+// then refreshes from the cloud and re-renders.
+async function refreshFromCloud() {
+  if (!window.TNProjects) return;
+  try {
+    const cloud = await TNProjects.list();
+    // Convert cloud index entries to the same shape renderRecents expects
+    // (i.e. { id, name, updatedAt, state: { template } }).
+    const merged = cloud.map(p => ({
+      id: p.id,
+      name: p.name,
+      owner: p.owner,
+      updatedAt: new Date(p.updatedAt || 0).getTime(),
+      state: { template: p.template },
+      __cloud: true,
+    }));
+    saveAllProjects(merged);
+    renderRecents();
+  } catch (err) {
+    console.warn('[cloud] refresh failed:', err.message);
+  }
+}
+
+// Override openProject to load from cloud + use ?projectId= URL param
+const _origOpenProject = openProject;
+window.openProject = function (p) {
+  const tplId = p.state?.template || 'bar-chart-01';
+  const tpl = TEMPLATES.find(t => t.id === tplId);
+  if (!tpl || !tpl.ready) {
+    alert(`Template "${tplId}" is not available yet.`);
+    return;
+  }
+  // Templates' bridge looks for ?projectId= and calls TNProjects.load()
+  window.location.href = `${tpl.url}?projectId=${encodeURIComponent(p.id)}`;
+};
+
+// Override deleteProject to also remove from cloud
+const _origDeleteProject = deleteProject;
+window.deleteProject = async function (id) {
+  if (window.TNProjects) {
+    try { await TNProjects.delete(id); }
+    catch (err) { console.warn('[cloud] delete failed:', err); }
+  }
+  _origDeleteProject(id);
+};
+
 /* ==================== BOOT ==================== */
-populateShowBar();
 renderTemplates();
-renderRecents();
+renderRecents();      // immediate from localStorage cache
+refreshFromCloud();   // async refresh from Cloudflare Worker → Gist
 
 // Re-render recents when returning from template (bfcache case)
-window.addEventListener('pageshow', renderRecents);
+window.addEventListener('pageshow', () => {
+  renderRecents();
+  refreshFromCloud();
+});
 </script>
 </body>
 </html>

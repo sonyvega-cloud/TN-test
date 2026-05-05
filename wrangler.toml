@@ -1,0 +1,10 @@
+name = "tn-projects-worker"
+main = "worker.js"
+compatibility_date = "2024-09-23"
+
+# Set these via:
+#   wrangler secret put GITHUB_TOKEN
+#   wrangler secret put GIST_ID
+# Then ALLOWED_ORIGINS as a non-secret var:
+[vars]
+ALLOWED_ORIGINS = "https://sonyvega-cloud.github.io,http://localhost:8080,http://127.0.0.1:8080"
