@@ -876,13 +876,16 @@
      Blocks all input; only Cancel button is interactive.
      ============================================================ */
   .export-modal {
-    position: fixed; inset: 0; z-index: 9999;
-    background: rgba(0, 0, 0, 0.88);
-    display: none;
-    align-items: center; justify-content: center;
-    backdrop-filter: blur(4px);
+    position: fixed !important;
+    top: 0 !important; left: 0 !important; right: 0 !important; bottom: 0 !important;
+    z-index: 99999 !important;
+    background: rgba(0, 0, 0, 0.88) !important;
+    display: none !important;
+    align-items: center !important;
+    justify-content: center !important;
+    backdrop-filter: blur(4px) !important;
   }
-  .export-modal.open { display: flex; }
+  .export-modal.open { display: flex !important; }
   .export-modal-panel {
     background: #141414;
     border: 1px solid rgba(255, 255, 255, 0.1);
@@ -3021,8 +3024,9 @@ document.getElementById('btnExportMP4')?.addEventListener('click', async () => {
   });
 
   // Composite: bg video underneath, animation canvas on top.
+  // bar-chart uses a top-level `bgVideo` const, not the `els` object.
   const useVideo = (state.branding === 'preview') && videoReady && !videoFailed;
-  const video = els.bgVideo;
+  const video = bgVideo;
   const comp = document.createElement('canvas');
   comp.width = W; comp.height = H;
   const cctx = comp.getContext('2d');
@@ -3119,10 +3123,12 @@ document.getElementById('btnExportMP4')?.addEventListener('click', async () => {
    ============================================================ */
 let _exportCancelled = false;
 function exportModalOpen() {
+  console.log('[modal] open() called');
   _exportCancelled = false;
   const m = document.getElementById('exportModal');
-  if (!m) return;
+  if (!m) { console.warn('[modal] #exportModal NOT FOUND in DOM'); return; }
   m.classList.add('open');
+  console.log('[modal] .open class added; classList=', m.className, 'display=', getComputedStyle(m).display);
   exportModalSetStatus('Příprava…');
   exportModalSetProgress(0, true);   // indeterminate
   exportModalSetMeta('—', '—');
