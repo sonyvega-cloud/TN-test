@@ -54,10 +54,60 @@
   }
   button.primary:hover { background: #ff2030; }
   button.ghost { background: transparent; }
-  .preset-row { display: flex; gap: 6px; flex-wrap: wrap; }
-  .preset-row button { padding: 6px 10px; font-size: 11px; }
-  .preset-row button.fixed-btn { border-color: var(--accent-dim); color: #ffb3b3; }
-  .preset-row button.fixed-btn:hover { border-color: var(--accent); background: var(--accent-dim); color: #fff; }
+  /* Fixed position cards */
+  .fixed-cards { display: flex; flex-direction: column; gap: 8px; }
+  .fixed-card {
+    display: flex; align-items: center; gap: 14px;
+    width: 100%; padding: 12px;
+    background: var(--panel-2); border: 1px solid var(--line);
+    border-radius: var(--radius); cursor: pointer;
+    text-align: left; font-family: var(--sans);
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .fixed-card:hover { border-color: var(--line-2); }
+  .fixed-card.active {
+    border-color: var(--accent);
+    background: rgba(227, 6, 19, 0.08);
+  }
+  .fixed-card-mini {
+    width: 96px; height: 54px;
+    background: #000; border-radius: 3px;
+    position: relative; flex-shrink: 0;
+    border: 1px solid var(--line);
+  }
+  .fixed-card-rect { position: absolute; background: var(--accent); }
+  .fixed-card-info { flex: 1; min-width: 0; }
+  .fixed-card-title { font-size: 14px; font-weight: 600; color: var(--text); }
+  .fixed-card.active .fixed-card-title { color: #fff; }
+  .fixed-card-desc { font-size: 11px; color: var(--muted); margin-top: 3px; font-family: var(--mono); }
+
+  /* Details rollup */
+  details.advanced {
+    margin-top: 16px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+  }
+  details.advanced summary {
+    cursor: pointer; padding: 12px 16px; list-style: none;
+    font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase;
+    color: var(--muted); user-select: none;
+    display: flex; align-items: center;
+  }
+  details.advanced summary::-webkit-details-marker { display: none; }
+  details.advanced summary::before {
+    content: '▸';
+    margin-right: 10px;
+    font-size: 11px;
+    transition: transform 0.15s;
+  }
+  details.advanced[open] summary::before { transform: rotate(90deg); }
+  details.advanced[open] summary {
+    color: var(--text);
+    border-bottom: 1px solid var(--line);
+  }
+  .advanced-body { padding: 14px 16px 16px; }
   .check {
     display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text); cursor: pointer; user-select: none;
   }
@@ -129,68 +179,73 @@
     </div>
 
     <div class="panel">
-      <h2>Pozice & velikost <span class="pin" id="pin-label">PEVNÁ 1</span></h2>
-      <div class="row">
-        <span class="lbl">X (px)</span>
-        <input type="range" id="x-r" min="0" max="1920" step="1" value="114" />
-        <input type="number" id="x-n" min="0" max="1920" step="1" value="114" />
-      </div>
-      <div class="row">
-        <span class="lbl">Y (px)</span>
-        <input type="range" id="y-r" min="0" max="1080" step="1" value="819" />
-        <input type="number" id="y-n" min="0" max="1080" step="1" value="819" />
-      </div>
-      <div class="row">
-        <span class="lbl">Velikost</span>
-        <input type="range" id="size-r" min="40" max="1080" step="1" value="154" />
-        <input type="number" id="size-n" min="40" max="1080" step="1" value="154" />
-      </div>
-      <div class="row">
-        <span class="lbl">Quiet zone</span>
-        <input type="range" id="quiet-r" min="0" max="80" step="1" value="8" />
-        <input type="number" id="quiet-n" min="0" max="80" step="1" value="8" />
-      </div>
-      <div style="margin-top: 12px;">
-        <label>Pevné pozice</label>
-        <div class="preset-row" style="margin-bottom: 8px;">
-          <button class="fixed-btn" onclick="preset(1)">⚑ Pevná 1 · 114, 819 · 154 px</button>
-          <button class="fixed-btn" onclick="preset(2)">⚑ Pevná 2 · 1632, 136 · 172 px</button>
-        </div>
-        <label>Rohy & střed</label>
-        <div class="preset-row">
-          <button onclick="preset('tl')">↖ TL</button>
-          <button onclick="preset('tr')">↗ TR</button>
-          <button onclick="preset('bl')">↙ BL</button>
-          <button onclick="preset('br')">↘ BR</button>
-          <button onclick="preset('c')">● Střed</button>
-        </div>
+      <h2>Pozice</h2>
+      <div class="fixed-cards">
+        <button type="button" class="fixed-card" data-id="1" onclick="preset(1)">
+          <div class="fixed-card-mini">
+            <div class="fixed-card-rect" style="left:5.94%; top:75.83%; width:8.02%; height:14.26%;"></div>
+          </div>
+          <div class="fixed-card-info">
+            <div class="fixed-card-title">Pevná 1</div>
+            <div class="fixed-card-desc">114, 819 · 154 × 154 px</div>
+          </div>
+        </button>
+        <button type="button" class="fixed-card" data-id="2" onclick="preset(2)">
+          <div class="fixed-card-mini">
+            <div class="fixed-card-rect" style="left:85.00%; top:12.59%; width:8.96%; height:15.93%;"></div>
+          </div>
+          <div class="fixed-card-info">
+            <div class="fixed-card-title">Pevná 2</div>
+            <div class="fixed-card-desc">1632, 136 · 172 × 172 px</div>
+          </div>
+        </button>
       </div>
     </div>
 
     <div class="panel">
       <h2>Vzhled</h2>
-      <div class="pair">
-        <div>
-          <label>Barva modulů</label>
-          <div style="display: flex; align-items: center; gap: 8px;">
-            <input type="color" id="color" value="#000000" />
-            <input type="text" id="color-hex" value="#000000" style="font-size: 12px;" />
-          </div>
-        </div>
-        <div>
-          <label>Korekce chyb</label>
-          <select id="level">
-            <option value="L">L · 7 %</option>
-            <option value="M" selected>M · 15 %</option>
-            <option value="Q">Q · 25 %</option>
-            <option value="H">H · 30 %</option>
-          </select>
-        </div>
+      <div class="row" style="margin-bottom: 12px;">
+        <span class="lbl">Korekce</span>
+        <select id="level" style="flex: 1;">
+          <option value="L">L · 7 %</option>
+          <option value="M" selected>M · 15 %</option>
+          <option value="Q">Q · 25 %</option>
+          <option value="H">H · 30 %</option>
+        </select>
       </div>
-      <div style="margin-top: 12px;">
-        <label class="check"><input type="checkbox" id="bg-white" checked /> Bílý čtverec pod QR</label>
-      </div>
+      <label class="check"><input type="checkbox" id="bg-white" checked /> Bílý čtverec pod QR</label>
     </div>
+
+    <details class="advanced">
+      <summary>Manuální úprava · pozice, velikost, barva</summary>
+      <div class="advanced-body">
+        <div class="row">
+          <span class="lbl">X (px)</span>
+          <input type="range" id="x-r" min="0" max="1920" step="1" value="114" />
+          <input type="number" id="x-n" min="0" max="1920" step="1" value="114" />
+        </div>
+        <div class="row">
+          <span class="lbl">Y (px)</span>
+          <input type="range" id="y-r" min="0" max="1080" step="1" value="819" />
+          <input type="number" id="y-n" min="0" max="1080" step="1" value="819" />
+        </div>
+        <div class="row">
+          <span class="lbl">Velikost</span>
+          <input type="range" id="size-r" min="40" max="1080" step="1" value="154" />
+          <input type="number" id="size-n" min="40" max="1080" step="1" value="154" />
+        </div>
+        <div class="row" style="margin-bottom: 14px;">
+          <span class="lbl">Quiet zone</span>
+          <input type="range" id="quiet-r" min="0" max="80" step="1" value="8" />
+          <input type="number" id="quiet-n" min="0" max="80" step="1" value="8" />
+        </div>
+        <div class="row">
+          <span class="lbl">Barva</span>
+          <input type="color" id="color" value="#000000" />
+          <input type="text" id="color-hex" value="#000000" style="font-size: 12px; flex: 1;" />
+        </div>
+      </div>
+    </details>
   </div>
 
   <!-- RIGHT: preview + export -->
@@ -2553,7 +2608,7 @@ var qrcode = function() {
       qr.make();
     } catch(e){
       $('meta').innerHTML = '<span class="err">Chyba: data jsou příliš dlouhá pro úroveň ' + o.level + '. Zkus L nebo zkrať obsah.</span>';
-      updatePinLabel(matchFixed(o));
+      updateFixedCards(matchFixed(o));
       return;
     }
     const count = qr.getModuleCount();
@@ -2593,17 +2648,14 @@ var qrcode = function() {
       ' · pozice (' + o.x + ', ' + o.y + ')' +
       ' · čtverec ' + o.size + 'px' +
       ' · ' + fixedTag;
-    updatePinLabel(matched);
+    updateFixedCards(matched);
   }
 
-  function updatePinLabel(matched){
-    const pin = $('pin-label');
-    if (matched) {
-      pin.textContent = matched.label.toUpperCase();
-      pin.style.display = '';
-    } else {
-      pin.style.display = 'none';
-    }
+  function updateFixedCards(matched){
+    document.querySelectorAll('.fixed-card').forEach(card => {
+      const id = parseInt(card.dataset.id, 10);
+      card.classList.toggle('active', !!(matched && matched.id === id));
+    });
   }
 
   function bindPair(rId, nId, lo, hi){
