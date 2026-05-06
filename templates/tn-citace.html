@@ -166,6 +166,12 @@
   .pb-btn:hover { background: #4a4a4a; }
   .pb-btn.primary { background: var(--tn-red); border-color: var(--tn-red-dk); }
   .pb-btn.primary:hover { background: var(--tn-red-dk); }
+  .pb-btn:disabled,
+  .pb-btn[disabled] {
+    opacity: 0.4;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
   .pb-meta {
     font-family: var(--font-mono);
     font-size: 11px;
@@ -2146,10 +2152,22 @@ function isDirty() {
 }
 function updateProjectMeta() {
   const el = $('projMeta');
+  const saveBtn = document.getElementById('projSave');
   if (!currentProjectId) {
-    el.innerHTML = '<span>nový</span>';
+    // NEW project — never auto-saved. User must explicitly "Uložit jako…"
+    // to create. The "Uložit" button is disabled because there's nothing
+    // to update yet (clicking it actually redirects to Save As anyway).
+    el.innerHTML = '<span class="dirty">● nový · neuložený</span>';
+    if (saveBtn) {
+      saveBtn.disabled = true;
+      saveBtn.title = 'Použij „Uložit jako…" pro první uložení';
+    }
   } else {
     el.innerHTML = isDirty() ? '<span class="dirty">● neuloženo</span>' : '<span class="saved">✓ uloženo</span>';
+    if (saveBtn) {
+      saveBtn.disabled = false;
+      saveBtn.title = '';
+    }
   }
 }
 function saveProject(id, name) {
@@ -2239,6 +2257,13 @@ function openProjModal()  { renderProjectList(); $('projModal').classList.add('s
 function closeProjModal() { $('projModal').classList.remove('show'); }
 
 $('projSave').addEventListener('click', () => {
+  // For NEW projects (no ID yet), "Uložit" doesn't make sense — there's
+  // nothing to update. Force the user to "Uložit jako…" so they pick a
+  // name. This is the Figma pattern: explicit first-save, then autosave.
+  if (!currentProjectId) {
+    $('projSaveAs').click();
+    return;
+  }
   const name = $('projName').value.trim() || 'Untitled';
   saveProject(currentProjectId, name);
   showToast(`Uloženo: ${name}`, 'success');
@@ -3447,6 +3472,17 @@ if (document.readyState === 'loading') {
   // event fires (text input, mode toggle click, slider drag, etc.). The
   // wrapped render() below also requires armed=true before triggering save.
   // ===========================================================================
+  // ===========================================================================
+  // FIGMA-STYLE PERSISTENCE:
+  //   - NEW project (no currentProjectId yet): autosave is OFF. User must
+  //     explicitly "Uložit jako…" to create the project. This stops the
+  //     "open template just to peek → ghost project gets created" problem.
+  //   - EXISTING project (has currentProjectId): autosave runs normally
+  //     after every change, ~2s debounced.
+  //
+  // We track _userHasInteracted to skip autosave on boot/load renders.
+  // Then we ALSO require currentProjectId for autosave to fire.
+  // ===========================================================================
   let _userHasInteracted = false;
   function _armAutoSave() { _userHasInteracted = true; }
   // Arm on first real user interaction in the sidebar (covers all input types
@@ -3455,24 +3491,30 @@ if (document.readyState === 'loading') {
     document.querySelector('.control')?.addEventListener(evt, _armAutoSave, { once: false, capture: true });
   });
 
+  // Helper — autosave allowed only for existing (named) projects.
+  function _autoSaveAllowed() {
+    return _userHasInteracted
+        && typeof currentProjectId !== 'undefined'
+        && currentProjectId;
+  }
+
   // Expose globally so existing input handlers can `window.tnAutoSave()` after
   // touching state. Templates already have a `render()` call after every input;
   // hook into that as a single chokepoint.
   window.tnAutoSave = () => {
-    if (!_userHasInteracted) return;
+    if (!_autoSaveAllowed()) return;
     autoSaver.trigger();
   };
 
   // Wrap render() to also kick auto-save. This ensures EVERY state change
   // (slider, text, color picker, anything) is persisted within ~2 seconds —
-  // BUT only after the user has explicitly interacted. Boot/load renders
-  // don't trigger phantom saves.
+  // BUT only for EXISTING projects after the user has interacted.
   if (typeof render === 'function') {
     const origRender = render;
     // eslint-disable-next-line no-global-assign
     render = function (...args) {
       const r = origRender.apply(this, args);
-      if (_userHasInteracted) {
+      if (_autoSaveAllowed()) {
         try { autoSaver.trigger(); } catch (_) {}
       }
       return r;

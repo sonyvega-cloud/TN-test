@@ -187,6 +187,12 @@
     border-radius: 3px;
   }
   .pb-btn:hover { background: var(--tn-red); border-color: var(--tn-red); color: #fff; }
+  .pb-btn:disabled,
+  .pb-btn[disabled] {
+    opacity: 0.4;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
   .pb-meta {
     margin-top: 10px;
     font-family: var(--font-mono);
@@ -2832,11 +2838,21 @@ function isDirty() {
 }
 function updateProjectMeta() {
   const el = document.getElementById('projMeta');
+  const saveBtn = document.getElementById('projSave');
   if (!el) return;
   if (!currentProjectId) {
-    el.textContent = isDirty() ? 'Unsaved — use Save as… to store' : 'No saved project';
-    el.className = 'pb-meta' + (isDirty() ? ' dirty' : '');
+    // NEW project — never auto-saved. User must explicitly "Save as…".
+    el.textContent = 'Unsaved — use Save as… to store';
+    el.className = 'pb-meta dirty';
+    if (saveBtn) {
+      saveBtn.disabled = true;
+      saveBtn.title = 'Use "Save as…" for the first save';
+    }
     return;
+  }
+  if (saveBtn) {
+    saveBtn.disabled = false;
+    saveBtn.title = '';
   }
   const all = loadAllProjects();
   const p = all.find(x => x.id === currentProjectId);
@@ -2965,6 +2981,12 @@ function closeProjModal() {
 
 // ---------- Wire up buttons ----------
 document.getElementById('projSave').addEventListener('click', () => {
+  // For NEW projects (no ID yet), "Save" doesn't make sense — there's nothing
+  // to update. Force the user to "Save as…" so they pick a name. Figma pattern.
+  if (!currentProjectId) {
+    document.getElementById('projSaveAs').click();
+    return;
+  }
   const name = document.getElementById('projName').value.trim() || 'Untitled';
   saveProject(currentProjectId, name);
   showToast(`Saved: ${name}`, 'success');
@@ -3865,6 +3887,17 @@ if (document.readyState === 'loading') {
   // event fires (text input, mode toggle click, slider drag, etc.). The
   // wrapped render() below also requires armed=true before triggering save.
   // ===========================================================================
+  // ===========================================================================
+  // FIGMA-STYLE PERSISTENCE:
+  //   - NEW project (no currentProjectId yet): autosave is OFF. User must
+  //     explicitly "Uložit jako…" to create the project. This stops the
+  //     "open template just to peek → ghost project gets created" problem.
+  //   - EXISTING project (has currentProjectId): autosave runs normally
+  //     after every change, ~2s debounced.
+  //
+  // We track _userHasInteracted to skip autosave on boot/load renders.
+  // Then we ALSO require currentProjectId for autosave to fire.
+  // ===========================================================================
   let _userHasInteracted = false;
   function _armAutoSave() { _userHasInteracted = true; }
   // Arm on first real user interaction in the sidebar (covers all input types
@@ -3873,24 +3906,30 @@ if (document.readyState === 'loading') {
     document.querySelector('.control')?.addEventListener(evt, _armAutoSave, { once: false, capture: true });
   });
 
+  // Helper — autosave allowed only for existing (named) projects.
+  function _autoSaveAllowed() {
+    return _userHasInteracted
+        && typeof currentProjectId !== 'undefined'
+        && currentProjectId;
+  }
+
   // Expose globally so existing input handlers can `window.tnAutoSave()` after
   // touching state. Templates already have a `render()` call after every input;
   // hook into that as a single chokepoint.
   window.tnAutoSave = () => {
-    if (!_userHasInteracted) return;
+    if (!_autoSaveAllowed()) return;
     autoSaver.trigger();
   };
 
   // Wrap render() to also kick auto-save. This ensures EVERY state change
   // (slider, text, color picker, anything) is persisted within ~2 seconds —
-  // BUT only after the user has explicitly interacted. Boot/load renders
-  // don't trigger phantom saves.
+  // BUT only for EXISTING projects after the user has interacted.
   if (typeof render === 'function') {
     const origRender = render;
     // eslint-disable-next-line no-global-assign
     render = function (...args) {
       const r = origRender.apply(this, args);
-      if (_userHasInteracted) {
+      if (_autoSaveAllowed()) {
         try { autoSaver.trigger(); } catch (_) {}
       }
       return r;

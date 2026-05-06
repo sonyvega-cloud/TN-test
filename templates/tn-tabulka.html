@@ -166,6 +166,12 @@
   .pb-btn:hover { background: #4a4a4a; }
   .pb-btn.primary { background: var(--tn-red); border-color: var(--tn-red-dk); }
   .pb-btn.primary:hover { background: var(--tn-red-dk); }
+  .pb-btn:disabled,
+  .pb-btn[disabled] {
+    opacity: 0.4;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
   .pb-meta {
     font-family: var(--font-mono);
     font-size: 11px;
@@ -408,6 +414,97 @@
   .stage .bg-video,
   .stage .bg-flat {
     z-index: 1;
+  }
+
+  /* === PHOTO OVERLAY ===
+   * Floating control panel that appears when the cursor is over the photo
+   * quad. Position is set in JS from LAYOUT.imageX/imageW so it tracks the
+   * actual image area for each template. Hidden by default; .visible class
+   * (toggled by pointermove) shows it. */
+  .photo-overlay {
+    position: absolute;
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 12px;
+    background: rgba(0, 0, 0, 0.78);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 4px;
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(-4px);
+    transition: opacity 0.15s ease, transform 0.15s ease;
+    min-width: 200px;
+  }
+  .photo-overlay.visible {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0);
+  }
+  .photo-overlay-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: #f0f0f0;
+    border-radius: 3px;
+    cursor: pointer;
+    font-family: var(--font-ui);
+    font-size: 13px;
+    font-weight: 500;
+    text-align: left;
+    transition: background 0.12s;
+  }
+  .photo-overlay-btn:hover {
+    background: rgba(255, 255, 255, 0.16);
+    border-color: rgba(255, 255, 255, 0.30);
+  }
+  .po-icon {
+    font-size: 16px;
+    line-height: 1;
+  }
+  .po-label { flex: 1; }
+  .photo-overlay-zoom {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 6px 4px 2px;
+  }
+  .po-zoom-label {
+    color: rgba(255, 255, 255, 0.75);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  .po-zoom-label span {
+    color: #fff;
+    font-weight: 600;
+  }
+  #photoZoom {
+    width: 100%;
+    accent-color: var(--tn-red, #DC0F2E);
+    cursor: pointer;
+  }
+  .po-zoom-hint {
+    color: rgba(255, 255, 255, 0.45);
+    font-size: 10px;
+    font-family: var(--font-mono);
+    line-height: 1.4;
+    margin-top: 2px;
+  }
+
+  /* When no image is loaded, gray out zoom + reset controls (upload still
+   * fully clickable since that's the primary action). */
+  .photo-overlay.no-image #photoResetBtn,
+  .photo-overlay.no-image .photo-overlay-zoom {
+    opacity: 0.35;
+    pointer-events: none;
   }
 
   /* Timeline */
@@ -1068,6 +1165,26 @@
           <div class="bg-flat" id="bgFlat" style="display:none"></div>
           <!-- The ENTIRE graphic is rendered here. Same layout frame as Bar Chart. -->
           <canvas id="stage-canvas" width="1920" height="1080"></canvas>
+
+          <!-- PHOTO OVERLAY — appears on hover over the photo quad. Lets the
+               user upload a new image, reset position, and zoom in/out. The
+               overlay is positioned relative to the canvas via percentage
+               coords matching LAYOUT.imageX/W. -->
+          <div class="photo-overlay" id="photoOverlay">
+            <label class="photo-overlay-btn" for="inImage" title="Nahrát fotku">
+              <span class="po-icon">📷</span>
+              <span class="po-label">Nahrát fotku</span>
+            </label>
+            <button class="photo-overlay-btn" id="photoResetBtn" type="button" title="Reset pozice + zoom">
+              <span class="po-icon">⟲</span>
+              <span class="po-label">Reset</span>
+            </button>
+            <div class="photo-overlay-zoom">
+              <span class="po-zoom-label">Zoom <span id="photoZoomOut">100 %</span></span>
+              <input type="range" id="photoZoom" min="100" max="400" value="100" step="5" />
+              <div class="po-zoom-hint">scroll kolečko = zoom · drag = pohyb · 2× klik = reset</div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -1123,6 +1240,7 @@ const state = {
   image: null,             // base64 data URL or null
   imageY: 50,              // 0..100 → cover-fit Y offset percentage (slider seed)
   imageOffset: { x: 0, y: 0 },     // free-form drag pan in source-image px
+  imageZoom: 1.0,          // 1.0 = cover-fit, >1 = zoomed in (max 4.0)
   show: 'tn',
   branding: 'preview',     // 'preview' | 'export'
   frame: 0,
@@ -1557,15 +1675,22 @@ function drawImageQuad(t, alpha) {
   ctx.globalAlpha = alpha;
 
   if (imageEl && imageEl.complete && imageEl.naturalWidth > 0) {
-    // Photoshop-style cover crop with both axes pannable.
+    // Photoshop-style cover crop with both axes pannable + zoom (1.0..4.0).
+    // Zoom works by *shrinking* the source rectangle: smaller source → upscaled
+    // to the same destination → looks zoomed in. Default zoom 1.0 = cover-fit.
     const imgW = imageEl.naturalWidth;
     const imgH = imageEl.naturalHeight;
     const sa = imgW / imgH;
     const da = w / h;
+    const zoom = Math.max(1.0, Math.min(4.0, state.imageZoom || 1.0));
     let sx, sy, sw, sh;
+    // Step 1: cover-fit base source rectangle (zoom=1.0)
     if (sa > da) { sh = imgH; sw = imgH * da; sx = (imgW - sw) / 2; sy = 0; }
     else         { sw = imgW; sh = imgW / da; sx = 0; sy = (imgH - sh) / 2; }
-    // imageY slider seeds either Y (portrait) or X (landscape)
+    // Step 2: shrink source rect by zoom factor → effectively zoom in
+    sw /= zoom;
+    sh /= zoom;
+    // imageY slider seeds either Y (portrait) or X (landscape) — within bounds
     if (sa <= da) {
       sy = (state.imageY / 100) * (imgH - sh);
     } else {
@@ -1580,12 +1705,17 @@ function drawImageQuad(t, alpha) {
     ctx.rect(x, y, w, h);
     ctx.clip();
     ctx.drawImage(imageEl, sx, sy, sw, sh, x, y, w, h);
-    // Record hit-area for drag detection
-    _photoHitAreas.push({ x, y, w, h, photoW: w, photoH: h });
+    // Record hit-area for drag detection (also store source-rect dimensions
+    // so the drag handler can compute the correct source-px conversion at
+    // the current zoom level).
+    _photoHitAreas.push({ x, y, w, h, photoW: w, photoH: h, sw, sh });
   } else {
-    // No image — TN red fill (matches reference screenshot)
+    // No image — TN red fill (matches reference screenshot).
+    // Still register the area as a "photo zone" so the hover overlay shows
+    // and the user can click "Upload photo" without first having an image.
     ctx.fillStyle = '#FE0000';
     ctx.fillRect(x, y, w, h);
+    _photoHitAreas.push({ x, y, w, h, photoW: w, photoH: h, sw: 0, sh: 0, empty: true });
   }
   ctx.restore();
 }
@@ -1720,14 +1850,11 @@ canvas.addEventListener('pointermove', (e) => {
   if (_photoDragState) {
     const c = _canvasCoords(e);
     if (!imageEl) return;
-    const iw = imageEl.naturalWidth || imageEl.width;
-    const ih = imageEl.naturalHeight || imageEl.height;
-    if (!iw || !ih) return;
-    const sa = iw / ih;
-    const da = _photoDragState.photoW / _photoDragState.photoH;
-    let sw, sh;
-    if (sa > da) { sh = ih; sw = ih * da; }
-    else         { sw = iw; sh = iw / da; }
+    // Source rectangle dimensions captured AT DRAG START (post-zoom).
+    // Using these makes the drag pixel-perfect even when zoomed in.
+    const sw = _photoDragState.startSw;
+    const sh = _photoDragState.startSh;
+    if (!sw || !sh) return;
     const scaleX = sw / _photoDragState.photoW;
     const scaleY = sh / _photoDragState.photoH;
     const dxSrc = -(c.x - _photoDragState.startMouseX) * scaleX;
@@ -1740,17 +1867,20 @@ canvas.addEventListener('pointermove', (e) => {
     return;
   }
   const c = _canvasCoords(e);
-  canvas.classList.toggle('over-photo', !!_hitPhotoAt(c.x, c.y));
+  const hit = _hitPhotoAt(c.x, c.y);
+  // Only show grab cursor over loaded photo (not over empty red quad)
+  canvas.classList.toggle('over-photo', !!hit && !hit.empty);
 });
 canvas.addEventListener('pointerdown', (e) => {
   const c = _canvasCoords(e);
   const hit = _hitPhotoAt(c.x, c.y);
-  if (!hit) return;
+  if (!hit || hit.empty) return;   // no drag without an image
   const off = state.imageOffset || { x: 0, y: 0 };
   _photoDragState = {
     startMouseX: c.x, startMouseY: c.y,
     startOffX: off.x, startOffY: off.y,
     photoW: hit.w, photoH: hit.h,
+    startSw: hit.sw, startSh: hit.sh,    // source rect at drag start (post-zoom)
   };
   canvas.classList.add('dragging');
   try { canvas.setPointerCapture(e.pointerId); } catch (_) {}
@@ -1766,14 +1896,114 @@ canvas.addEventListener('pointerup',     _endPhotoDrag);
 canvas.addEventListener('pointercancel', _endPhotoDrag);
 canvas.addEventListener('pointerleave', () => {
   if (!_photoDragState) canvas.classList.remove('over-photo');
+  // Hide overlay when leaving canvas (but only if cursor isn't on the overlay)
+  setTimeout(() => {
+    const ov = document.getElementById('photoOverlay');
+    if (!ov) return;
+    if (!ov.matches(':hover') && !_photoDragState) ov.classList.remove('visible');
+  }, 50);
 });
-// Double-click photo → reset offset
+
+// === Photo overlay (hover panel with upload + zoom) ===========================
+// Positions itself over the top-left corner of the image quad (in canvas-px,
+// converted to stage-percent). Shown when cursor enters the photo area.
+function _positionPhotoOverlay() {
+  const ov = document.getElementById('photoOverlay');
+  if (!ov) return;
+  // Convert canvas-px to stage % (canvas fills stage 100%×100%)
+  const xPct = (LAYOUT.imageX / W) * 100;
+  const yPct = (LAYOUT.chartTop / H) * 100;
+  ov.style.left = `calc(${xPct}% + 16px)`;
+  ov.style.top  = `calc(${yPct}% + 16px)`;
+}
+
+// Show overlay on hover over photo area (with or without image); hide otherwise.
+canvas.addEventListener('pointermove', (e) => {
+  // Don't double-trigger during a drag
+  if (_photoDragState) return;
+  const ov = document.getElementById('photoOverlay');
+  if (!ov) return;
+  const c = _canvasCoords(e);
+  const hit = _hitPhotoAt(c.x, c.y);
+  if (hit && !ov.classList.contains('visible')) {
+    _positionPhotoOverlay();
+    // Mark whether we have an image so CSS can dim zoom/reset controls
+    ov.classList.toggle('no-image', !!hit.empty);
+    ov.classList.add('visible');
+  } else if (hit) {
+    // Already visible — keep the no-image state in sync (e.g. user just
+    // uploaded → flip from disabled to enabled).
+    ov.classList.toggle('no-image', !!hit.empty);
+  }
+}, { passive: true });
+
+// Hide overlay when cursor leaves the overlay itself
+document.getElementById('photoOverlay')?.addEventListener('pointerleave', () => {
+  const ov = document.getElementById('photoOverlay');
+  if (!ov || _photoDragState) return;
+  ov.classList.remove('visible');
+});
+
+// Reset button — clears offset + zoom
+document.getElementById('photoResetBtn')?.addEventListener('click', () => {
+  state.imageOffset = { x: 0, y: 0 };
+  state.imageZoom = 1.0;
+  const zs = document.getElementById('photoZoom');
+  const zo = document.getElementById('photoZoomOut');
+  if (zs) zs.value = 100;
+  if (zo) zo.textContent = '100 %';
+  renderFrame(state.frame);
+  if (typeof window.tnAutoSave === 'function') window.tnAutoSave();
+});
+
+// Zoom slider — sync with state and re-render on input
+document.getElementById('photoZoom')?.addEventListener('input', (e) => {
+  const pct = parseInt(e.target.value, 10);
+  state.imageZoom = Math.max(1.0, Math.min(4.0, pct / 100));
+  const zo = document.getElementById('photoZoomOut');
+  if (zo) zo.textContent = `${pct} %`;
+  renderFrame(state.frame);
+  if (typeof window.tnAutoSave === 'function') window.tnAutoSave();
+});
+
+// Reposition overlay when stage resizes (fitStage triggers layout changes)
+window.addEventListener('resize', () => _positionPhotoOverlay());
+// Double-click photo → reset offset AND zoom (only when image is loaded)
 canvas.addEventListener('dblclick', (e) => {
   const c = _canvasCoords(e);
-  if (!_hitPhotoAt(c.x, c.y)) return;
+  const hit = _hitPhotoAt(c.x, c.y);
+  if (!hit || hit.empty) return;
   state.imageOffset = { x: 0, y: 0 };
+  state.imageZoom = 1.0;
+  // Sync zoom slider UI if present
+  const zs = document.getElementById('photoZoom');
+  const zo = document.getElementById('photoZoomOut');
+  if (zs) zs.value = 100;
+  if (zo) zo.textContent = '100 %';
   renderFrame(state.frame);
+  if (typeof window.tnAutoSave === 'function') window.tnAutoSave();
 });
+
+// Wheel-zoom: scroll-wheel over the photo zooms in/out (1.0 .. 4.0).
+// Skips if there's no image — wheel falls through to default page scroll.
+canvas.addEventListener('wheel', (e) => {
+  const c = _canvasCoords(e);
+  const hit = _hitPhotoAt(c.x, c.y);
+  if (!hit || hit.empty) return;
+  e.preventDefault();
+  const cur = state.imageZoom || 1.0;
+  // deltaY > 0 = scroll down = zoom OUT, < 0 = zoom IN
+  const factor = e.deltaY > 0 ? 0.9 : 1.1;
+  const next = Math.max(1.0, Math.min(4.0, cur * factor));
+  state.imageZoom = next;
+  // Sync zoom slider UI if present
+  const zs = document.getElementById('photoZoom');
+  const zo = document.getElementById('photoZoomOut');
+  if (zs) zs.value = Math.round(next * 100);
+  if (zo) zo.textContent = `${Math.round(next * 100)} %`;
+  renderFrame(state.frame);
+  if (typeof window.tnAutoSave === 'function') window.tnAutoSave();
+}, { passive: false });
 
 function render() {
   // Keep upload thumb in sync
@@ -1943,6 +2173,11 @@ $('inImage').addEventListener('change', e => {
   reader.onload = () => {
     state.image = reader.result;
     state.imageOffset = { x: 0, y: 0 };   // reset drag for new photo
+    state.imageZoom = 1.0;                // reset zoom for new photo
+    const zs = document.getElementById('photoZoom');
+    const zo = document.getElementById('photoZoomOut');
+    if (zs) zs.value = 100;
+    if (zo) zo.textContent = '100 %';
     render();
   };
   reader.readAsDataURL(f);
@@ -1950,6 +2185,11 @@ $('inImage').addEventListener('change', e => {
 $('btnClearImage').addEventListener('click', () => {
   state.image = null;
   state.imageOffset = { x: 0, y: 0 };
+  state.imageZoom = 1.0;
+  const zs = document.getElementById('photoZoom');
+  const zo = document.getElementById('photoZoomOut');
+  if (zs) zs.value = 100;
+  if (zo) zo.textContent = '100 %';
   $('inImage').value = '';
   render();
 });
@@ -2038,6 +2278,7 @@ function snapshotState() {
     imageOffset: state.imageOffset
       ? { x: state.imageOffset.x, y: state.imageOffset.y }
       : { x: 0, y: 0 },
+    imageZoom: typeof state.imageZoom === 'number' ? state.imageZoom : 1.0,
     branding: state.branding,
     duration: DURATION,
     fps: FPS,
@@ -2059,6 +2300,8 @@ function applySnapshot(snap) {
   state.imageOffset = (snap.imageOffset && typeof snap.imageOffset === 'object')
     ? { x: snap.imageOffset.x || 0, y: snap.imageOffset.y || 0 }
     : { x: 0, y: 0 };
+  state.imageZoom = (typeof snap.imageZoom === 'number' && snap.imageZoom > 0)
+    ? Math.max(1.0, Math.min(4.0, snap.imageZoom)) : 1.0;
   const rawBranding = snap.branding ?? 'preview';
   state.branding = (rawBranding === 'live' || rawBranding === 'preview') ? 'preview' : 'export';
   // Show theme — fall back to default 'tn' if missing or unknown.
@@ -2079,6 +2322,12 @@ function applySnapshot(snap) {
   // applySnapshot writes so an undefined element doesn't crash preview/restore.
   const _imgY = $('inImageY');   if (_imgY) _imgY.value = state.imageY;
   const _imgYOut = $('outImageY'); if (_imgYOut) _imgYOut.textContent = `${state.imageY} %`;
+  // Sync photo zoom slider (overlay) to loaded zoom value
+  const _zs = document.getElementById('photoZoom');
+  const _zo = document.getElementById('photoZoomOut');
+  const zoomPct = Math.round((state.imageZoom || 1.0) * 100);
+  if (_zs) _zs.value = zoomPct;
+  if (_zo) _zo.textContent = `${zoomPct} %`;
   rebuildRowsList();
   if (typeof updateFpsPillUI === 'function') updateFpsPillUI();
   state.frame = TOTAL_FRAMES - 1;
@@ -2090,10 +2339,22 @@ function isDirty() {
 }
 function updateProjectMeta() {
   const el = $('projMeta');
+  const saveBtn = document.getElementById('projSave');
   if (!currentProjectId) {
-    el.innerHTML = '<span>nový</span>';
+    // NEW project — never auto-saved. User must explicitly "Uložit jako…"
+    // to create. The "Uložit" button is disabled because there's nothing
+    // to update yet (clicking it actually redirects to Save As anyway).
+    el.innerHTML = '<span class="dirty">● nový · neuložený</span>';
+    if (saveBtn) {
+      saveBtn.disabled = true;
+      saveBtn.title = 'Použij „Uložit jako…" pro první uložení';
+    }
   } else {
     el.innerHTML = isDirty() ? '<span class="dirty">● neuloženo</span>' : '<span class="saved">✓ uloženo</span>';
+    if (saveBtn) {
+      saveBtn.disabled = false;
+      saveBtn.title = '';
+    }
   }
 }
 function saveProject(id, name) {
@@ -2183,6 +2444,13 @@ function openProjModal()  { renderProjectList(); $('projModal').classList.add('s
 function closeProjModal() { $('projModal').classList.remove('show'); }
 
 $('projSave').addEventListener('click', () => {
+  // For NEW projects (no ID yet), "Uložit" doesn't make sense — there's
+  // nothing to update. Force the user to "Uložit jako…" so they pick a
+  // name. This is the Figma pattern: explicit first-save, then autosave.
+  if (!currentProjectId) {
+    $('projSaveAs').click();
+    return;
+  }
   const name = $('projName').value.trim() || 'Untitled';
   saveProject(currentProjectId, name);
   showToast(`Uloženo: ${name}`, 'success');
@@ -3420,6 +3688,17 @@ if (document.readyState === 'loading') {
   // event fires (text input, mode toggle click, slider drag, etc.). The
   // wrapped render() below also requires armed=true before triggering save.
   // ===========================================================================
+  // ===========================================================================
+  // FIGMA-STYLE PERSISTENCE:
+  //   - NEW project (no currentProjectId yet): autosave is OFF. User must
+  //     explicitly "Uložit jako…" to create the project. This stops the
+  //     "open template just to peek → ghost project gets created" problem.
+  //   - EXISTING project (has currentProjectId): autosave runs normally
+  //     after every change, ~2s debounced.
+  //
+  // We track _userHasInteracted to skip autosave on boot/load renders.
+  // Then we ALSO require currentProjectId for autosave to fire.
+  // ===========================================================================
   let _userHasInteracted = false;
   function _armAutoSave() { _userHasInteracted = true; }
   // Arm on first real user interaction in the sidebar (covers all input types
@@ -3428,24 +3707,30 @@ if (document.readyState === 'loading') {
     document.querySelector('.control')?.addEventListener(evt, _armAutoSave, { once: false, capture: true });
   });
 
+  // Helper — autosave allowed only for existing (named) projects.
+  function _autoSaveAllowed() {
+    return _userHasInteracted
+        && typeof currentProjectId !== 'undefined'
+        && currentProjectId;
+  }
+
   // Expose globally so existing input handlers can `window.tnAutoSave()` after
   // touching state. Templates already have a `render()` call after every input;
   // hook into that as a single chokepoint.
   window.tnAutoSave = () => {
-    if (!_userHasInteracted) return;
+    if (!_autoSaveAllowed()) return;
     autoSaver.trigger();
   };
 
   // Wrap render() to also kick auto-save. This ensures EVERY state change
   // (slider, text, color picker, anything) is persisted within ~2 seconds —
-  // BUT only after the user has explicitly interacted. Boot/load renders
-  // don't trigger phantom saves.
+  // BUT only for EXISTING projects after the user has interacted.
   if (typeof render === 'function') {
     const origRender = render;
     // eslint-disable-next-line no-global-assign
     render = function (...args) {
       const r = origRender.apply(this, args);
-      if (_userHasInteracted) {
+      if (_autoSaveAllowed()) {
         try { autoSaver.trigger(); } catch (_) {}
       }
       return r;
