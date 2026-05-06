@@ -384,6 +384,84 @@
     z-index: 1;
   }
 
+  /* === PHOTO OVERLAY === */
+  .photo-overlay {
+    position: absolute;
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 12px;
+    background: rgba(0, 0, 0, 0.78);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 4px;
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(-4px);
+    transition: opacity 0.15s ease, transform 0.15s ease;
+    min-width: 200px;
+  }
+  .photo-overlay.visible {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0);
+  }
+  .photo-overlay-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: #f0f0f0;
+    border-radius: 3px;
+    cursor: pointer;
+    font-family: var(--font-ui);
+    font-size: 13px;
+    font-weight: 500;
+    text-align: left;
+    transition: background 0.12s;
+  }
+  .photo-overlay-btn:hover {
+    background: rgba(255, 255, 255, 0.16);
+    border-color: rgba(255, 255, 255, 0.30);
+  }
+  .po-icon { font-size: 16px; line-height: 1; }
+  .po-label { flex: 1; }
+  .photo-overlay-zoom {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 6px 4px 2px;
+  }
+  .po-zoom-label {
+    color: rgba(255, 255, 255, 0.75);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  .po-zoom-label span { color: #fff; font-weight: 600; }
+  #photoZoom {
+    width: 100%;
+    accent-color: var(--tn-red, #DC0F2E);
+    cursor: pointer;
+  }
+  .po-zoom-hint {
+    color: rgba(255, 255, 255, 0.45);
+    font-size: 10px;
+    font-family: var(--font-mono);
+    line-height: 1.4;
+    margin-top: 2px;
+  }
+  .photo-overlay.no-image #photoResetBtn,
+  .photo-overlay.no-image .photo-overlay-zoom {
+    opacity: 0.35;
+    pointer-events: none;
+  }
+
   /* Timeline */
   .timeline {
     padding: 10px 16px 12px;
@@ -1055,6 +1133,24 @@
           <div class="bg-flat" id="bgFlat" style="display:none"></div>
           <!-- The ENTIRE graphic is rendered here. Same layout frame as Bar Chart. -->
           <canvas id="stage-canvas" width="1920" height="1080"></canvas>
+
+          <!-- PHOTO OVERLAY — appears on hover over the portrait. Lets the
+               user upload a new photo, reset position, and zoom in/out. -->
+          <div class="photo-overlay" id="photoOverlay">
+            <label class="photo-overlay-btn" for="inPortrait" title="Nahrát fotku">
+              <span class="po-icon">📷</span>
+              <span class="po-label">Nahrát fotku</span>
+            </label>
+            <button class="photo-overlay-btn" id="photoResetBtn" type="button" title="Reset pozice + zoom">
+              <span class="po-icon">⟲</span>
+              <span class="po-label">Reset</span>
+            </button>
+            <div class="photo-overlay-zoom">
+              <span class="po-zoom-label">Zoom <span id="photoZoomOut">100 %</span></span>
+              <input type="range" id="photoZoom" min="100" max="400" value="100" step="5" />
+              <div class="po-zoom-hint">scroll kolečko = zoom · drag = pohyb · 2× klik = reset</div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -1105,6 +1201,7 @@ const state = {
   portrait: null,          // base64 data URL or null
   portraitY: 20,           // 0..100 → vertical seed offset (slider) — kept for backward compat
   portraitOffset: { x: 0, y: 0 },   // free-form pan in source-image px (drag)
+  portraitZoom: 1.0,       // 1.0 = cover-fit, >1 = zoomed in (max 4.0)
   quoteYOffset: 0,         // manual nudge to auto-centered quote block (px)
   quoteLHOffset: 0,        // manual line-height offset (±px from default)
   show: 'tn',
@@ -1582,15 +1679,18 @@ function drawPortrait(t) {
   if (isUserPhoto) {
     // Cover-fit the image: scale so both dimensions fill, then apply offset
     // (in source-image px) for pan/drag. portraitY slider is a baseline seed,
-    // portraitOffset is the user's drag adjustment on top.
+    // portraitOffset is the user's drag adjustment on top. Plus zoom 1..4.
     const imgW = portraitImageEl.naturalWidth;
     const imgH = portraitImageEl.naturalHeight;
-    // Photoshop-style cover crop with both axes pannable.
     const sa = imgW / imgH;
     const da = w / h;
+    const zoom = Math.max(1.0, Math.min(4.0, state.portraitZoom || 1.0));
     let sx, sy, sw, sh;
     if (sa > da) { sh = imgH; sw = imgH * da; sx = (imgW - sw) / 2; sy = 0; }
     else         { sw = imgW; sh = imgW / da; sx = 0; sy = (imgH - sh) / 2; }
+    // Shrink source rect by zoom factor → effective zoom in
+    sw /= zoom;
+    sh /= zoom;
     // portraitY slider: maps 0..100 → -range..+range on Y
     if (sa <= da) {
       const range = imgH - sh;
@@ -1601,8 +1701,8 @@ function drawPortrait(t) {
     sx = Math.max(0, Math.min(imgW - sw, sx + off.x));
     sy = Math.max(0, Math.min(imgH - sh, sy + off.y));
     ctx.drawImage(portraitImageEl, sx, sy, sw, sh, x, y, w, h);
-    // Record hit-area for drag detection (only when user photo present)
-    _photoHitAreas.push({ x, y, w, h, photoW: w, photoH: h, kind: 'citace' });
+    // Record hit-area for drag detection (with current source rect for zoom-aware drag)
+    _photoHitAreas.push({ x, y, w, h, photoW: w, photoH: h, sw, sh, kind: 'citace' });
   } else {
     // No user photo → default silhouette PNG. The silhouette itself is the
     // whole portrait — no fill behind it, so the режия video (or our flat
@@ -1619,6 +1719,9 @@ function drawPortrait(t) {
       const drawY = y + (h - drawH) / 2;
       ctx.drawImage(defaultPortraitImg, drawX, drawY, drawW, drawH);
     }
+    // Register hit area even without user photo so the hover overlay appears
+    // and the user can click "Upload" without first uploading anything.
+    _photoHitAreas.push({ x, y, w, h, photoW: w, photoH: h, sw: 0, sh: 0, kind: 'citace', empty: true });
   }
   ctx.restore();   // unclip
   ctx.restore();   // alpha
@@ -1798,16 +1901,11 @@ canvas.addEventListener('pointermove', (e) => {
   if (_photoDragState) {
     const c = _canvasCoords(e);
     if (!portraitImageEl) return;
-    const iw = portraitImageEl.naturalWidth || portraitImageEl.width;
-    const ih = portraitImageEl.naturalHeight || portraitImageEl.height;
-    if (!iw || !ih) return;
-
-    // Cover-fit math — figure out source rect dimensions
-    const sa = iw / ih;
-    const da = _photoDragState.photoW / _photoDragState.photoH;
-    let sw, sh;
-    if (sa > da) { sh = ih; sw = ih * da; }
-    else         { sw = iw; sh = iw / da; }
+    // Source rectangle dimensions captured AT DRAG START (post-zoom).
+    // Using these makes the drag pixel-perfect even when zoomed in.
+    const sw = _photoDragState.startSw;
+    const sh = _photoDragState.startSh;
+    if (!sw || !sh) return;
     const scaleX = sw / _photoDragState.photoW;
     const scaleY = sh / _photoDragState.photoH;
     // Photoshop hand-tool: drag right reveals more of LEFT side → negate
@@ -1820,19 +1918,21 @@ canvas.addEventListener('pointermove', (e) => {
     e.preventDefault();
     return;
   }
-  // Idle hover — show grab cursor over a photo
+  // Idle hover — show grab cursor only over loaded photo (not silhouette)
   const c = _canvasCoords(e);
-  canvas.classList.toggle('over-photo', !!_hitPhotoAt(c.x, c.y));
+  const hit = _hitPhotoAt(c.x, c.y);
+  canvas.classList.toggle('over-photo', !!hit && !hit.empty);
 });
 canvas.addEventListener('pointerdown', (e) => {
   const c = _canvasCoords(e);
   const hit = _hitPhotoAt(c.x, c.y);
-  if (!hit) return;
+  if (!hit || hit.empty) return;   // no drag without a real image
   const off = state.portraitOffset || { x: 0, y: 0 };
   _photoDragState = {
     startMouseX: c.x, startMouseY: c.y,
     startOffX: off.x, startOffY: off.y,
     photoW: hit.w, photoH: hit.h,
+    startSw: hit.sw, startSh: hit.sh,
   };
   canvas.classList.add('dragging');
   try { canvas.setPointerCapture(e.pointerId); } catch (_) {}
@@ -1848,14 +1948,100 @@ canvas.addEventListener('pointerup',     _endPhotoDrag);
 canvas.addEventListener('pointercancel', _endPhotoDrag);
 canvas.addEventListener('pointerleave', () => {
   if (!_photoDragState) canvas.classList.remove('over-photo');
+  // Hide overlay when leaving canvas (but only if cursor isn't on the overlay)
+  setTimeout(() => {
+    const ov = document.getElementById('photoOverlay');
+    if (!ov) return;
+    if (!ov.matches(':hover') && !_photoDragState) ov.classList.remove('visible');
+  }, 50);
 });
-// Double-click photo → reset offset
+// Double-click photo → reset offset AND zoom (only when image is loaded)
 canvas.addEventListener('dblclick', (e) => {
   const c = _canvasCoords(e);
-  if (!_hitPhotoAt(c.x, c.y)) return;
+  const hit = _hitPhotoAt(c.x, c.y);
+  if (!hit || hit.empty) return;
   state.portraitOffset = { x: 0, y: 0 };
+  state.portraitZoom = 1.0;
+  const zs = document.getElementById('photoZoom');
+  const zo = document.getElementById('photoZoomOut');
+  if (zs) zs.value = 100;
+  if (zo) zo.textContent = '100 %';
   renderFrame(state.frame);
+  if (typeof window.tnAutoSave === 'function') window.tnAutoSave();
 });
+
+// Wheel-zoom: scroll-wheel over the photo zooms in/out (1.0 .. 4.0).
+canvas.addEventListener('wheel', (e) => {
+  const c = _canvasCoords(e);
+  const hit = _hitPhotoAt(c.x, c.y);
+  if (!hit || hit.empty) return;
+  e.preventDefault();
+  const cur = state.portraitZoom || 1.0;
+  const factor = e.deltaY > 0 ? 0.9 : 1.1;
+  const next = Math.max(1.0, Math.min(4.0, cur * factor));
+  state.portraitZoom = next;
+  const zs = document.getElementById('photoZoom');
+  const zo = document.getElementById('photoZoomOut');
+  if (zs) zs.value = Math.round(next * 100);
+  if (zo) zo.textContent = `${Math.round(next * 100)} %`;
+  renderFrame(state.frame);
+  if (typeof window.tnAutoSave === 'function') window.tnAutoSave();
+}, { passive: false });
+
+// === Photo overlay (hover panel with upload + zoom) ===========================
+function _positionPhotoOverlay() {
+  const ov = document.getElementById('photoOverlay');
+  if (!ov) return;
+  // Use CONTENT.portraitX/Y in canvas-px → convert to stage % (canvas fills 100%×100%)
+  const px = (CONTENT.portraitX / W) * 100;
+  const py = (CONTENT.portraitY / H) * 100;
+  ov.style.left = `calc(${px}% + 16px)`;
+  ov.style.top  = `calc(${py}% + 16px)`;
+}
+
+// Show overlay on hover over photo area (with or without image); hide otherwise.
+canvas.addEventListener('pointermove', (e) => {
+  if (_photoDragState) return;
+  const ov = document.getElementById('photoOverlay');
+  if (!ov) return;
+  const c = _canvasCoords(e);
+  const hit = _hitPhotoAt(c.x, c.y);
+  if (hit && !ov.classList.contains('visible')) {
+    _positionPhotoOverlay();
+    ov.classList.toggle('no-image', !!hit.empty);
+    ov.classList.add('visible');
+  } else if (hit) {
+    ov.classList.toggle('no-image', !!hit.empty);
+  }
+}, { passive: true });
+
+document.getElementById('photoOverlay')?.addEventListener('pointerleave', () => {
+  const ov = document.getElementById('photoOverlay');
+  if (!ov || _photoDragState) return;
+  ov.classList.remove('visible');
+});
+
+document.getElementById('photoResetBtn')?.addEventListener('click', () => {
+  state.portraitOffset = { x: 0, y: 0 };
+  state.portraitZoom = 1.0;
+  const zs = document.getElementById('photoZoom');
+  const zo = document.getElementById('photoZoomOut');
+  if (zs) zs.value = 100;
+  if (zo) zo.textContent = '100 %';
+  renderFrame(state.frame);
+  if (typeof window.tnAutoSave === 'function') window.tnAutoSave();
+});
+
+document.getElementById('photoZoom')?.addEventListener('input', (e) => {
+  const pct = parseInt(e.target.value, 10);
+  state.portraitZoom = Math.max(1.0, Math.min(4.0, pct / 100));
+  const zo = document.getElementById('photoZoomOut');
+  if (zo) zo.textContent = `${pct} %`;
+  renderFrame(state.frame);
+  if (typeof window.tnAutoSave === 'function') window.tnAutoSave();
+});
+
+window.addEventListener('resize', () => _positionPhotoOverlay());
 
 function render() {
   // Keep the upload-row thumb preview in sync with state.portrait
@@ -2036,6 +2222,11 @@ $('inPortrait').addEventListener('change', e => {
   reader.onload = () => {
     state.portrait = reader.result;
     state.portraitOffset = { x: 0, y: 0 };   // reset drag for new photo
+    state.portraitZoom = 1.0;                // reset zoom for new photo
+    const zs = document.getElementById('photoZoom');
+    const zo = document.getElementById('photoZoomOut');
+    if (zs) zs.value = 100;
+    if (zo) zo.textContent = '100 %';
     render();
   };
   reader.readAsDataURL(f);
@@ -2043,6 +2234,11 @@ $('inPortrait').addEventListener('change', e => {
 $('btnClearPortrait').addEventListener('click', () => {
   state.portrait = null;
   state.portraitOffset = { x: 0, y: 0 };
+  state.portraitZoom = 1.0;
+  const zs = document.getElementById('photoZoom');
+  const zo = document.getElementById('photoZoomOut');
+  if (zs) zs.value = 100;
+  if (zo) zo.textContent = '100 %';
   $('inPortrait').value = '';
   render();
 });
@@ -2098,6 +2294,7 @@ function snapshotState() {
     portraitOffset: state.portraitOffset
       ? { x: state.portraitOffset.x, y: state.portraitOffset.y }
       : { x: 0, y: 0 },
+    portraitZoom: typeof state.portraitZoom === 'number' ? state.portraitZoom : 1.0,
     branding: state.branding,
     duration: DURATION,
     fps: FPS,
@@ -2114,6 +2311,8 @@ function applySnapshot(snap) {
   state.portraitOffset = (snap.portraitOffset && typeof snap.portraitOffset === 'object')
     ? { x: snap.portraitOffset.x || 0, y: snap.portraitOffset.y || 0 }
     : { x: 0, y: 0 };
+  state.portraitZoom = (typeof snap.portraitZoom === 'number' && snap.portraitZoom > 0)
+    ? Math.max(1.0, Math.min(4.0, snap.portraitZoom)) : 1.0;
   // Normalize legacy branding values from older saves: 'live' meant video backdrop,
   // 'flat' meant solid gradient. Current scheme is only 'preview' (video) / 'export' (clean).
   const rawBranding = snap.branding ?? 'preview';
@@ -2137,6 +2336,12 @@ function applySnapshot(snap) {
   // Portrait-Y slider was removed in favour of drag-to-pan; guard the legacy
   // applySnapshot write so an undefined element doesn't crash preview/restore.
   const _portraitY = $('inPortraitY'); if (_portraitY) _portraitY.value = state.portraitY;
+  // Sync photo zoom slider (overlay) to loaded zoom value
+  const _zs = document.getElementById('photoZoom');
+  const _zo = document.getElementById('photoZoomOut');
+  const zoomPct = Math.round((state.portraitZoom || 1.0) * 100);
+  if (_zs) _zs.value = zoomPct;
+  if (_zo) _zo.textContent = `${zoomPct} %`;
   $('inQuoteY').value = state.quoteYOffset || 0;
   $('outQuoteY').textContent = `${(state.quoteYOffset || 0) > 0 ? '+' : ''}${state.quoteYOffset || 0} px`;
   $('inQuoteLH').value = state.quoteLHOffset || 0;
