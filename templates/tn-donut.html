@@ -90,12 +90,14 @@
   .tn-mark {
     display: inline-flex; align-items: center; justify-content: center;
     width: 28px; height: 28px;
-    background: var(--text-inv);
-    color: var(--tn-red);
-    font-weight: 800; font-size: 14px; letter-spacing: -0.02em;
-    font-family: var(--font-ui);
+    background: transparent;
     border: 0; cursor: pointer; padding: 0;
     transition: transform .1s ease;
+  }
+  .tn-mark .tn-logo-svg {
+    width: 100%;
+    height: 100%;
+    display: block;
   }
   .tn-mark:hover { transform: scale(1.08); }
   .tn-mark:active { transform: scale(0.95); }
@@ -1079,7 +1081,7 @@
   <aside class="control">
     <header class="control-header">
       <div class="brand-row">
-        <button class="tn-mark" id="btnHome" title="Zpět na hlavní rozcestník">tn</button>
+        <button class="tn-mark" id="btnHome" title="Zpět na hlavní rozcestník"><svg class="tn-logo-svg" xmlns="http://www.w3.org/2000/svg" viewBox="480.94 294.91 275.33 275.33" aria-label="TN logo"><path fill="#e00521" d="M480.94,294.91v275.33h275.33v-275.33h-275.33ZM719.46,491.63h-28.47l-51.15-67.82v67.82h-28.07v-91.73h-39.19v91.73h-29.19v-91.73h-33.91v-25.85h130.36l51.15,68.1v-68.1h28.47v117.58Z"/></svg></button>
         <span class="brand">Graphics Engine</span>
       </div>
       <div class="template-badge">
