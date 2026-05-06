@@ -90,10 +90,13 @@
   .tn-mark {
     display: inline-flex; align-items: center; justify-content: center;
     width: 28px; height: 28px;
-    background: transparent;
+    background: #fff;          /* white bg so the TN letter cutouts show white */
     border: 0; cursor: pointer; padding: 0;
     transition: transform .1s ease;
+    overflow: hidden;
   }
+  .tn-mark:hover { transform: scale(1.08); }
+  .tn-mark:active { transform: scale(0.95); }
   .tn-mark .tn-logo-svg {
     width: 100%;
     height: 100%;
