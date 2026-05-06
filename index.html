@@ -48,11 +48,13 @@
   }
   .tn-mark {
     width: 36px; height: 36px;
-    background: var(--text-inv);
-    color: var(--tn-red);
-    display: flex; align-items: center; justify-content: center;
-    font-weight: 800; font-size: 16px;
-    letter-spacing: -0.02em;
+    background: transparent;
+    display: inline-flex; align-items: center; justify-content: center;
+  }
+  .tn-mark .tn-logo-svg {
+    width: 100%;
+    height: 100%;
+    display: block;
   }
   .masthead .title {
     font-weight: 800;
@@ -462,7 +464,7 @@
 <body>
 
 <header class="masthead">
-  <span class="tn-mark">TN</span>
+  <span class="tn-mark"><svg class="tn-logo-svg" xmlns="http://www.w3.org/2000/svg" viewBox="480.94 294.91 275.33 275.33" aria-label="TN logo"><path fill="#e00521" d="M480.94,294.91v275.33h275.33v-275.33h-275.33ZM719.46,491.63h-28.47l-51.15-67.82v67.82h-28.07v-91.73h-39.19v91.73h-29.19v-91.73h-33.91v-25.85h130.36l51.15,68.1v-68.1h28.47v117.58Z"/></svg></span>
   <span class="title">Graphics Engine</span>
   <span class="sub">Televizní Noviny · Template Library</span>
 </header>
