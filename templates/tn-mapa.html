@@ -750,7 +750,8 @@
     min-width: 180px;
     box-shadow: 0 4px 12px rgba(0,0,0,0.3);
   }
-  .fps-pill:hover .fps-pill-menu { display: block; }
+  .fps-pill:hover .fps-pill-menu,
+  .fps-pill.open .fps-pill-menu { display: block; }
   .fps-pill-menu button {
     display: block;
     width: 100%;
@@ -1427,27 +1428,34 @@ const ctx = canvas.getContext('2d');
 // source), but the bottom area is a 2-column split: image on left (770×770),
 // gray rows panel on right.
 const LAYOUT = {
-  // === MAPA LAYOUT ===
-  // Title band sits at the BOTTOM (y=970..1080) — see all 4 reference screenshots.
-  // Map area fills the canvas above it.
+  // === MAPA LAYOUT — measured from reference screenshots ===
+  // White strip sits at y=858..944 (height 87px). Below it is a 136px bottom
+  // режия zone (y=945..1080) for the TN logo box + chrome — kept black in
+  // export mode, transparent in preview so backdrop video shows.
   mapTop:           0,
-  mapBottom:      970,
-  titleBandTop:   970,
-  titleBandH:     110,
-  titleBandBot:  1080,
-  titleX:          90,    // left padding inside the white strip
-  titleY:        1040,    // baseline of title text inside the strip
-  sourceX:       1805,    // GLOBAL TN right-edge alignment for source caption
-  sourceY:       1040,
-  // TN red logo box reservation
+  mapBottom:      858,    // top of strip = bottom of map area
+  titleBandTop:   858,
+  titleBandH:      87,
+  titleBandBot:   945,
+  // Title text positioning (left x=115, baseline y=932 measured from reference)
+  titleX:         115,
+  titleY:         932,
+  // Source caption — measured right edge ≈ 1688 (further from right edge than
+  // tabulka's 1805 because no режия chrome shares the strip in mapa).
+  sourceX:       1688,
+  sourceY:        932,
+  // Bottom режия zone (below the strip)
+  bottomBlackTop: 945,
+  bottomBlackH:   135,
+  // TN red logo box reservation (sits in the bottom режия zone)
   logoBoxW:      270,
   logoBoxH:      155,
-  // Compatibility aliases used by some shared helpers (export, etc.)
+  // Compatibility aliases used by some shared helpers
   topBlackH:        0,
   chartTop:         0,
-  chartBottom:    970,
+  chartBottom:    858,
 };
-const BLOCK_ANCHOR_Y = 970;   // animation anchor (title band scale-Y intro)
+const BLOCK_ANCHOR_Y = 858;   // animation anchor (strip + bottom zone scale-Y)
 const W = 1920, H = 1080;
 
 /* =============================================================================
@@ -1550,53 +1558,85 @@ const MAP_MODES = {
 
 async function loadGeoJSON(file) {
   if (_geoCache[file]) return _geoCache[file];
+  const url = `${GEO_BASE}/${file}`;
   try {
-    const url = `${GEO_BASE}/${file}`;
+    console.log('[geo] fetching', url);
     const res = await fetch(url);
-    if (!res.ok) throw new Error(`HTTP ${res.status} for ${url}`);
-    const data = await res.json();
+    if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText} for ${url}`);
+    const text = await res.text();
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch (e) {
+      throw new Error(`JSON parse failed for ${url}: ${e.message} (first 100 chars: ${text.slice(0,100)})`);
+    }
+    if (!data || !Array.isArray(data.features)) {
+      throw new Error(`Invalid GeoJSON shape from ${url} — no features array`);
+    }
+    console.log('[geo] loaded', url, '·', data.features.length, 'features');
     _geoCache[file] = data;
     return data;
   } catch (err) {
-    console.warn('[geo] loadGeoJSON failed:', err.message);
+    console.error('[geo] loadGeoJSON failed:', err.message);
     _geoCache[file] = { type: 'FeatureCollection', features: [], _error: err.message };
     return _geoCache[file];
   }
 }
 
-// Project a [lon, lat] coordinate to canvas [x, y] using the given mode's
-// bounding box scaled into the map area (LAYOUT.mapTop..mapBottom).
-// Uses simple equirectangular projection (good enough for visual purposes,
-// not for cartographic accuracy). Aspect-correct: keeps the map's aspect ratio
-// and centers it within the available canvas area.
+// Project a [lon, lat] coordinate to canvas [x, y].
+// Uses Web Mercator (the standard for web maps) which preserves aspect ratio
+// correctly within a given region. Polar regions get distorted (Greenland
+// looks huge) but that's the trade-off everyone accepts for the rest looking
+// natural. Antarctica is excluded from world mode for this reason.
+//
+// We project the bbox corners through Mercator, then fit the resulting
+// rectangle into the canvas map area while preserving aspect ratio.
 function makeProjection(modeId) {
   const mode = MAP_MODES[modeId] || MAP_MODES['cz-kraje'];
   const [minLon, minLat, maxLon, maxLat] = mode.bounds;
-  const dataAR = (maxLon - minLon) / (maxLat - minLat);
-  // Compensate for latitude foreshortening at the bbox center (Mercator-lite).
-  const midLat = (minLat + maxLat) / 2;
-  const latScale = Math.cos(midLat * Math.PI / 180);
-  const projDataAR = dataAR * latScale;
+
+  // Web Mercator. Both X and Y must be in the same units (radians) for the
+  // aspect ratio to come out right. We multiply longitude by π/180 to match
+  // the natural-units output of mercY().
+  const mercY = (lat) => Math.log(Math.tan(Math.PI / 4 + (lat * Math.PI / 180) / 2));
+  const D2R = Math.PI / 180;
+
+  const xMin = minLon * D2R;
+  const xMax = maxLon * D2R;
+  const yMinMerc = mercY(minLat);
+  const yMaxMerc = mercY(maxLat);
+  const dataW = xMax - xMin;
+  const dataH = yMaxMerc - yMinMerc;
+  const dataAR = dataW / dataH;
+
   const mapW = W;
   const mapH = LAYOUT.mapBottom - LAYOUT.mapTop;
   const canvasAR = mapW / mapH;
-  let scale, offX, offY;
-  if (projDataAR > canvasAR) {
-    // bbox wider than canvas → fit to width
-    scale = mapW / (maxLon - minLon);
-    const drawnH = (maxLat - minLat) * scale * latScale;
-    offX = 0;
+
+  // Reserve breathing room around the map — references show 8–12% margin
+  // around CZ (more for world/europe to avoid edge-clipping coastlines).
+  const PAD = 0.08;
+  const safeW = mapW * (1 - 2 * PAD);
+  const safeH = mapH * (1 - 2 * PAD);
+
+  let scale, offX, offY, drawnW, drawnH;
+  if (dataAR > canvasAR) {
+    scale = safeW / dataW;
+    drawnW = safeW;
+    drawnH = dataH * scale;
+    offX = mapW * PAD;
     offY = LAYOUT.mapTop + (mapH - drawnH) / 2;
   } else {
-    // bbox taller than canvas → fit to height
-    scale = mapH / ((maxLat - minLat) * latScale);
-    const drawnW = (maxLon - minLon) * scale;
+    scale = safeH / dataH;
+    drawnW = dataW * scale;
+    drawnH = safeH;
     offX = (mapW - drawnW) / 2;
-    offY = LAYOUT.mapTop;
+    offY = LAYOUT.mapTop + mapH * PAD;
   }
+
   return function project(lon, lat) {
-    const x = offX + (lon - minLon) * scale;
-    const y = offY + (maxLat - lat) * scale * latScale;   // Y is flipped (lat increases up)
+    const x = offX + (lon * D2R - xMin) * scale;
+    const y = offY + (yMaxMerc - mercY(lat)) * scale;
     return [x, y];
   };
 }
@@ -1771,9 +1811,12 @@ function renderFrame(f) {
 
     // Fallback placeholder when data isn't loaded yet (or empty)
     if (!drewReal) {
+      const cachedData = _geoCache[cfg.file];
+      const loadError = cachedData && cachedData._error;
+      const isLoading = !cachedData && _geoLoadingMode === cfg.file;
       ctx.save();
       ctx.globalAlpha = mapP;
-      ctx.fillStyle = 'rgba(168, 200, 232, 0.15)';   // matches map fill, faint
+      ctx.fillStyle = 'rgba(168, 200, 232, 0.15)';
       ctx.fillRect(0, LAYOUT.mapTop, W, LAYOUT.mapBottom - LAYOUT.mapTop);
       ctx.fillStyle = 'rgba(255,255,255,0.30)';
       ctx.font = '700 56px "Organica", sans-serif';
@@ -1786,13 +1829,27 @@ function renderFrame(f) {
         'world':     'SVĚT',
       };
       const cy = LAYOUT.mapTop + (LAYOUT.mapBottom - LAYOUT.mapTop) / 2;
-      ctx.fillText(modeNames[state.mode] || 'MAPA', W / 2, cy);
-      ctx.font = '400 24px "Organica", sans-serif';
-      ctx.fillStyle = 'rgba(255,255,255,0.20)';
-      const subtitle = cfg.placeholder
-        ? 'řeky budou doplněny později'
-        : 'načítám geo data…';
-      ctx.fillText(subtitle, W / 2, cy + 60);
+      ctx.fillText(modeNames[state.mode] || 'MAPA', W / 2, cy - 30);
+      ctx.font = '400 22px "Organica", sans-serif';
+      let subtitle;
+      if (loadError) {
+        subtitle = '⚠ chyba načítání: ' + loadError;
+        ctx.fillStyle = 'rgba(255, 120, 120, 0.85)';
+      } else if (cfg.placeholder) {
+        subtitle = 'řeky budou doplněny později';
+        ctx.fillStyle = 'rgba(255,255,255,0.50)';
+      } else if (isLoading) {
+        subtitle = 'načítám geo data…';
+        ctx.fillStyle = 'rgba(255,255,255,0.40)';
+      } else {
+        subtitle = 'data nejsou k dispozici';
+        ctx.fillStyle = 'rgba(255,255,255,0.40)';
+      }
+      ctx.fillText(subtitle, W / 2, cy + 20);
+      // Show expected file path for debugging
+      ctx.font = '400 16px "Organica", sans-serif';
+      ctx.fillStyle = 'rgba(255,255,255,0.30)';
+      ctx.fillText('očekávám: ' + GEO_BASE + '/' + cfg.file, W / 2, cy + 56);
       ctx.restore();
     }
   }
@@ -1802,18 +1859,27 @@ function renderFrame(f) {
   ctx.fillStyle = 'rgba(242, 242, 242, 0.95)';
   ctx.fillRect(0, LAYOUT.titleBandTop, W, LAYOUT.titleBandH);
 
+  // EXPORT mode: paint bottom режия zone (y=945..1080) black — режия composites
+  // its TN logo + chrome on top. In preview the backdrop video shows through.
+  if (state.branding === 'export') {
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, LAYOUT.bottomBlackTop, W, LAYOUT.bottomBlackH);
+  }
+
   // Title (left) + source (right) — fade in 0.48..0.88s
   const titleP = easeOutCubic(clamp01((t - 0.48) / 0.40));
   if (titleP > 0) {
     ctx.save();
     ctx.globalAlpha = titleP;
-    ctx.fillStyle = '#000';
-    ctx.font = `800 ${autoFitTitle(state.title || '', state.source || '', 54)}px "Organica", sans-serif`;
+    ctx.fillStyle = getFontColor();
+    ctx.font = `800 ${autoFitTitle(state.title || '', state.source || '', 62)}px "Organica", sans-serif`;
     ctx.textBaseline = 'alphabetic';
     ctx.textAlign = 'left';
     ctx.fillText(state.title || '', LAYOUT.titleX, LAYOUT.titleY);
-    ctx.fillStyle = '#222';
-    ctx.font = '400 28px "Organica", sans-serif';
+    // Source caption — slightly lighter than title (matches reference)
+    const fc = getFontColor();
+    ctx.fillStyle = fc === '#0a0a0a' ? '#222' : fc;
+    ctx.font = '400 26px "Organica", sans-serif';
     ctx.textAlign = 'right';
     ctx.fillText(state.source || '', LAYOUT.sourceX, LAYOUT.titleY);
     ctx.restore();
@@ -1872,7 +1938,22 @@ document.querySelectorAll('.fps-pill-menu button').forEach(btn => {
     setFps(newFps);
     updateFpsPillUI();
     render();
+    // Close the menu after picking
+    document.getElementById('fpsPill')?.classList.remove('open');
   });
+});
+
+// FPS pill toggles open/close on click — pure CSS hover wasn't reliable on
+// touch devices and forced users to keep the cursor inside a tiny target.
+const _fpsPillEl = document.getElementById('fpsPill');
+document.getElementById('fpsActiveBtn')?.addEventListener('click', e => {
+  e.stopPropagation();
+  if (_fpsPillEl) _fpsPillEl.classList.toggle('open');
+});
+// Close FPS pill when clicking anywhere outside it
+document.addEventListener('click', e => {
+  if (!_fpsPillEl) return;
+  if (!e.target.closest('.fps-pill')) _fpsPillEl.classList.remove('open');
 });
 
 // =============================================================================
@@ -1957,7 +2038,8 @@ $('inSource').addEventListener('input', e => { state.source = e.target.value; re
   const sel = document.getElementById('inShow');
   if (sel) sel.addEventListener('change', e => {
     state.show = e.target.value;
-    applyShowTheme();
+    applyShowTheme();   // swaps backdrop video + accent
+    render();           // re-paint title color, map highlights, pins (theme accent)
   });
   populateShowSelect();
 })();
@@ -2132,68 +2214,88 @@ function updateProjectMeta() {
     el.innerHTML = isDirty() ? '<span class="dirty">● neuloženo</span>' : '<span class="saved">✓ uloženo</span>';
   }
 }
-function saveProject(id, name) {
-  const all = loadAllProjects();
-  const now = Date.now();
+// All project save/load/delete now goes through TNProjects (the unified
+// localStorage API in projects.js). The legacy `tn_graphics_engine_projects_v2`
+// key still gets read by TNProjects.readStore() for backwards compatibility,
+// but new writes go to `tn_projects_local_v2`. Single source of truth →
+// delete from index actually sticks.
+async function saveProject(id, name) {
+  const owner = (window.TNLogin && TNLogin.getNick && TNLogin.getNick()) || 'XXX';
   const snap = snapshotState();
-  if (!id) {
-    id = 'p_' + now.toString(36) + '_' + Math.random().toString(36).slice(2, 6);
-    all.push({ id, name, createdAt: now, updatedAt: now, state: snap });
-  } else {
-    const idx = all.findIndex(p => p.id === id);
-    if (idx >= 0) {
-      all[idx].name = name;
-      all[idx].updatedAt = now;
-      all[idx].state = snap;
-    } else {
-      all.push({ id, name, createdAt: now, updatedAt: now, state: snap });
-    }
+  const project = {
+    id: id || TNProjects.uuid(),
+    name: name || 'Untitled',
+    owner,
+    template: TEMPLATE_ID,
+    show: state.show,
+    fps: FPS,
+    duration: DURATION,
+    state: snap,
+  };
+  try {
+    const saved = await TNProjects.save(project);
+    currentProjectId = saved.id;
+    localStorage.setItem(LS_CURRENT, saved.id);
+    lastSavedSnapshot = JSON.stringify(snap);
+    updateProjectMeta();
+    return saved.id;
+  } catch (err) {
+    console.error('[saveProject] failed:', err);
+    showToast('Chyba ukládání: ' + err.message, 'error');
+    return null;
   }
-  saveAllProjects(all);
-  currentProjectId = id;
-  localStorage.setItem(LS_CURRENT, id);
-  lastSavedSnapshot = JSON.stringify(snap);
-  updateProjectMeta();
-  return id;
 }
-function loadProject(id) {
-  const p = loadAllProjects().find(x => x.id === id);
-  if (!p) return;
-  applySnapshot(p.state);
-  currentProjectId = p.id;
-  $('projName').value = p.name;
-  localStorage.setItem(LS_CURRENT, id);
-  lastSavedSnapshot = JSON.stringify(snapshotState());
-  updateProjectMeta();
-  render();
-  showToast(`Otevřeno: ${p.name}`, 'success');
+async function loadProject(id) {
+  try {
+    const p = await TNProjects.load(id);
+    if (!p) return;
+    applySnapshot(p.state);
+    currentProjectId = p.id;
+    $('projName').value = p.name;
+    localStorage.setItem(LS_CURRENT, id);
+    lastSavedSnapshot = JSON.stringify(snapshotState());
+    updateProjectMeta();
+    render();
+    showToast(`Otevřeno: ${p.name}`, 'success');
+  } catch (err) {
+    console.error('[loadProject] failed:', err);
+    showToast('Projekt nenalezen', 'error');
+  }
 }
-function deleteProject(id) {
-  const all = loadAllProjects().filter(p => p.id !== id);
-  saveAllProjects(all);
+async function deleteProject(id) {
+  try {
+    await TNProjects.delete(id);
+  } catch (err) {
+    console.error('[deleteProject] failed:', err);
+  }
   if (currentProjectId === id) {
     currentProjectId = null;
     localStorage.removeItem(LS_CURRENT);
     updateProjectMeta();
   }
-  renderProjectList();
+  await renderProjectList();
 }
 
 // ---------- Modal UI ----------
-function renderProjectList() {
+async function renderProjectList() {
   const list = $('projList');
-  // Show only projects for this template (or legacy untagged) — avoids
-  // bar-chart projects leaking into the quote template's Open dialog.
-  const all = loadAllProjects()
-    .filter(p => (p.state?.template || 'bar-chart-01') === TEMPLATE_ID)
-    .sort((a, b) => b.updatedAt - a.updatedAt);
+  list.innerHTML = '<div class="proj-empty">Načítám…</div>';
+  let all;
+  try {
+    const idx = await TNProjects.list();
+    // Filter to projects belonging to this template only.
+    all = idx.filter(p => p.template === TEMPLATE_ID || p.template === 'tn-mapa-01');
+  } catch (err) {
+    list.innerHTML = '<div class="proj-empty">Chyba načítání: ' + escapeHtml(err.message) + '</div>';
+    return;
+  }
   if (all.length === 0) {
     list.innerHTML = '<div class="proj-empty">Žádné uložené projekty v této šabloně.<br>Použij „Uložit jako…" pro vytvoření.</div>';
     return;
   }
   list.innerHTML = all.map(p => {
-    const d = new Date(p.updatedAt);
-    const dateStr = d.toLocaleString('cs-CZ', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' });
+    const updated = new Date(p.updatedAt || 0);
+    const dateStr = updated.toLocaleString('cs-CZ', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' });
     const isCurrent = p.id === currentProjectId ? ' (current)' : '';
     return `<div class="proj-item" data-id="${p.id}">
       <div class="proj-info">
@@ -2205,12 +2307,14 @@ function renderProjectList() {
     </div>`;
   }).join('');
   list.querySelectorAll('.proj-btn').forEach(btn => {
-    btn.addEventListener('click', e => {
+    btn.addEventListener('click', async e => {
       const id = e.target.dataset.id;
       if (e.target.dataset.action === 'load') { closeProjModal(); loadProject(id); }
       else if (e.target.dataset.action === 'delete') {
-        const p = loadAllProjects().find(x => x.id === id);
-        if (p && confirm(`Smazat projekt „${p.name}"?`)) deleteProject(id);
+        const proj = all.find(x => x.id === id);
+        if (proj && confirm(`Smazat projekt „${proj.name}"?`)) {
+          await deleteProject(id);
+        }
       }
     });
   });
@@ -2650,15 +2754,21 @@ console.log('[Boot] starting, FPS=', FPS, 'DURATION=', DURATION, 'TOTAL_FRAMES='
     return;
   }
 
-  // Load project from URL or last-open
+  // Load project from URL or last-open via TNProjects (single source of truth)
   const targetId = _urlProjectId || localStorage.getItem(LS_CURRENT);
   if (targetId) {
-    const all = loadAllProjects();
-    const p = all.find(x => x.id === targetId && (x.state?.template === TEMPLATE_ID));
-    if (p) {
-      applySnapshot(p.state);
-      currentProjectId = p.id;
-      $('projName').value = p.name;
+    try {
+      const p = await TNProjects.load(targetId);
+      // Only apply if this project is for our template (otherwise show fresh)
+      const tplOk = p.state?.template === TEMPLATE_ID || p.template === TEMPLATE_ID
+                 || p.state?.template === 'tn-mapa' || p.template === 'tn-mapa';
+      if (p && tplOk) {
+        applySnapshot(p.state);
+        currentProjectId = p.id;
+        $('projName').value = p.name;
+      }
+    } catch (_) {
+      // not found — start fresh
     }
   }
 
@@ -2964,9 +3074,17 @@ async function pickH264Codec(width, height, fps, bitrate) {
 }
 
 document.getElementById('btnExportMP4')?.addEventListener('click', async () => {
-  // Browser capability check
+  // Browser capability check — WebCodecs is needed for MP4 H.264 export.
+  // If absent, offer to fall back to WebM (which uses MediaRecorder API).
   if (typeof VideoEncoder === 'undefined' || typeof VideoFrame === 'undefined') {
-    showToast?.('Prohlížeč nepodporuje WebCodecs. Použij Chrome/Edge/Safari 16.4+.', 'error');
+    const useWebM = confirm(
+      'Prohlížeč nepodporuje MP4 export (WebCodecs).\n\n' +
+      'Chrome / Edge / Safari 16.4+ doporučeny.\n\n' +
+      'Chceš místo toho exportovat WebM (browser native)?'
+    );
+    if (useWebM) {
+      document.getElementById('btnExportVideo')?.click();
+    }
     return;
   }
 
@@ -3430,19 +3548,44 @@ if (document.readyState === 'loading') {
     },
   });
   
+  // ===========================================================================
+  // CRITICAL: only auto-save AFTER the user has made an explicit change.
+  // Otherwise opening any template triggers a phantom save with a fresh UUID,
+  // which the index then shows as a "new" project. This is the "XX projekty"
+  // bug: every page open / refresh / mode switch was creating a new entry.
+  //
+  // We start in "armed=false" mode and only flip to true when a real input
+  // event fires (text input, mode toggle click, slider drag, etc.). The
+  // wrapped render() below also requires armed=true before triggering save.
+  // ===========================================================================
+  let _userHasInteracted = false;
+  function _armAutoSave() { _userHasInteracted = true; }
+  // Arm on first real user interaction in the sidebar (covers all input types
+  // without needing to manually wire each handler).
+  ['input', 'change', 'click'].forEach(evt => {
+    document.querySelector('.control')?.addEventListener(evt, _armAutoSave, { once: false, capture: true });
+  });
+  
   // Expose globally so existing input handlers can `window.tnAutoSave()` after
   // touching state. Templates already have a `render()` call after every input;
   // hook into that as a single chokepoint.
-  window.tnAutoSave = () => autoSaver.trigger();
+  window.tnAutoSave = () => {
+    if (!_userHasInteracted) return;
+    autoSaver.trigger();
+  };
   
   // Wrap render() to also kick auto-save. This ensures EVERY state change
-  // (slider, text, color picker, anything) is persisted within ~2 seconds.
+  // (slider, text, color picker, anything) is persisted within ~2 seconds —
+  // BUT only after the user has explicitly interacted. Boot/load renders
+  // don't trigger phantom saves.
   if (typeof render === 'function') {
     const origRender = render;
     // eslint-disable-next-line no-global-assign
     render = function (...args) {
       const r = origRender.apply(this, args);
-      try { autoSaver.trigger(); } catch (_) {}
+      if (_userHasInteracted) {
+        try { autoSaver.trigger(); } catch (_) {}
+      }
       return r;
     };
   }

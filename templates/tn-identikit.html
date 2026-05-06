@@ -4,6 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>TN Identikit — Template 04</title>
+<script src="../login.js"></script>
+<script src="../projects.js"></script>
 <script src="../theme.js"></script>
 <!-- TN CITACE (quote card) — Graph Generator template 06 -->
 <!-- Layout derived from PSD reference (uploads/citace-reference.png): -->
@@ -659,7 +661,8 @@
     min-width: 180px;
     box-shadow: 0 4px 12px rgba(0,0,0,0.3);
   }
-  .fps-pill:hover .fps-pill-menu { display: block; }
+  .fps-pill:hover .fps-pill-menu,
+  .fps-pill.open .fps-pill-menu { display: block; }
   .fps-pill-menu button {
     display: block;
     width: 100%;
@@ -932,7 +935,7 @@
     <div class="project-bar">
       <div class="pb-row">
         <span class="pb-label">Projekt</span>
-        <input type="text" class="pb-name" id="projName" value="Untitled" />
+        <input type="text" class="pb-name" id="projName" value="" placeholder="Untitled" />
         <span class="pb-meta" id="projMeta">nový</span>
       </div>
       <div class="pb-row">
@@ -1836,7 +1839,22 @@ document.querySelectorAll('.fps-pill-menu button').forEach(btn => {
     setFps(newFps);
     updateFpsPillUI();
     render();
+    // Close the menu after picking
+    document.getElementById('fpsPill')?.classList.remove('open');
   });
+});
+
+// FPS pill toggles open/close on click — pure CSS hover wasn't reliable on
+// touch devices and forced users to keep the cursor inside a tiny target.
+const _fpsPillEl = document.getElementById('fpsPill');
+document.getElementById('fpsActiveBtn')?.addEventListener('click', e => {
+  e.stopPropagation();
+  if (_fpsPillEl) _fpsPillEl.classList.toggle('open');
+});
+// Close FPS pill when clicking anywhere outside it
+document.addEventListener('click', e => {
+  if (!_fpsPillEl) return;
+  if (!e.target.closest('.fps-pill')) _fpsPillEl.classList.remove('open');
 });
 
 // =============================================================================
@@ -1942,7 +1960,8 @@ function getFontColor() {
 
 $('inShow').addEventListener('change', e => {
   state.show = e.target.value;
-  applyShowTheme();
+  applyShowTheme();   // swaps backdrop video + accent
+  render();           // re-paint title color, accents (theme color propagation)
 });
 populateShowSelect();
 $('inDuration').addEventListener('input', e => {
@@ -2231,7 +2250,7 @@ $('projNew').addEventListener('click', () => {
   });
   currentProjectId = null;
   localStorage.removeItem(LS_CURRENT);
-  $('projName').value = 'Untitled';
+  $('projName').value = buildAutoProjectName('Identikit');
   lastSavedSnapshot = JSON.stringify(snapshotState());
   updateProjectMeta();
   render();
@@ -2849,11 +2868,17 @@ function _showLabel(showId) {
   return map[showId] || (showId ? showId.toUpperCase() : 'TN');
 }
 function _userNick() {
+  // Login system shipped — delegate to TNLogin global.
+  if (window.TNLogin && typeof window.TNLogin.getNick === 'function') {
+    const n = window.TNLogin.getNick();
+    if (n) return n;
+  }
+  // Fallback if login.js failed to load
   try {
     const n = localStorage.getItem('tn_user_nick');
     if (n && /^[A-Z]{3}$/.test(n)) return n;
   } catch (_) {}
-  return 'XXX';   // placeholder until login system ships
+  return 'XXX';
 }
 function _bumpExportCounter(templateName) {
   // Per-day, per-template counter. Returns the NEW count after increment.
@@ -2882,6 +2907,19 @@ function buildExportFilename(templateName, fps) {
   const mode = (fps === 50) ? 'TV' : 'WEB';
   return templateName + n + '-' + showLabel + '-GFX-' + mode + '-' + _userNick() + '-' + _ymdShort() + '.mp4';
 }
+
+// === Auto-name helper for new projects ===
+// Generates a default project name in the same shape as export filenames,
+// but without bumping the export counter. Pattern:
+//   {Tpl}-{Show}-GFX-{Nick}-{YYMMDD}
+// Counter is intentionally OMITTED here (auto-naming a project shouldn't
+// reserve an export number). User can rename freely after creation.
+function buildAutoProjectName(templateName) {
+  const showId = (typeof state !== 'undefined' && state && state.show) ? state.show : 'tn';
+  const showLabel = _showLabel(showId);
+  return templateName + '-' + showLabel + '-GFX-' + _userNick() + '-' + _ymdShort();
+}
+
 
 async function loadMp4Muxer() {
   if (_mp4MuxerLoaded || window.Mp4Muxer) { _mp4MuxerLoaded = true; return; }
@@ -2936,9 +2974,17 @@ async function pickH264Codec(width, height, fps, bitrate) {
 }
 
 document.getElementById('btnExportMP4')?.addEventListener('click', async () => {
-  // Browser capability check
+  // Browser capability check — WebCodecs is needed for MP4 H.264 export.
+  // If absent, offer to fall back to WebM (which uses MediaRecorder API).
   if (typeof VideoEncoder === 'undefined' || typeof VideoFrame === 'undefined') {
-    showToast?.('Prohlížeč nepodporuje WebCodecs. Použij Chrome/Edge/Safari 16.4+.', 'error');
+    const useWebM = confirm(
+      'Prohlížeč nepodporuje MP4 export (WebCodecs).\n\n' +
+      'Chrome / Edge / Safari 16.4+ doporučeny.\n\n' +
+      'Chceš místo toho exportovat WebM (browser native)?'
+    );
+    if (useWebM) {
+      document.getElementById('btnExportVideo')?.click();
+    }
     return;
   }
 
@@ -3310,6 +3356,164 @@ if (document.readyState === 'loading') {
     _wireExportFolderLink();
   }, 0);
 }
+
+// === LOGIN BADGE — show NICK in control-header ===
+// Don't block UI; just attach the badge. Log out reloads to keep state clean.
+(function attachLoginBadge() {
+  if (!window.TNLogin) return;
+  const placeBadge = () => {
+    const header = document.querySelector('.control-header');
+    if (!header) return;
+    // Use the brand row so badge sits next to ZPĚT button
+    const slot = header;
+    TNLogin.attachBadge(slot, {
+      onChange: () => { window.location.reload(); }
+    });
+  };
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', placeBadge);
+  } else {
+    placeBadge();
+  }
+})();
+
+// === Auto-name init — set default name on first load if not loaded from project ===
+(function autoNameInit() {
+  function set() {
+    const inp = document.getElementById('projName');
+    if (!inp) return;
+    if (!inp.value || inp.value === 'Untitled') {
+      // Only set if no project is loaded (currentProjectId = null)
+      if (typeof currentProjectId === 'undefined' || currentProjectId === null) {
+        try { inp.value = buildAutoProjectName('Identikit'); } catch (_) {}
+      }
+    }
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', set);
+  } else {
+    setTimeout(set, 100);   // wait for project load logic
+  }
+})();
+
+// === Cloudflare Worker projects bridge ===
+// Wires per-template auto-save and on-load deserialize via TNProjects API.
+(function tnProjectsBridge() {
+  if (!window.TNProjects) return;   // projects.js failed to load
+  
+  const TEMPLATE_ID = 'tn-identikit';
+  
+  function buildProject() {
+    // Snapshot current project — both metadata and full state.
+    const nameInput = document.getElementById('projName');
+    const name = (nameInput && nameInput.value.trim()) || 'Untitled';
+    const owner = (window.TNLogin && TNLogin.getNick()) || 'XXX';
+    const id = (typeof currentProjectId !== 'undefined' && currentProjectId)
+               ? currentProjectId
+               : TNProjects.uuid();
+    return {
+      id, name, owner,
+      template: TEMPLATE_ID,
+      show: state.show,
+      fps: state.fps,
+      duration: state.duration,
+      state: snapshotState(),
+    };
+  }
+  
+  // Set up debounced auto-save. trigger() is called from every input handler.
+  const autoSaver = TNProjects.autoSave(buildProject, {
+    onStart: () => {
+      const meta = document.getElementById('projMeta');
+      if (meta) meta.textContent = 'ukládám…';
+    },
+    onSave: (saved) => {
+      // Capture the assigned ID so subsequent saves update instead of inserting
+      if (typeof currentProjectId !== 'undefined') {
+        try {
+          // eslint-disable-next-line no-global-assign
+          currentProjectId = saved.id;
+          localStorage.setItem(LS_CURRENT, saved.id);
+        } catch (_) {}
+      }
+      const meta = document.getElementById('projMeta');
+      if (meta) {
+        const t = new Date(saved.updatedAt).toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        meta.textContent = 'uloženo ' + t;
+      }
+    },
+    onError: (err) => {
+      const meta = document.getElementById('projMeta');
+      if (meta) meta.textContent = 'chyba ukládání · ' + err.message;
+    },
+  });
+  
+  // ===========================================================================
+  // CRITICAL: only auto-save AFTER the user has made an explicit change.
+  // Otherwise opening any template triggers a phantom save with a fresh UUID,
+  // which the index then shows as a "new" project. This is the "XX projekty"
+  // bug: every page open / refresh / mode switch was creating a new entry.
+  //
+  // We start in "armed=false" mode and only flip to true when a real input
+  // event fires (text input, mode toggle click, slider drag, etc.). The
+  // wrapped render() below also requires armed=true before triggering save.
+  // ===========================================================================
+  let _userHasInteracted = false;
+  function _armAutoSave() { _userHasInteracted = true; }
+  // Arm on first real user interaction in the sidebar (covers all input types
+  // without needing to manually wire each handler).
+  ['input', 'change', 'click'].forEach(evt => {
+    document.querySelector('.control')?.addEventListener(evt, _armAutoSave, { once: false, capture: true });
+  });
+
+  // Expose globally so existing input handlers can `window.tnAutoSave()` after
+  // touching state. Templates already have a `render()` call after every input;
+  // hook into that as a single chokepoint.
+  window.tnAutoSave = () => {
+    if (!_userHasInteracted) return;
+    autoSaver.trigger();
+  };
+
+  // Wrap render() to also kick auto-save. This ensures EVERY state change
+  // (slider, text, color picker, anything) is persisted within ~2 seconds —
+  // BUT only after the user has explicitly interacted. Boot/load renders
+  // don't trigger phantom saves.
+  if (typeof render === 'function') {
+    const origRender = render;
+    // eslint-disable-next-line no-global-assign
+    render = function (...args) {
+      const r = origRender.apply(this, args);
+      if (_userHasInteracted) {
+        try { autoSaver.trigger(); } catch (_) {}
+      }
+      return r;
+    };
+  }
+  
+  // Load from URL ?projectId=...
+  const params = new URLSearchParams(location.search);
+  const loadId = params.get('projectId');
+  if (loadId) {
+    TNProjects.load(loadId).then(p => {
+      if (!p || !p.state) return;
+      applySnapshot(p.state);
+      try {
+        // eslint-disable-next-line no-global-assign
+        currentProjectId = p.id;
+        localStorage.setItem(LS_CURRENT, p.id);
+      } catch (_) {}
+      const inp = document.getElementById('projName');
+      if (inp) inp.value = p.name;
+      const meta = document.getElementById('projMeta');
+      if (meta) meta.textContent = 'načteno z cloudu';
+      if (typeof render === 'function') render();
+    }).catch(err => {
+      console.warn('[projects] load failed:', err);
+      const meta = document.getElementById('projMeta');
+      if (meta) meta.textContent = 'chyba načtení · ' + err.message;
+    });
+  }
+})();
 </script>
 
 <!-- Full-screen export progress modal — blocks all interaction during export. -->
