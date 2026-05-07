@@ -76,8 +76,16 @@
     border: 1px solid var(--line);
   }
   .fixed-card-rect { position: absolute; background: var(--accent); }
+  .fixed-card-lista { position: absolute; background: var(--accent); opacity: 0.7; border-radius: 1px; }
   .fixed-card-info { flex: 1; min-width: 0; }
-  .fixed-card-title { font-size: 14px; font-weight: 600; color: var(--text); }
+  .fixed-card-title { font-size: 14px; font-weight: 600; color: var(--text); display: flex; align-items: center; gap: 8px; }
+  .badge-lista {
+    font-size: 9px; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--muted); font-weight: 500;
+    background: var(--panel); padding: 2px 6px; border-radius: 3px;
+    border: 1px solid var(--line);
+  }
+  .fixed-card.active .badge-lista { color: #ffb3b3; border-color: var(--accent-dim); }
   .fixed-card.active .fixed-card-title { color: #fff; }
   .fixed-card-desc { font-size: 11px; color: var(--muted); margin-top: 3px; font-family: var(--mono); }
 
@@ -199,6 +207,18 @@
             <div class="fixed-card-desc">1632, 136 · 172 × 172 px</div>
           </div>
         </button>
+        <button type="button" class="fixed-card" data-id="3" onclick="preset(3)">
+          <div class="fixed-card-mini">
+            <!-- lista preview (red, smaller) -->
+            <div class="fixed-card-lista" style="left:43.44%; top:81.11%; width:38.33%; height:6.30%;"></div>
+            <!-- QR preview -->
+            <div class="fixed-card-rect" style="left:83.07%; top:68.15%; width:10.83%; height:19.26%;"></div>
+          </div>
+          <div class="fixed-card-info">
+            <div class="fixed-card-title">Pevná 3 <span class="badge-lista">+ lista</span></div>
+            <div class="fixed-card-desc">1595, 736 · 208 × 208 px</div>
+          </div>
+        </button>
       </div>
     </div>
 
@@ -214,6 +234,15 @@
         </select>
       </div>
       <label class="check"><input type="checkbox" id="bg-white" checked /> Bílý čtverec pod QR</label>
+    </div>
+
+    <div class="panel" id="lista-panel" style="display: none;">
+      <h2>Lista</h2>
+      <label class="check" style="margin-bottom: 12px;">
+        <input type="checkbox" id="lista-on" checked /> Lista zapnutá
+      </label>
+      <label>Text</label>
+      <input type="text" id="lista-text" value="Andrej Babiš hostem TN Live" />
     </div>
 
     <details class="advanced">
@@ -2577,8 +2606,11 @@ var qrcode = function() {
   const W = 1920, H = 1080;
   const FIXED = [
     { id: 1, label: 'Pevná 1', x: 116,  y: 764, size: 208 },
-    { id: 2, label: 'Pevná 2', x: 1632, y: 136, size: 172 }
+    { id: 2, label: 'Pevná 2', x: 1632, y: 136, size: 172 },
+    { id: 3, label: 'Pevná 3', x: 1595, y: 736, size: 208, listaCapable: true }
   ];
+
+  const LISTA_DEFAULT_TEXT = 'Andrej Babiš hostem TN Live';
 
   function vals(){
     return {
@@ -2608,7 +2640,9 @@ var qrcode = function() {
       qr.make();
     } catch(e){
       $('meta').innerHTML = '<span class="err">Chyba: data jsou příliš dlouhá pro úroveň ' + o.level + '. Zkus L nebo zkrať obsah.</span>';
-      updateFixedCards(matchFixed(o));
+      const matchedErr = matchFixed(o);
+      updateFixedCards(matchedErr);
+      updateListaPanel(matchedErr);
       return;
     }
     const count = qr.getModuleCount();
@@ -2640,8 +2674,16 @@ var qrcode = function() {
     }
 
     const matched = matchFixed(o);
+
+    // Lista (only for Pevná 3, when toggle is on)
+    let listaDrawn = false;
+    if (matched && matched.listaCapable && $('lista-on').checked) {
+      drawLista(o, $('lista-text').value);
+      listaDrawn = true;
+    }
+
     const fixedTag = matched
-      ? '<span class="ok">' + matched.label.toUpperCase() + ' OK</span>'
+      ? '<span class="ok">' + matched.label.toUpperCase() + ' OK' + (listaDrawn ? ' + LISTA' : '') + '</span>'
       : '<span style="color: var(--muted)">vlastní pozice</span>';
     $('meta').innerHTML =
       'modulů ' + count + '×' + count +
@@ -2649,6 +2691,61 @@ var qrcode = function() {
       ' · čtverec ' + o.size + 'px' +
       ' · ' + fixedTag;
     updateFixedCards(matched);
+    updateListaPanel(matched);
+  }
+
+  // Lista layout constants — taken from reference design (red variant)
+  const LISTA = {
+    height: 68,           // bar height (smaller than before)
+    gapToQr: 25,          // px gap between lista right edge and QR left edge
+    paddingX: 19,         // text right padding inside lista
+    paddingLeft: 27,      // text left padding inside lista
+    fontSize: 46,         // text font size in px
+    bgColor: '#e30613',   // TN red, 100% opacity
+    textColor: '#ffffff',
+    textBaselineBias: 4,  // optical centering bias (text sits slightly lower)
+    fontStack: '700 46px "Organica GR", "Organica", "Tablet Gothic", "Inter", "Helvetica Neue", Arial, sans-serif'
+  };
+
+  function drawLista(o, text){
+    const txt = (text || '').trim() || ' ';
+    const qrBottom = o.y + o.size;
+    const listaRight = o.x - LISTA.gapToQr;
+    const listaTop = qrBottom - LISTA.height;
+
+    // Measure text width using the actual font stack
+    ctx.font = LISTA.fontStack;
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'middle';
+    const metrics = ctx.measureText(txt);
+    const textWidth = metrics.width;
+
+    // Lista width = text + side paddings
+    const listaWidth = Math.ceil(textWidth + LISTA.paddingX + LISTA.paddingLeft);
+    const listaLeft = listaRight - listaWidth;
+
+    // Background — TN red, 100% opaque
+    ctx.fillStyle = LISTA.bgColor;
+    ctx.fillRect(listaLeft, listaTop, listaWidth, LISTA.height);
+
+    // Text — white, right-aligned, optically centered (slight downward bias)
+    ctx.fillStyle = LISTA.textColor;
+    const textY = listaTop + LISTA.height / 2 + LISTA.textBaselineBias;
+    const textX = listaRight - LISTA.paddingX;
+    ctx.fillText(txt, textX, textY);
+
+    // Reset alignment
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'alphabetic';
+  }
+
+  function updateListaPanel(matched){
+    const panel = $('lista-panel');
+    if (matched && matched.listaCapable) {
+      panel.style.display = '';
+    } else {
+      panel.style.display = 'none';
+    }
   }
 
   function updateFixedCards(matched){
@@ -2676,6 +2773,8 @@ var qrcode = function() {
 
   ['data','color','level'].forEach(id => $(id).addEventListener('input', render));
   $('bg-white').addEventListener('change', render);
+  $('lista-on').addEventListener('change', render);
+  $('lista-text').addEventListener('input', render);
 
   // Color hex sync
   $('color').addEventListener('input', () => { $('color-hex').value = $('color').value.toUpperCase(); });
