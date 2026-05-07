@@ -2703,8 +2703,7 @@ var qrcode = function() {
     fontSize: 46,         // text font size in px
     bgColor: '#e30613',   // TN red, 100% opacity
     textColor: '#ffffff',
-    textBaselineBias: 4,  // optical centering bias (text sits slightly lower)
-    fontStack: '700 46px "Organica GR", "Organica", "Tablet Gothic", "Inter", "Helvetica Neue", Arial, sans-serif'
+    fontStack: '600 46px "Organica GR", "Organica", "Tablet Gothic", "Inter", "Helvetica Neue", Arial, sans-serif'
   };
 
   function drawLista(o, text){
@@ -2713,12 +2712,15 @@ var qrcode = function() {
     const listaRight = o.x - LISTA.gapToQr;
     const listaTop = qrBottom - LISTA.height;
 
-    // Measure text width using the actual font stack
+    // Set font + measure for optical centering
     ctx.font = LISTA.fontStack;
     ctx.textAlign = 'right';
-    ctx.textBaseline = 'middle';
+    ctx.textBaseline = 'alphabetic';
     const metrics = ctx.measureText(txt);
     const textWidth = metrics.width;
+    // Real glyph bbox heights — works regardless of which font the OS resolves
+    const ascent = metrics.actualBoundingBoxAscent;
+    const descent = metrics.actualBoundingBoxDescent;
 
     // Lista width = text + side paddings
     const listaWidth = Math.ceil(textWidth + LISTA.paddingX + LISTA.paddingLeft);
@@ -2728,9 +2730,11 @@ var qrcode = function() {
     ctx.fillStyle = LISTA.bgColor;
     ctx.fillRect(listaLeft, listaTop, listaWidth, LISTA.height);
 
-    // Text — white, right-aligned, optically centered (slight downward bias)
+    // Text — white, right-aligned, optically centered:
+    // visible glyph bbox (ascent..descent) gets the same space above and below
     ctx.fillStyle = LISTA.textColor;
-    const textY = listaTop + LISTA.height / 2 + LISTA.textBaselineBias;
+    const visualCenterY = listaTop + LISTA.height / 2;
+    const textY = visualCenterY + (ascent - descent) / 2;
     const textX = listaRight - LISTA.paddingX;
     ctx.fillText(txt, textX, textY);
 
